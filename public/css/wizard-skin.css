@@ -64,3 +64,54 @@ dialog{border-radius:14px}
 .savebar .why{font-size:14px;color:var(--muted)}
 .savebar .why.ready{color:var(--ok)}
 body.is-bulk .savebar{display:none}
+/* ---------- phones: wizard and bulk ---------- */
+@media (max-width:980px){ aside .card{position:static} }
+@media (max-width:640px){
+  body{font-size:15.5px}
+  .top{flex-wrap:wrap;padding-top:10px}
+  .brand .bname{font-size:21px}
+  .hero-row{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px}
+  .hero-row .f{min-width:0!important;max-width:none!important;margin:0}
+  .hero-row .hero-acts{grid-column:1/-1;flex-wrap:wrap}
+  .hero-acts .btn{flex:1 1 auto;justify-content:center}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .tabs button{padding:6px 10px;font-size:14.5px;flex:none}
+  .grid{gap:14px;padding:12px 0 30px}
+  .blk{padding:12px 13px;margin-bottom:12px}
+  .blk h3{font-size:17px}
+  .row{gap:8px}
+  .row>.f{flex-basis:100%}
+  .hit{padding:9px 11px}
+  .hit .acts{margin-left:0;flex-wrap:wrap;width:100%}
+  .savebar{gap:6px;padding:8px 10px;margin-left:-4px;margin-right:-4px}
+  .savebar .btn{flex:1 1 100%;font-size:16px;padding:10px 12px;justify-content:center}
+  .savebar .why{font-size:13px}
+  dialog{width:calc(100% - 20px);max-width:none;margin:10px auto;padding:14px}
+  .foot .wrap{flex-direction:column;gap:6px}
+  /* bulk page */
+  .bs-bar{gap:6px}
+  .bs-sheetbar .in{flex:1 1 100%;width:100%}
+  .bs-sep{display:none}
+  .bs-status{font-size:12px}
+  .sheet-wrap{max-height:70vh}
+  table.sheet td.cl{min-width:100px;max-width:220px}
+  .bs-menu{left:auto;right:0;min-width:240px}
+}
+/* ---------- title + word box: one tidy card ---------- */
+body:not(.is-bulk) .top{padding:14px 0 6px;border:0}
+body:not(.is-bulk) .brand .bname{font-size:20px;display:inline-flex;align-items:center;gap:8px}
+body:not(.is-bulk) .brand .bname::after{content:"নতুন বা হালনাগাদ";font:500 12px/1 "Tiro Bangla",serif;color:var(--primary);background:var(--chip);border-radius:999px;padding:5px 9px}
+#single .hero{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 8px;margin-top:4px}
+#single .lemma-wrap{border:0;position:relative;padding:0;margin:0}
+.lemma-lbl{margin-left:2px!important}
+.lemma-lbl{display:block;font-size:13px;color:var(--muted);margin:0 0 4px 2px}
+#single #lemma{box-sizing:border-box;width:100%;border:1.5px solid var(--line);border-radius:12px;background:var(--sunken);padding:8px 14px;margin:0;font:700 clamp(24px,3.6vw,34px)/1.3 "Tiro Bangla",serif;color:var(--ink);transition:border-color .15s,box-shadow .15s,background .15s}
+#single #lemma::placeholder{color:var(--muted);opacity:.55;font-weight:500}
+#single #lemma:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--line))}
+#single #lemma:focus{outline:none;border-color:var(--primary);background:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 16%,transparent)}
+#single .hero-row{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+@media (max-width:640px){
+  #single .hero{padding:10px 10px 6px;border-radius:12px}
+  #single #lemma{font-size:24px;padding:7px 11px}
+  body:not(.is-bulk) .brand .bname::after{display:none}
+}
