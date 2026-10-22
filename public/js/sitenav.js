@@ -39,9 +39,12 @@ function cleanUrl(href) {
   let user = ""; try { user = sessionStorage.getItem("wd_token") ? sessionStorage.getItem("wd_user") || "" : ""; } catch (e) {}
   const nav = document.createElement("nav");
   nav.className = "sitenav"; nav.setAttribute("aria-label", "সাইটের পাতা");
-  nav.innerHTML = `<div class="sn-in"><a class="logo" href="${cleanUrl("index.html")}">লেক্সিম<b>.</b>বাংলা</a>${links.filter(l => l[2] !== "search").map(([h, t, k]) => `<a class="nl" href="${cleanUrl(h)}"${k === page ? ' aria-current="page"' : ""}>${t}</a>`).join("")}
+  nav.innerHTML = `<div class="sn-in"><a class="logo" href="${cleanUrl("index.html")}">লেক্সিম<b>.</b>বাংলা</a><button type="button" class="sn-burger" aria-label="মেনু" aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><span class="sn-links">${links.filter(l => l[2] !== "search").map(([h, t, k]) => `<a class="nl" href="${cleanUrl(h)}"${k === page ? ' aria-current="page"' : ""}>${t}</a>`).join("")}</span>
     <span class="nav-acct" id="nav-acct"><a class="nl-btn" href="${cleanUrl("search.html")}"${page === "search" ? ' aria-current="page"' : ""}><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>অনুসন্ধান</span></a><button type="button" class="login-btn${user ? " on" : ""}" id="login-btn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>${user ? user.replace(/[<>&"]/g, "") : "লগ ইন"}</span></button></span></div>`;
   document.body.prepend(nav);
+  // Phones: the page links fold into the ☰ button.
+  const burger = nav.querySelector(".sn-burger");
+  burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); });
   // Light / dark / auto — one button, same on every page (the choice is kept in localStorage "theme").
   const THEMES = [["auto", "স্বয়ংক্রিয়", '<circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none"/>'],
     ["light", "হালকা", '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'],

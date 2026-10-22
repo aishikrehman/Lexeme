@@ -1,6 +1,6 @@
 /* Site-wide header, identical on every page (reader pages and the wizard).
    Everything is set explicitly here so page stylesheets (site.css / wizard.css) cannot make it differ. */
-.sitenav{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;font:16px/1.5 "Tiro Bangla","Noto Sans Bengali",serif;color:var(--ink)}
+.sitenav{background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:50;font:16px/1.5 "Tiro Bangla","Noto Sans Bengali",serif;color:var(--ink)}
 .sitenav .sn-in{max-width:1180px;margin:0 auto;padding:8px 20px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;box-sizing:border-box}
 .sitenav .logo{display:inline-flex;align-items:center;height:34px;font:700 19px/1 "Tiro Bangla",serif;color:var(--ink);text-decoration:none;margin-right:12px}
 .sitenav .logo b{color:var(--accent)}
@@ -18,7 +18,25 @@
 /* light / dark / auto button: same size and look on every page */
 .sitenav .theme-btn{display:grid;place-items:center;width:34px;height:34px;padding:0;margin:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;cursor:pointer;flex:none}
 .sitenav .theme-btn .ic{width:18px;height:18px}
-@media (max-width:700px){.sitenav .sn-in{gap:2px}.sitenav a.nl{padding:0 9px}}
+.sn-links{display:contents}
+.sn-burger{display:none;width:38px;height:34px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;cursor:pointer;padding:0;align-items:center;justify-content:center}
+.sn-burger .ic{width:20px;height:20px}
+/* tablets: tighter spacing */
+@media (max-width:1000px){.sitenav a.nl{padding:0 9px;font-size:15px}.sitenav .logo{margin-right:6px}}
+/* phones: logo + buttons on one row, links in a ☰ menu */
+@media (max-width:760px){
+  .sitenav .sn-in{padding:8px 12px;gap:6px;flex-wrap:nowrap}
+  .sitenav .logo{font-size:17px;margin-right:auto}
+  .sn-burger{display:inline-flex;order:5;flex:none}
+  .nav-acct{margin-left:0;gap:6px}
+  .sitenav .nl-btn span,.sitenav .login-btn span{display:none}
+  .sitenav .nl-btn,.sitenav .login-btn{padding:0;width:36px;justify-content:center}
+  .sitenav .theme-btn{order:4}
+  .sn-links{display:none}
+  .sitenav.open .sn-links{display:flex;flex-direction:column;position:absolute;left:0;right:0;top:100%;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 10px 24px rgba(0,0,0,.12);padding:6px 12px 10px}
+  .sitenav.open .sn-links a.nl{height:42px;border-radius:10px;font-size:16px}
+  .lx-menu,.lx-note{right:12px;left:12px;max-width:none}
+}
 .lx-note{position:absolute;right:20px;top:calc(100% + 6px);max-width:360px;background:var(--surface);border:1px solid var(--warn);color:var(--ink);border-radius:10px;padding:8px 12px;font:14px/1.5 "Tiro Bangla",serif;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:60}
 .lx-menu{position:absolute;right:62px;top:calc(100% + 4px);min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:6px;z-index:60;font:15px/1.5 "Tiro Bangla",serif}
 .lx-menu[hidden]{display:none}
