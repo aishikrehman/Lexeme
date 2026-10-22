@@ -40,3 +40,27 @@ aside .card{border-radius:12px;top:70px}
 .foot a{color:var(--primary)}
 
 dialog{border-radius:14px}
+
+/* compact top: title + word + language/category row take little height */
+.top{padding:12px 0 2px}
+.brand .bname{font-size:24px}
+.brand .bsub:empty{display:none}
+.hero{padding:6px 0 0}
+#lemma{font-size:clamp(24px,3.4vw,32px);padding:.05em 0}
+.lemma-wrap{border-top-width:2px}
+.hero-row{gap:8px 10px;margin-top:4px;align-items:flex-end}
+.hero-row .f{margin-bottom:4px;min-width:120px}
+.hero-row .fl{font-size:12px}
+.hero-row select,.hero-row .in{height:34px;padding-top:0;padding-bottom:0}
+.hero-acts{flex-direction:row!important;gap:8px;align-items:center;min-width:0!important}
+.hero-acts .btn{height:34px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.found{margin:8px 0 2px}
+.tabs{margin-top:8px}
+
+/* always-visible save bar (single-word wizard) */
+.savebar{position:sticky;bottom:0;z-index:40;display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0 0;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px 12px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+.savebar .btn{font-size:17px;padding:10px 22px;background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+.savebar .btn:disabled{background:var(--sunken);border-color:var(--line);color:var(--muted);opacity:1}
+.savebar .why{font-size:14px;color:var(--muted)}
+.savebar .why.ready{color:var(--ok)}
+body.is-bulk .savebar{display:none}

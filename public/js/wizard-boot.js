@@ -19,6 +19,24 @@
     $(".top .bsub").textContent = "স্প্রেডশিটে অনেক শব্দ একসঙ্গে লিখুন বা পেস্ট করুন, যাচাই করুন, তারপর একবারে উইকি উপাত্তে সংরক্ষণ করুন";
     document.title = "একসঙ্গে অনেক · লেক্সিম.বাংলা";
   } else setMode(false);
+  // Save bar: always visible at the bottom of the single-word wizard (any tab). It drives the real
+  // #submit button, so the save itself, its checks and its log stay as they are.
+  if (!isBulk) {
+    const bar = document.createElement("div"); bar.className = "savebar";
+    bar.innerHTML = `<button type="button" class="btn" id="save-now">উইকি উপাত্তে সংরক্ষণ করুন</button><span class="why" id="save-why"></span>`;
+    $("#single").appendChild(bar);
+    $("#save-now").addEventListener("click", () => {
+      if ($("#p-review").hidden) selectTab("review");
+      if (!$("#submit").disabled) $("#submit").click();
+      $("#p-review").scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+    const sync = () => {
+      const s = $("#submit"); const off = s.disabled, w = $("#submit-why")?.textContent || "";
+      $("#save-now").disabled = off;
+      const why = $("#save-why"); why.textContent = off ? w || s.title || "" : "সব ঠিক আছে — সংরক্ষণ করা যাবে।"; why.classList.toggle("ready", !off);
+    };
+    setInterval(sync, 400); sync();
+  }
   // A row sent from the bulk sheet (“উইজার্ডে খুলুন”) becomes the draft here.
   if (!isBulk && q.get("from") === "bulk") {
     let row = null; try { row = JSON.parse(sessionStorage.getItem("lx_bulk_row") || "null"); sessionStorage.removeItem("lx_bulk_row"); } catch (e) {}

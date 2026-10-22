@@ -1355,6 +1355,10 @@ function renderReview() {
   $("#summary").placeholder = autoSummary();
   $("#submit").disabled = !auth.user || v.errors.length > 0 || v.nothing;
   $("#submit").title = !auth.user ? "সংরক্ষণের জন্য লগ ইন করুন" : v.errors.length ? "আগে ত্রুটিগুলো ঠিক করুন" : v.nothing ? "কিছু বদলানো হয়নি" : "";
+  // Say why the button is off, next to it (not only on hover).
+  let why = $("#submit-why");
+  if (!why) { why = document.createElement("span"); why.id = "submit-why"; why.className = "muted"; why.style.cssText = "font-size:14px;align-self:center"; $("#submit").after(why); }
+  why.textContent = !auth.user ? "সংরক্ষণের জন্য ওপরে “লগ ইন” চাপুন।" : v.errors.length ? `আগে নিচের ${toBn(v.errors.length)}টি ত্রুটি ঠিক করুন।` : v.nothing ? "এখনো কিছু বদলানো হয়নি।" : "";
   const unc = uncoveredSummary(); const grouped = {}; unc.forEach(([w, p]) => (grouped[p] = grouped[p] || []).push(w));
   box.innerHTML = `
   <section class="blk"><h3>যাচাই</h3>

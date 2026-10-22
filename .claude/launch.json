@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "lexeme", "runtimeExecutable": "node", "runtimeArgs": ["server.js"], "port": 3000 }
+    { "name": "lexeme", "runtimeExecutable": "C:\\Users\\Aishik\\AppData\\Local\\Author Software\\nvm\\.nodejs\\node.exe", "runtimeArgs": ["server.js", "3001"], "port": 3001 }
   ]
 }
