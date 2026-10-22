@@ -26,9 +26,12 @@ const LXAuth = (function () {
   const user = () => (token() ? ss.get("wd_user") || "" : "");
 
   async function login(id = clientId()) {
+    if (server() && window.LX_PASTEBACK) return pasteBackLogin();
     if (server()) { location.href = "/auth/login?back=" + encodeURIComponent(location.pathname + location.search + location.hash); return; }
     // Without the Node server there is nowhere to keep the OAuth 1.0a secret, so login cannot start.
-    if (!id) { note("লগ ইনের জন্য সার্ভার চালু করুন: npm start, তারপর http://localhost:3000 খুলুন। পড়তে লগ ইন লাগে না।"); return; }
+    // Served by Node but no consumer configured (e.g. a host without the OAUTH_* environment variables).
+    if (!id && window.LX_NODE) { note("এই সার্ভারে লগ ইন এখনো চালু করা হয়নি (OAUTH_CONSUMER_KEY / OAUTH_CONSUMER_SECRET / PUBLIC_URL সেট করা নেই)। পড়তে লগ ইন লাগে না।"); return; }
+    if (!id) { note("লগ ইনের জন্য সার্ভার চালু করুন: npm start, তারপর সার্ভারের ঠিকানা খুলুন। পড়তে লগ ইন লাগে না।"); return; }
     if (location.protocol === "file:") { alert("লগ ইনের জন্য পাতাটি সার্ভার দিয়ে খুলতে হবে (npm start, তারপর http://localhost:3000)।"); return; }
     const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
     const challenge = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
@@ -69,6 +72,31 @@ const LXAuth = (function () {
     if (server()) { try { await fetch("/auth/logout", { method: "POST" }); } catch (e) {} window.LX_USER = ""; ss.set("wd_token", null); ss.set("wd_user", null); render(); window.dispatchEvent(new Event("lx-auth")); return; }
     return setToken("");
   };
+
+  // Consumer whose callback is another address (e.g. http://127.0.0.1:5000/): Wikimedia opens in a new tab;
+  // after approving, that tab lands on the callback address — copy it and paste it here to finish.
+  async function pasteBackLogin() {
+    const b = document.getElementById("login-btn"); if (!b) return;
+    const w = window.open("about:blank", "_blank");
+    let j; try { j = await (await fetch("/auth/login?json=1&back=" + encodeURIComponent(location.pathname))).json(); } catch (e) { j = { error: e.message }; }
+    if (!j.url) { w?.close(); note("লগ ইন শুরু করা যায়নি: " + (j.error || "")); return; }
+    if (w) w.location = j.url; else window.open(j.url, "_blank");
+    let m = document.getElementById("lx-paste");
+    if (!m) { m = document.createElement("div"); m.id = "lx-paste"; m.className = "lx-menu lx-paste"; b.closest(".sn-in").appendChild(m); }
+    m.hidden = false;
+    m.innerHTML = `<div class="lx-menu-who">লগ ইন শেষ করুন<small>নতুন ট্যাবে উইকিমিডিয়ায় অনুমতি দিন। তারপর সেই ট্যাব যে ঠিকানায় যাবে (পাতাটি না খুললেও), ঠিকানা-বার থেকে পুরো ঠিকানা কপি করে এখানে পেস্ট করুন।</small></div>
+      <input id="lx-paste-in" placeholder="http://127.0.0.1:5000/…oauth_verifier=…" style="width:100%;box-sizing:border-box;margin:6px 0;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--sunken);color:var(--ink)">
+      <div style="display:flex;gap:6px"><button type="button" id="lx-paste-go" style="color:var(--primary)">লগ ইন শেষ করুন</button><button type="button" id="lx-paste-x" style="color:var(--muted)">বাতিল</button></div>
+      <small id="lx-paste-msg" style="color:var(--err)"></small>`;
+    const go = async () => {
+      const v = m.querySelector("#lx-paste-in").value.trim(); if (!v) return;
+      const r = await (await fetch("/auth/complete?u=" + encodeURIComponent(v))).json().catch(() => ({}));
+      if (r.ok) location.reload(); else m.querySelector("#lx-paste-msg").textContent = r.error || "লগ ইন শেষ হয়নি। আবার লগ ইন চাপুন।";
+    };
+    m.querySelector("#lx-paste-go").onclick = go;
+    m.querySelector("#lx-paste-in").addEventListener("paste", () => setTimeout(go, 50));
+    m.querySelector("#lx-paste-x").onclick = () => { m.hidden = true; };
+  }
 
   // A short message under the header button (no popup).
   function note(msg) {

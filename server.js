@@ -43,7 +43,7 @@ function cleanRedirect(p, search) {
   return to + (rest ? "?" + rest : "");
 }
 // Tell every page it is behind this server (clean links, wizard proxy) and who is logged in.
-const nodeFlag = req => h => h.replace("<head>", '<head><base href="/">').replace("</head>", `<script>window.LX_NODE = true; window.LX_OAUTH1 = ${OAUTH1.enabled}; window.LX_USER = ${JSON.stringify(OAUTH1.loggedIn(req) ? OAUTH1.userOf(req) || "অ্যাকাউন্ট" : "").replace(/</g, "\\u003c")}; window.LX_CAN_EDIT = ${OAUTH1.canEdit(req)}; window.LX_GRANTS = ${JSON.stringify(OAUTH1.grantsOf(req)).replace(/</g, "\\u003c")}; window.LX_OAUTH_CLIENT = ${JSON.stringify(process.env.OAUTH_CLIENT_ID || CFG.oauthClientId || "")};</script></head>`).replace("<!--NODE-->", "<script>window.LX_PROXY = true;</script>");
+const nodeFlag = req => h => h.replace("<head>", '<head><base href="/">').replace("</head>", `<script>window.LX_NODE = true; window.LX_OAUTH1 = ${OAUTH1.enabled}; window.LX_PASTEBACK = ${OAUTH1.pasteBack}; window.LX_USER = ${JSON.stringify(OAUTH1.loggedIn(req) ? OAUTH1.userOf(req) || "অ্যাকাউন্ট" : "").replace(/</g, "\\u003c")}; window.LX_CAN_EDIT = ${OAUTH1.canEdit(req)}; window.LX_GRANTS = ${JSON.stringify(OAUTH1.grantsOf(req)).replace(/</g, "\\u003c")}; window.LX_OAUTH_CLIENT = ${JSON.stringify(process.env.OAUTH_CLIENT_ID || CFG.oauthClientId || "")};</script></head>`).replace("<!--NODE-->", "<script>window.LX_PROXY = true;</script>");
 
 // JSON API.
 const API = {
@@ -128,7 +128,18 @@ const server = http.createServer(async (req, res) => {
     }
     // Login must start on the same host the callback returns to (e.g. 127.0.0.1:5000, not localhost),
     // otherwise the browser comes back without its session cookie.
-    if (p === "/auth/login" && OAUTH1.publicUrl && req.headers.host !== new URL(OAUTH1.publicUrl).host) {
+    // Paste-back login: the address Wikimedia sent the browser to (with oauth_verifier) is pasted on this site.
+    if (p === "/auth/complete") {
+      let q2; try { q2 = new URL(url.searchParams.get("u") || "").searchParams; } catch (e) { q2 = new URLSearchParams(); }
+      if (!q2.get("oauth_verifier") || !q2.get("oauth_token")) return send(res, 400, JSON.stringify({ ok: false, error: "ঠিকানায় oauth_verifier পাওয়া যায়নি" }));
+      const r = await OAUTH1.callback(req, res, q2);
+      return send(res, 200, JSON.stringify({ ok: OAUTH1.loggedIn(req), user: OAUTH1.userOf(req), redirect: r.redirect }), undefined, { "Cache-Control": "no-store" });
+    }
+    if (p === "/auth/login" && url.searchParams.get("json") === "1") {
+      const r = await OAUTH1.login(req, res, url.searchParams.get("back"));
+      return send(res, r.redirect ? 200 : r.status || 500, JSON.stringify(r.redirect ? { url: r.redirect } : { error: r.error }), undefined, { "Cache-Control": "no-store" });
+    }
+    if (p === "/auth/login" && !OAUTH1.pasteBack && OAUTH1.publicUrl && req.headers.host !== new URL(OAUTH1.publicUrl).host) {
       res.writeHead(302, { Location: OAUTH1.publicUrl + "/auth/login" + url.search }); return res.end();
     }
     if (p === "/auth/callback") { res.writeHead(302, { Location: "/?login=failed" }); return res.end(); } // reached without oauth_verifier
@@ -138,7 +149,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, r.status || 500, `<!doctype html><meta charset="utf-8"><p style="font:16px sans-serif;padding:20px">লগ ইন করা যায়নি: ${String(r.error).replace(/[<&]/g, "")}</p><p style="font:16px sans-serif;padding:0 20px"><a href="/">ফিরে যান</a></p>`, "text/html; charset=utf-8");
     }
     if (p === "/auth/logout") { OAUTH1.logout(req, res); return send(res, 200, JSON.stringify({ ok: true })); }
-    if (p === "/auth/me") return send(res, 200, JSON.stringify({ user: OAUTH1.userOf(req), oauth1: OAUTH1.enabled }), undefined, { "Cache-Control": "no-store" });
+    if (p === "/auth/me") return send(res, 200, JSON.stringify({ user: OAUTH1.userOf(req), oauth1: OAUTH1.enabled, publicUrl: OAUTH1.publicUrl, callback: OAUTH1.callbackUrl, missing: OAUTH1.missing }), undefined, { "Cache-Control": "no-store" });
     if (PROXY[p]) {
       if (req.method !== "GET" && req.method !== "POST") return send(res, 405, JSON.stringify({ error: "method not allowed" }));
       return await proxy(req, res, PROXY[p], url.search);
