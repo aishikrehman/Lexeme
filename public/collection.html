@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>সংকলন · লেক্সিম.বাংলা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css">
+</head>
+<body>
+<main class="wrap">
+  <h1 style="margin:26px 0 4px" id="title"></h1>
+  <p class="muted" id="lead" style="margin:0"></p>
+  <div class="toolbar"><input id="filter" lang="bn" placeholder="এই পাতায় খুঁজুন…" aria-label="এই পাতায় খুঁজুন"><span class="muted" id="count"></span><a class="btn small" id="add" href="wizard.html">+ নতুন যোগ করুন</a></div>
+  <div class="cards" id="out"></div>
+  <div id="pager"></div>
+</main>
+<script src="js/sitenav.js"></script><script src="js/auth.js"></script>
+<script src="../lib/config.js"></script><script src="../lib/wikidata.js"></script><script src="../lib/lexindex.js"></script><script src="../lib/reader.js"></script>
+<script src="js/common.js"></script>
+<script>
+"use strict";
+const cat = (location.pathname.match(/\/collection\/(idiom|proverb)/) || [])[1] || (params().cat === "proverb" ? "proverb" : "idiom");
+const page = +params().page || 1;
+const T = { idiom: ["বাগধারা", "Idioms", "যে শব্দগুচ্ছের অর্থ আক্ষরিক অর্থ থেকে আলাদা।"], proverb: ["প্রবাদ-প্রবচন", "Proverbs", "লোকমুখে প্রচলিত জ্ঞানগর্ভ উক্তি।"] }[cat];
+$("#title").innerHTML = `${T[0]} <span class="en">${T[1]}</span>`; $("#lead").textContent = T[2]; document.title = `${T[0]} · লেক্সিম.বাংলা`;
+$("#add").href = `wizard.html?cat=${cat}`;
+configReady.then(async () => {
+  $("#out").innerHTML = skeleton(9);
+  try {
+    const j = await getJSON(`/api/collection?${qs({ lang: getLang(), cat, page, size: 60 })}`);
+    $("#count").textContent = `${toBn(j.total)}টি`;
+    const draw = f => { $("#out").innerHTML = j.list.filter(s => !f || (s.lemma + s.gloss).includes(f)).map(s => wcard(s, cat)).join("") || `<div class="msg">কিছু পাওয়া যায়নি।</div>`; };
+    draw(""); $("#filter").addEventListener("input", e => draw(e.target.value.trim()));
+    $("#pager").innerHTML = pager(j.page, j.pages, n => colUrl(cat) + (n > 1 ? (colUrl(cat).includes("?") ? "&" : "?") + "page=" + n : ""));
+  } catch (e) { $("#out").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+});
+</script>
+</body>
+</html>

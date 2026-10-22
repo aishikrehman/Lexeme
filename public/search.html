@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>খুঁজুন · লেক্সিম.বাংলা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css">
+</head>
+<body>
+<main class="wrap">
+  <section class="hero" style="padding-bottom:0">
+    <div class="seg-r" role="tablist" aria-label="অনুসন্ধানের ধরন" id="smode" style="margin-bottom:14px">
+      <button type="button" role="tab" data-v="regular">সাধারণ অনুসন্ধান</button><button type="button" role="tab" data-v="advanced">উন্নত অনুসন্ধান</button>
+    </div>
+    <!-- Regular: one box, relevance ranking -->
+    <form class="bigsearch" id="f" role="search">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input name="q" id="q" lang="bn" placeholder="শব্দ, অর্থ বা ইংরেজি লিখুন…" autocomplete="off" aria-label="শব্দ খুঁজুন">
+    </form>
+  </section>
+
+  <!-- Advanced: one box per match type; every filled box must match -->
+  <form class="card adv" id="adv" hidden>
+    <p class="muted" style="margin:0 0 10px;font-size:14px">যে ঘরগুলো পূরণ করবেন, সবগুলোই মিলতে হবে। যেমন “দিয়ে শুরু: ক” আর “দিয়ে শেষ: র” → ক দিয়ে শুরু ও র দিয়ে শেষ এমন সব শব্দ।</p>
+    <div class="adv-grid">
+      <label for="a-q">সবচেয়ে প্রাসঙ্গিক</label><input id="a-q" data-k="q" lang="bn" autocomplete="off" placeholder="যেকোনো শব্দ, রূপ বা অর্থ">
+      <label for="a-exact">হুবহু</label><input id="a-exact" data-k="exact" lang="bn" autocomplete="off" placeholder="পুরো শব্দটি ঠিক এমন">
+      <label for="a-starts">দিয়ে শুরু</label><input id="a-starts" data-k="starts" lang="bn" autocomplete="off" placeholder="যেমন: জল">
+      <label for="a-ends">দিয়ে শেষ</label><input id="a-ends" data-k="ends" lang="bn" autocomplete="off" placeholder="যেমন: কর">
+      <label for="a-contains">ভেতরে আছে</label><input id="a-contains" data-k="contains" lang="bn" autocomplete="off" placeholder="যেমন: বুনো ওল">
+      <span class="lbl">কোথায়</span>
+      <div class="seg-r" role="group" aria-label="কোথায় খুঁজবে — একাধিক বাছা যায়" id="field">
+        <button type="button" data-v="lemma">শব্দে (lemma)</button><button type="button" data-v="gloss">সংজ্ঞায়</button>
+      </div>
+      <label for="lang">ভাষা</label><select id="lang"></select>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="submit">খুঁজুন</button><button class="btn ghost" type="button" id="a-clear">সব মুছুন</button></div>
+  </form>
+
+  <p class="muted" id="hint" style="text-align:center;font-size:14px;margin:10px 0"></p>
+  <div id="out" class="rows" aria-live="polite"></div>
+</main>
+<script src="js/sitenav.js"></script><script src="js/auth.js"></script>
+<script src="../lib/config.js"></script><script src="../lib/wikidata.js"></script><script src="../lib/lexindex.js"></script><script src="../lib/reader.js"></script>
+<script src="js/common.js"></script>
+<script>
+"use strict";
+const p = params();
+const KEYS = ["q", "exact", "starts", "ends", "contains"];
+const HOW_BN = { q: "প্রাসঙ্গিক", exact: "হুবহু", starts: "দিয়ে শুরু", ends: "দিয়ে শেষ", contains: "ভেতরে আছে" };
+// Old links: ?how=starts,ends&q=X → put X in each listed box.
+const oldHow = String(p.how || "").split(",").filter(h => KEYS.includes(h) && h !== "q");
+if (oldHow.length && p.q) { oldHow.forEach(h => (p[h] = p.q)); delete p.q; }
+const fields = new Set(String(p.field || (p.mode === "lemma" || p.mode === "gloss" ? p.mode : "")).split(",").filter(f => f === "lemma" || f === "gloss"));
+if (!fields.size) { fields.add("lemma"); fields.add("gloss"); }
+
+// Mode is remembered in the browser (not in the URL); advanced fields in the URL also open advanced mode.
+const savedMode = () => { try { return localStorage.getItem("search_mode"); } catch (e) { return null; } };
+let advanced = p.adv === "1" || KEYS.some(k => k !== "q" && p[k]) || !!p.field || p.lang === "all" || savedMode() === "advanced";
+$("#q").value = p.q || "";
+KEYS.forEach(k => { $(`#adv [data-k="${k}"]`).value = p[k] || ""; });
+
+function setMode(adv) {
+  // Carry the text over so switching never loses what was typed.
+  if (adv && !advanced) $("#a-q").value = $("#q").value; else if (!adv && advanced) $("#q").value = $("#a-q").value || $("#q").value;
+  advanced = adv; try { localStorage.setItem("search_mode", adv ? "advanced" : "regular"); } catch (e) {}
+  $("#adv").hidden = !adv; $("#f").hidden = adv;
+  $$("#smode button").forEach(b => { const on = (b.dataset.v === "advanced") === adv; b.setAttribute("aria-selected", String(on)); b.setAttribute("aria-pressed", String(on)); });
+}
+const drawFields = () => $$("#field button").forEach(b => b.setAttribute("aria-pressed", String(fields.has(b.dataset.v))));
+const values = () => (advanced ? Object.fromEntries(KEYS.map(k => [k, $(`#adv [data-k="${k}"]`).value.trim()])) : { q: $("#q").value.trim() });
+const fieldStr = () => (!advanced || fields.size === 2 ? "" : [...fields].join(","));
+const langVal = () => (advanced ? $("#lang").value : getLang());
+
+let runSeq = 0, typeT;
+async function run() {
+  const v = values(), lang = langVal(); drawFields();
+  const filled = KEYS.filter(k => v[k]);
+  history.replaceState(null, "", cleanUrl("search.html?" + qs({ ...v, field: fieldStr(), lang: advanced && lang === "all" ? "all" : "" })));
+  const label = filled.map(k => (k === "q" ? `“${v.q}”` : `${HOW_BN[k]} “${v[k]}”`)).join(" ও ");
+  document.title = (label ? `${label} · ` : "") + "খুঁজুন · লেক্সিম.বাংলা";
+  $("#hint").textContent = advanced && lang === "all" && filled.some(k => k !== "q") ? "সব ভাষায় খুঁজলে উইকি উপাত্তের সূচি থেকে প্রথম ফলগুলো ছেঁকে দেখানো হয়; একটি ভাষা বাছলে পুরো তালিকা আসে।" : "";
+  if (!filled.length) { $("#out").innerHTML = `<div class="msg">${advanced ? "ওপরের এক বা একাধিক ঘরে লিখুন।" : "একটি শব্দ লিখুন — লিখতে লিখতেই ফল নিচে দেখা যাবে। বাংলা শব্দ, শব্দের রূপ (যেমন “মাকে”), বা অর্থ সবই খোঁজা যায়।"}</div>`; return; }
+  const my = ++runSeq; $("#out").innerHTML = skeleton(5);
+  try {
+    const j = await getJSON(`/api/search?${qs({ ...v, lang, field: fieldStr(), limit: advanced ? 200 : 50 })}`);
+    if (my !== runSeq) return;
+    const where = advanced && fields.size === 1 ? (fields.has("gloss") ? " (সংজ্ঞায়)" : " (শব্দে)") : "";
+    const head = `<p class="muted">${esc(label)}${where} — ${toBn(j.list.length)}টি ফল${j.list.length >= 200 ? " (প্রথম ২০০টি)" : ""}</p>`;
+    $("#out").innerHTML = j.list.length ? head + j.list.map((s, i) => rowItem(s, j.labels, i + 1).replace('<span class="g">', s.inGloss ? '<span class="g"><span class="chip">সংজ্ঞায় মিল</span> ' : '<span class="g">').replace('<span class="n">', `<span class="n">${s.language !== getLang() || lang === "all" ? langBadge(s.language, j.labels) + " " : ""}`)).join("")
+      : `<div class="msg">কিছু পাওয়া যায়নি। ${v.q || v.exact ? `<a class="btn small" href="wizard.html?${qs({ lemma: v.exact || v.q, return: 1 })}">${ic("plus")}লেক্সিম উইজার্ডে নতুন শব্দ হিসেবে যোগ করুন</a>` : ""}</div>`;
+  } catch (e) { if (my === runSeq) $("#out").innerHTML = `<div class="msg err">খোঁজা যায়নি: ${esc(e.message)}</div>`; }
+}
+// Results update below while typing (no popup) in both modes.
+const later = () => { clearTimeout(typeT); typeT = setTimeout(run, 350); };
+$("#q").addEventListener("input", later);
+$$("#adv input").forEach(i => i.addEventListener("input", later));
+$("#f").addEventListener("submit", e => { e.preventDefault(); run(); });
+$("#adv").addEventListener("submit", e => { e.preventDefault(); run(); });
+$("#a-clear").addEventListener("click", () => { $$("#adv input").forEach(i => (i.value = "")); run(); });
+$("#field").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
+  const v = b.dataset.v; if (fields.has(v) && fields.size > 1) fields.delete(v); else fields.add(v); run(); }); // at least one stays on
+$("#lang").addEventListener("change", () => { if ($("#lang").value !== "all") setLang($("#lang").value); run(); });
+$("#smode").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; setMode(b.dataset.v === "advanced"); run(); });
+setMode(advanced);
+configReady.then(() => {
+  $("#lang").innerHTML = SITE.languages.filter(l => l.qid).map(l => `<option value="${l.qid}">${esc(l.bn)}</option>`).join("") + `<option value="all">সব ভাষা</option>`;
+  $("#lang").value = p.lang === "all" ? "all" : getLang(); run();
+});
+</script>
+</body>
+</html>

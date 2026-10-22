@@ -1,0 +1,14 @@
+{
+  "name": "lexeme-bangla",
+  "version": "2.0.0",
+  "description": "লেক্সিম.বাংলা — Bengali-script lexeme dictionary reader and Wikidata Lexeme Wizard",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node --watch server.js",
+    "serve": "node server.js"
+  },
+  "engines": { "node": ">=18" },
+  "author": "Aishik Rehman (User:Aishik Rehman)",
+  "license": "MIT"
+}

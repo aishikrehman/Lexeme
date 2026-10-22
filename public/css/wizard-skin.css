@@ -1,0 +1,42 @@
+/* Lexeme Wizard → exactly the reader pages' look (site.css). Layout and behaviour stay as they are;
+   only sizes, spacing and styles are aligned so the wizard is one more page of the same site. */
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Tiro Bangla","Noto Sans Bengali",serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+@media (max-width:600px){.wrap{padding:0 16px}}
+
+/* page title: same as the other pages' h1 + muted lead (e.g. শব্দক্রম) */
+.top{padding:26px 0 4px;margin:0;border:0;gap:14px;align-items:flex-end}
+.brand{line-height:1.3}
+.brand .bname{font:700 32px/1.3 "Tiro Bangla",serif;color:var(--ink)}
+.brand .bname::before{content:none}
+.brand .bsub{font:16px/1.6 "Tiro Bangla",serif;color:var(--muted);margin-top:4px}
+
+/* word input: same size and rule as the word page title */
+.lemma-wrap{border-top:3px solid var(--ink)}
+#lemma{font-size:clamp(28px,4.5vw,42px);line-height:1.25;padding:.1em 0}
+.hero{padding:16px 0 4px}
+
+/* cards = the reader's .card */
+.blk{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:18px;box-shadow:none}
+.blk h3{font-size:19px;font-weight:600}
+aside .card{border-radius:12px;top:70px}
+.hint{font-size:14px}
+
+/* buttons, chips, messages = the reader's */
+.btn{border-radius:8px;font-weight:500}
+.btn.small{padding:4px 11px;font-size:14px}
+.seg{border-radius:999px}
+.hit{border-radius:10px;transition:transform .12s,box-shadow .12s}
+.hit:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+
+/* step tabs = the word page's tabs */
+.tabs{margin-top:16px}
+.tabs button{font:16px "Tiro Bangla",serif;padding:6px 14px;border-bottom-width:3px}
+.tabs button[aria-selected="true"]{border-bottom-color:var(--accent)}
+
+/* footer = the reader pages' footer */
+.foot{border-top:1px solid var(--line);background:transparent;padding:22px 0 40px;color:var(--muted);font-size:14px;margin-top:40px}
+.foot .wrap{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+.foot a{color:var(--primary)}
+
+dialog{border-radius:14px}

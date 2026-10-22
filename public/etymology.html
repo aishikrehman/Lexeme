@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ব্যুৎপত্তি · লেক্সিম.বাংলা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css">
+</head>
+<body>
+<main class="wrap" id="main"><div style="padding:40px 0"><div class="skel" style="width:40%;height:50px"></div></div></main>
+<script src="js/sitenav.js"></script><script src="js/auth.js"></script>
+<script src="../lib/config.js"></script><script src="../lib/wikidata.js"></script><script src="../lib/lexindex.js"></script><script src="../lib/reader.js"></script>
+<script src="js/common.js"></script>
+<script>
+"use strict";
+const ID = (params().id || (location.pathname.match(/L\d+/) || [""])[0]);
+configReady.then(async () => {
+  let t;
+  try { t = await getJSON(`/api/etymology/${ID}`); } catch (e) { $("#main").innerHTML = `<div class="msg err" style="margin-top:30px">${esc(e.message)}</div>`; return; }
+  const N = t.nodes, me = N[ID], L = t.labels;
+  document.title = `${me.lemma} — ব্যুৎপত্তি · লেক্সিম.বাংলা`;
+  const depth = Math.max(...Object.values(N).map(n => n.level));
+  const langsInTree = [...new Set(Object.values(N).map(n => n.language))];
+  const cogByRoot = {}; t.cognates.forEach(c => ((cogByRoot[c.root] = cogByRoot[c.root] || {})[c.language] = (cogByRoot[c.root]?.[c.language] || []).concat(c)));
+  $("#main").innerHTML = `
+    <header class="wordhead"><h1>${esc(me.lemma)}</h1><div class="meta">${langBadge(me.language, L)}<span class="chip">ব্যুৎপত্তি</span></div>
+      <div class="acts"><a class="btn ghost small" href="${wordUrl(ID)}">শব্দের পাতা</a><a class="btn small" href="wizard.html?id=${ID}&return=1">ব্যুৎপত্তি সম্পাদনা</a></div></header>
+    ${depth > 0 ? `<p class="muted">${toBn(Object.keys(N).length)}টি শব্দ, ${toBn(langsInTree.length)}টি ভাষা, ${toBn(depth)} স্তর পর্যন্ত। বাঁয়ে আজকের শব্দ, ডানে তার খণ্ডাংশ ও উৎস, আরও ডানে তাদের উৎস।${t.truncated ? " (অনেক বড় বৃক্ষ; কিছু অংশ বাদ রাখা হয়েছে।)" : ""}</p>
+      <div class="taglist" style="margin-bottom:10px">${langsInTree.map(l => langBadge(l, L)).join(" ")}</div>
+      <section class="card" id="tree">${etymologyTree(t, ID)}</section>
+      <h2 class="sec">সারসংক্ষেপ</h2><div class="card">${summaryLines()}</div>`
+      : `<div class="msg" style="margin-top:20px">এই শব্দের ব্যুৎপত্তি এখনো উইকি উপাত্তে যোগ হয়নি (P5191 “যে শব্দ থেকে উদ্ভূত”)। <a href="wizard.html?id=${ID}&return=1">লেক্সিম উইজার্ডে যোগ করুন</a></div>`}
+    <h2 class="sec">এই লেক্সিম দিয়ে গঠিত</h2><section class="card" id="desc"><div class="skel" style="width:40%;height:24px"></div></section>
+    ${t.cognates.length ? `<h2 class="sec">একই মূল থেকে অন্য ভাষায় <span class="en">cognates &amp; descendants</span></h2>
+      ${Object.entries(cogByRoot).map(([root, byLang]) => `<div class="card" style="margin-bottom:12px"><b>${esc(N[root]?.lemma || root)}</b> ${langBadge(N[root]?.language, L)} থেকে:
+        ${Object.entries(byLang).map(([lg, cs]) => `<div class="cog-lang"><h4>${langBadge(lg, L)}</h4><div class="taglist">${cs.map(c => `<a href="${wordUrl(c.id)}">${esc(c.lemma)}</a>`).join("")}</div></div>`).join("")}</div>`).join("")}` : ""}`;
+  getJSON(`/api/descendants/${ID}`).then(d => { $("#desc").innerHTML = Object.keys(d.nodes).length ? descendantsTree(d, ID, { lemma: me.lemma, language: me.language }) : '<span class="muted">এই শব্দ দিয়ে গঠিত অন্য কোনো লেক্সিম এখনো নেই।</span>'; })
+    .catch(() => { $("#desc").innerHTML = ""; });
+  function summaryLines() {
+    // Every path from the word to each root, written as a chain.
+    const out = []; const walk = (id, path, seen) => {
+      const es = t.edges.filter(x => x.from === id && N[x.to] && !seen.has(x.to));
+      if (!es.length) { if (path.length > 1) out.push(path); return; }
+      es.forEach(x => walk(x.to, path.concat({ id: x.to, edge: x }), new Set([...seen, x.to])));
+    };
+    walk(ID, [{ id: ID }], new Set([ID]));
+    return out.slice(0, 20).map(p => `<div class="ety-chain" style="margin:6px 0">${p.map((s, i) => `${i ? `<span class="arr">← ${s.edge.kind === "part" ? "খণ্ডাংশ" : esc(L[s.edge.mode]?.label || "")}</span>` : ""}<a href="${wordUrl(s.id)}">${esc(N[s.id].lemma)}</a> ${langBadge(N[s.id].language, L)}`).join(" ")}</div>`).join("");
+  }
+});
+</script>
+</body>
+</html>

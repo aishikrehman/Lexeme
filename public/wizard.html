@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>লেক্সিম উইজার্ড · লেক্সিম.বাংলা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/wizard.css">
+<link rel="stylesheet" href="css/sitenav.css"><link rel="stylesheet" href="css/wizard-skin.css"><link rel="stylesheet" href="css/bulk.css">
+</head>
+<body>
+<!-- The wizard's original theme and account buttons. wizard.js still uses them internally, but they are never shown:
+     the shared header (sitenav.js + auth.js) provides light/dark and login on every page, the wizard included. -->
+<div style="display:none!important" aria-hidden="true">
+  <button class="theme" id="theme" type="button" tabindex="-1"></button>
+  <button class="acct" id="acct" tabindex="-1"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>লগ ইন</span></button>
+</div>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="bname">লেক্সিম উইজার্ড</span><span class="bsub">নতুন শব্দ যোগ বা পুরোনো শব্দ হালনাগাদ · উইকি উপাত্তে সরাসরি সংরক্ষণ</span></div>
+    <div class="seg" role="group" aria-label="কাজের ধরন">
+      <button id="m-single" aria-pressed="true">একটি শব্দ</button>
+      <button id="m-bulk" aria-pressed="false">একসঙ্গে অনেক</button>
+    </div>
+  </header>
+
+  <main id="single">
+    <section class="hero">
+      <div class="lemma-wrap"><input id="lemma" lang="bn" placeholder="শব্দ লিখুন" autocomplete="off" aria-label="বাংলা হরফে শব্দ (lemma)" data-bind="lemma" data-rerender="forms"></div>
+      <div class="hero-row">
+        <label class="f"><span class="fl">ভাষা</span><select id="lang-preset"></select></label>
+        <label class="f" style="max-width:120px"><span class="fl">ভাষার আইটেম</span><input class="in" id="lang-q" readonly tabindex="-1" aria-readonly="true"></label>
+        <label class="f" style="max-width:90px"><span class="fl">কোড</span><input class="in" id="lang-code" readonly tabindex="-1" aria-readonly="true"></label>
+        <label class="f"><span class="fl">শব্দশ্রেণি <span class="en">lexical category</span></span><select data-bind="category" data-rerender="forms" id="cat"></select></label>
+        <div class="f"><button class="btn" id="lookup"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>উইকি উপাত্তে খুঁজুন</button></div>
+        <div class="f"><button class="btn ghost" id="reset">নতুন করে শুরু</button></div>
+      </div>
+      
+      <div class="found" id="found" aria-live="polite"></div>
+    </section>
+
+    <nav class="tabs" role="tablist" aria-label="ধাপ">
+      <button role="tab" data-tab="lexeme" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg><span>শব্দের তথ্য</span></button>
+      <button role="tab" data-tab="senses" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></svg><span>অর্থ</span><span class="cnt" id="c-senses">0</span></button>
+      <button role="tab" data-tab="forms" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5z"/><path d="m2 13 10 5 10-5"/></svg><span>রূপ</span><span class="cnt" id="c-forms">0</span></button>
+      <button role="tab" data-tab="review" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg><span>যাচাই ও সংরক্ষণ</span><span class="cnt" id="c-issues">0</span></button>
+    </nav>
+
+    <div class="grid">
+      <div>
+        <div class="panel" id="p-lexeme"></div>
+        <div class="panel" id="p-senses" hidden></div>
+        <div class="panel" id="p-forms" hidden></div>
+        <div class="panel" id="p-review" hidden>
+          <section class="blk">
+            <h3>উইকি উপাত্তে সংরক্ষণ<span class="tip" tabindex="0" role="note" aria-label="নতুন লেক্সিম একটি সম্পাদনায় তৈরি হয়। পুরোনো লেক্সিম সম্পাদনা করলে শুধু বদলানো অংশটুকু পাঠানো হয়; বাকি সব যেমন আছে থাকে। নতুন রূপ বা অর্থের সঙ্গে যুক্ত বিবৃতিগুলো তাদের আইডি তৈরি হওয়ার পর দ্বিতীয় সম্পাদনায় যায়।" data-tip="নতুন লেক্সিম একটি সম্পাদনায় তৈরি হয়। পুরোনো লেক্সিম সম্পাদনা করলে শুধু বদলানো অংশটুকু পাঠানো হয়; বাকি সব যেমন আছে থাকে। নতুন রূপ বা অর্থের সঙ্গে যুক্ত বিবৃতিগুলো তাদের আইডি তৈরি হওয়ার পর দ্বিতীয় সম্পাদনায় যায়।">i</span></h3>
+            <label class="f"><span class="fl">সম্পাদনার সারাংশ</span><span class="sumwrap"><span class="sumpre">লেক্সিম.বাংলা:</span><input class="in" id="summary" value="" aria-label="সম্পাদনার সারাংশ (লেক্সিম.বাংলা: এর পরে)"></span></label>
+            <div class="row" style="gap:8px">
+              <button class="btn" id="submit">উইকি উপাত্তে সংরক্ষণ করুন</button>
+            </div>
+            <div id="submit-log" class="log" style="margin-top:12px" hidden></div>
+          </section>
+          <div id="review-dyn"></div>
+        </div>
+      </div>
+      <aside><div class="card pv" id="preview"></div></aside>
+    </div>
+  </main>
+
+  <main id="bulk" hidden>
+    <!-- Step 1: the sheet -->
+    <section class="blk bs-step">
+      <h3><span class="bs-n">১</span>তালিকা তৈরি করুন <span class="muted" style="font-weight:400;font-size:14px">Excel / Google Sheets থেকে কপি-পেস্ট, ফাইল, বা সরাসরি লিখুন</span></h3>
+      <div class="bs-bar">
+        <div class="bs-grp">
+          <label class="btn ghost small filebtn">ফাইল খুলুন<input type="file" id="bulk-file" accept=".csv,.tsv,.txt,.json,text/csv,application/json" hidden></label>
+          <button class="btn ghost small" id="bulk-sample">নমুনা</button>
+          <button class="btn ghost small" id="bulk-tpl">খালি টেমপ্লেট</button>
+        </div>
+        <div class="bs-grp" aria-label="ডাউনলোড">
+          <span class="muted">ডাউনলোড:</span>
+          <button class="btn ghost small" id="bulk-csv-dl">CSV</button><button class="btn ghost small" id="bs-dl-tsv">TSV</button><button class="btn ghost small" id="bs-dl-json">JSON</button>
+        </div>
+        <div class="seg small" role="group" aria-label="দেখার ধরন"><button id="bv-table" aria-pressed="true">টেবিল</button><button id="bv-text" aria-pressed="false">লেখা (CSV/JSON)</button></div>
+      </div>
+      <div id="bulk-grid-wrap">
+        <div class="bs-bar bs-sheetbar">
+          <input class="in" id="bulk-q" placeholder="টেবিলে খুঁজুন…" aria-label="টেবিলে খুঁজুন">
+          <select id="bs-filter" aria-label="সারি বাছাই">
+            <option value="all">সব সারি</option><option value="issues">ঘরে সমস্যা আছে</option><option value="none">যাচাই হয়নি</option>
+            <option value="err">ত্রুটি</option><option value="warn">সতর্কতা</option><option value="ok">ঠিক আছে</option><option value="saved">সংরক্ষিত</option><option value="failed">ব্যর্থ</option>
+          </select>
+          <span class="bs-sep"></span>
+          <button class="btn ghost small" data-bs="addEnd" title="শেষে নতুন সারি">+ সারি</button>
+          <button class="btn ghost small" data-bs="insert" title="বাছাই করা সারির ওপরে (Shift+Enter)">↑ ওপরে সারি</button>
+          <button class="btn ghost small" data-bs="duplicate" title="বাছাই করা সারির কপি">⧉ কপি সারি</button>
+          <button class="btn ghost small" data-bs="fillDown" title="প্রথম সারির মান নিচে পূরণ (Ctrl+D)">⇣ নিচে পূরণ</button>
+          <button class="btn ghost small bs-danger" data-bs="delRows" title="বাছাই করা সারি মুছুন">সারি মুছুন</button>
+          <span class="bs-sep"></span>
+          <button class="btn ghost small" data-bs="undo" title="Ctrl+Z">↶</button><button class="btn ghost small" data-bs="redo" title="Ctrl+Y">↷</button>
+          <span class="bs-sep"></span>
+          <span class="bs-colwrap"><button class="btn ghost small" data-bs="cols">কলাম ▾</button><div class="bs-menu" id="bs-cols-menu" hidden></div></span>
+          <button class="btn ghost small" data-bs="find">খুঁজে বদলান</button>
+          <button class="btn ghost small" data-bs="openInWizard" title="বাছাই করা সারিটি উইজার্ডে খুলে বিস্তারিত সম্পাদনা">উইজার্ডে খুলুন ↗</button>
+          <button class="btn ghost small bs-danger" data-bs="clearall">সব মুছুন</button>
+        </div>
+        <div class="bs-bar" id="bs-find" hidden>
+          <input class="in" id="bs-find-in" placeholder="খুঁজুন" aria-label="খুঁজুন"><input class="in" id="bs-rep-in" placeholder="বদলে দিন" aria-label="বদলে দিন">
+          <label><input type="checkbox" id="bs-find-sel"> শুধু বাছাই করা ঘরে</label>
+          <button class="btn small" data-bs="replace">সব বদলান</button><span class="muted" id="bs-find-msg"></span>
+        </div>
+        <div class="tbl-wrap grid-wrap sheet-wrap" id="bulk-grid" aria-label="লেক্সিমের তালিকা — স্প্রেডশিট"></div>
+        <div class="bs-status"><span id="bulk-count"></span><span id="bs-sel"></span><span id="bs-saved" class="muted"></span>
+          <span class="muted bs-keys">ঘর বাছতে চাপুন বা টানুন · লিখলেই সম্পাদনা · Enter/Tab/তীর · Ctrl+C/V কপি-পেস্ট · Ctrl+D নিচে পূরণ · Ctrl+Z ফেরত</span></div>
+      </div>
+      <textarea id="bulk-text" rows="12" class="bn-in" hidden placeholder="এখানে CSV / JSON পেস্ট করুন"></textarea>
+    </section>
+
+    <!-- Step 2: validate -->
+    <section class="blk bs-step">
+      <h3><span class="bs-n">২</span>যাচাই করুন</h3>
+      <div class="row" style="gap:16px;align-items:center">
+        <label><input type="checkbox" id="bulk-dupes" checked> উইকি উপাত্তে আগের লেক্সিম ও রূপ খুঁজে দেখুন</label>
+      </div>
+      <div class="row" style="gap:8px;margin-top:10px">
+        <button class="btn" id="bulk-validate">ব্যাচ যাচাই করুন</button>
+        <button class="btn ghost" id="bulk-export" disabled>সম্পাদনা-পরিকল্পনা ডাউনলোড (JSON)</button>
+      </div>
+      <div id="bulk-summary" class="hint" style="margin-top:10px"></div>
+    </section>
+
+    <!-- Step 3: save -->
+    <section class="blk bs-step">
+      <h3><span class="bs-n">৩</span>উইকি উপাত্তে সংরক্ষণ</h3>
+      <div class="row" style="gap:16px;align-items:center">
+        <label>প্রতি সম্পাদনার মাঝে বিরতি <input class="in" type="number" id="bulk-delay" value="4000" min="1000" step="500" style="width:100px;display:inline-block"> মিলিসেকেন্ড</label>
+      </div>
+      <div class="row" style="gap:8px;margin-top:10px">
+        <button class="btn" id="bulk-run" disabled>ব্যাচ চালান</button>
+        <button class="btn ghost" id="bulk-stop" disabled>থামান</button>
+      </div>
+      <div class="log" id="bulk-log" style="margin-top:12px"><div class="muted">ব্যাচ চালালে এখানে দেখা যাবে।</div></div>
+    </section>
+  </main></div>
+
+<footer class="foot">
+  <div class="wrap">
+    <span><b>লেক্সিম.বাংলা</b> · তথ্য: <a href="https://www.wikidata.org/wiki/Wikidata:Lexicographical_data" target="_blank" rel="noopener">উইকি উপাত্ত লেক্সিম</a> (CC0)</span>
+    <span>নির্মাতা: <a href="https://www.wikidata.org/wiki/User:Aishik_Rehman" target="_blank" rel="noopener">ঐশিক রেহমান (User:Aishik Rehman)</a></span>
+  </div>
+</footer>
+
+<dialog id="exdlg" aria-labelledby="exdlg-title" class="wide">
+  <div class="dlg-head"><h3 id="exdlg-title" style="margin:0">প্রয়োগের উদাহরণ খুঁজুন</h3><button class="x" style="position:static" onclick="this.closest('dialog').close()" aria-label="বন্ধ করুন">×</button></div>
+  <div id="ex-body"></div>
+</dialog>
+
+<dialog id="adlg" aria-labelledby="adlg-title">
+  <h3 style="margin-top:0" id="adlg-title">উচ্চারণের অডিও</h3>
+  <p class="hint" id="adlg-for"></p>
+  <div class="row" style="gap:8px;align-items:center;margin-bottom:12px">
+    <button class="btn" id="a-rec">রেকর্ড করুন</button>
+    <span id="a-player" class="muted">এখনো কোনো অডিও নেই।</span>
+  </div>
+  <div class="drop" id="a-drop">.ogg, .wav, .flac, .webm বা .opus ফাইল এখানে টেনে আনুন, অথবা <label style="color:var(--primary);cursor:pointer;text-decoration:underline">ফাইল বাছুন<input type="file" id="a-file" accept=".ogg,.oga,.wav,.flac,.webm,.opus,audio/*" hidden></label></div>
+  <div class="row" style="margin-top:12px">
+    <label class="f"><span class="fl">কমন্সে ফাইলের নাম</span><input class="in" id="a-name" lang="bn"></label>
+    <label class="f"><span class="fl">লাইসেন্স</span><select id="a-lic"><option value="cc-by-sa-4.0">CC BY-SA 4.0</option><option value="cc-by-4.0">CC BY 4.0</option><option value="cc-zero">CC0</option></select></label>
+  </div>
+  <div id="a-msg"></div>
+  <div class="row" style="justify-content:space-between;margin-top:8px;gap:8px">
+    <button class="btn ghost" id="a-close">বন্ধ করুন</button>
+    <button class="btn" id="a-upload" disabled>কমন্সে আপলোড করে যুক্ত করুন</button>
+  </div>
+</dialog>
+
+<!--NODE--><script src="js/sitenav.js"></script><script src="js/auth.js"></script>
+<script src="js/wizard.js"></script>
+<script src="js/bulk-sheet.js"></script>
+<script src="js/wizard-boot.js"></script>
+</body>
+</html>
