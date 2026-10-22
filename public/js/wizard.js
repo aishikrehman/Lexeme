@@ -651,7 +651,9 @@ async function api(base, params = {}, { post = false, body = null } = {}) {
   } else { for (const [k, v] of Object.entries(params)) q.set(k, v); res = await fetch(base + "?" + q, { headers }); }
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${new URL(base, location.href).host}`);
   const j = await res.json();
-  if (j.error) { const e = new Error(`${j.error.code}: ${j.error.info}`); e.code = j.error.code; e.data = j; throw e; }
+  // Wikibase puts the real reason of generic errors (failed-save, modification-failed…) in error.messages.
+  const why = j.error && (j.error.messages || []).map(m => [m.name, ...(m.parameters || []).map(p => typeof p === "string" ? p.replace(/<[^>]+>/g, "") : JSON.stringify(p))].join(": ")).join(" · ");
+  if (j.error) { const e = new Error(`${j.error.code}: ${j.error.info}${why ? " — " + why : ""}`); e.code = j.error.code; e.data = j; throw e; }
   return j;
 }
 async function csrf(base) { const j = await api(base, { action: "query", meta: "tokens", type: "csrf" }); return j.query.tokens.csrftoken; }
