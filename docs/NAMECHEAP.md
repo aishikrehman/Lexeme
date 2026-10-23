@@ -33,7 +33,7 @@ cPanel → **Setup Node.js App** → Create Application:
 | নাম | মান |
 |---|---|
 | `PUBLIC_URL` | `https://lexeme.bnwp.org` |
-| `OAUTH_CONSUMER_KEY` | এখনকার consumer token (Render-এরটাই চলবে, কারণ ঠিকানা একই) |
+| `OAUTH_CONSUMER_KEY` | এখনকার consumer token (ঠিকানা একই, তাই নতুন লাগবে না) |
 | `OAUTH_CONSUMER_SECRET` | এখনকার secret |
 | `STORE_DIR` | `/home/<cpanel-user>/lexeme-data` (কোডের ফোল্ডারের বাইরে, যাতে আপডেটে মুছে না যায়) |
 
@@ -125,10 +125,3 @@ cd /opt/lexeme && sudo git pull && sudo systemctl restart lexeme
 - `https://lexeme.bnwp.org/auth/me` — `"missing": []` থাকলে লগ ইন ঠিক আছে।
 - লগ ইন করে স্টুডিওতে বক্তা যোগ করুন, অন্য ব্রাউজারে লগ ইন করে দেখুন এসেছে কিনা।
 - ডাটাবেজ ফাইল: `STORE_DIR/lexeme.db` — মাঝে মাঝে এর কপি রাখুন (ব্যাকআপ)।
-
-## D. Render থেকে সরে আসা
-
-1. নতুন হোস্টে সব চালু করে `/auth/me` যাচাই করুন।
-2. Render-এ যোগ করা custom domain `lexeme.bnwp.org` সরিয়ে দিন; DNS এখন Namecheap-এর দিকে।
-3. Render-এ লগ ইন করা ব্যবহারকারীদের তথ্য Render-এর ডিস্কে আছে — দরকার হলে সেখান থেকে `lexeme.db` নামিয়ে নতুন `STORE_DIR`-এ রাখুন।
-4. OAuth consumer বদলাতে হবে না — ঠিকানা আর callback (`https://lexeme.bnwp.org/auth/callback`) একই আছে।
