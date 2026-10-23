@@ -31,12 +31,16 @@ async function loadMore() {
     st.page++;
     if (st.page > pages) { $("#sentinel").innerHTML = `<div class="muted" style="text-align:center;padding:16px">শেষ।</div>`; io?.disconnect(); }
     else $("#sentinel").innerHTML = "";
+    // The observer only fires when the marker enters view; if it is still on screen, load the next page now.
+    loading = false;
+    if (st.page <= pages) { const r = $("#sentinel").getBoundingClientRect(); if (r.top < innerHeight + 600) return loadMore(); }
   } catch (e) { $("#sentinel").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
   loading = false;
 }
 function start() {
   drawLetters();
   io?.disconnect(); $("#out").innerHTML = ""; $("#pager").innerHTML = $("#top-pager").innerHTML = "";
+  $("#out").classList.toggle("one-col", st.view === "scroll"); // continuous reading: one column, new words continue below
   if (st.view === "scroll") { pages = Infinity; io = new IntersectionObserver(es => { if (es[0].isIntersecting) loadMore(); }, { rootMargin: "600px" }); io.observe($("#sentinel")); }
   else loadPaged();
 }

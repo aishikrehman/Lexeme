@@ -69,80 +69,78 @@
   </main>
 
   <main id="bulk" hidden>
-    <!-- Step 1: the sheet -->
-    <section class="blk bs-step">
-      <h3><span class="bs-n">১</span>তালিকা তৈরি করুন <span class="muted" style="font-weight:400;font-size:14px">Excel / Google Sheets থেকে কপি-পেস্ট, ফাইল, বা সরাসরি লিখুন</span></h3>
-      <div class="bs-bar">
-        <div class="bs-grp">
-          <label class="btn ghost small filebtn">ফাইল খুলুন<input type="file" id="bulk-file" accept=".csv,.tsv,.txt,.json,text/csv,application/json" hidden></label>
-          <button class="btn ghost small" id="bulk-sample">নমুনা</button>
-          <button class="btn ghost small" id="bulk-tpl">খালি টেমপ্লেট</button>
-        </div>
-        <div class="bs-grp" aria-label="ডাউনলোড">
-          <span class="muted">ডাউনলোড:</span>
-          <button class="btn ghost small" id="bulk-csv-dl">CSV</button><button class="btn ghost small" id="bs-dl-tsv">TSV</button><button class="btn ghost small" id="bs-dl-json">JSON</button>
-        </div>
-        <div class="seg small" role="group" aria-label="দেখার ধরন"><button id="bv-table" aria-pressed="true">টেবিল</button><button id="bv-text" aria-pressed="false">লেখা (CSV/JSON)</button></div>
+    <section class="blk bs-card">
+      <h3 class="bs-title"><span class="bs-n">১</span>তালিকা <span class="muted bs-hint">Excel / Google Sheets থেকে কপি করে টেবিলে পেস্ট করুন (Ctrl+V), বা সরাসরি লিখুন · সারিতে ডান-ক্লিক বা চেপে ধরুন: আরও কাজ</span></h3>
+
+      <!-- VisualEditor-style toolbar: icon groups -->
+      <div class="ve-bar" role="toolbar" aria-label="তালিকার টুলবার">
+        <span class="ve-grp bs-dd">
+          <button class="ve-btn" data-bs-menu="file" title="ফাইল"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>ফাইল</span><svg class="ic chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="bs-menu" data-menu="file" hidden>
+            <label class="bs-mi filebtn"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>ফাইল খুলুন <small>CSV · TSV · JSON</small><input type="file" id="bulk-file" accept=".csv,.tsv,.txt,.json,text/csv,application/json" hidden></label>
+            <button class="bs-mi" id="bulk-sample"><svg class="ic" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg>নমুনা তালিকা</button>
+            <button class="bs-mi" id="bulk-tpl"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>খালি টেমপ্লেট ডাউনলোড</button>
+            <div class="bs-msep"></div>
+            <button class="bs-mi" id="bulk-csv-dl"><svg class="ic" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>ডাউনলোড <small>CSV</small></button>
+            <button class="bs-mi" id="bs-dl-tsv"><svg class="ic" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>ডাউনলোড <small>TSV</small></button>
+            <button class="bs-mi" id="bs-dl-json"><svg class="ic" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg>ডাউনলোড <small>JSON</small></button>
+            <div class="bs-msep"></div>
+            <button class="bs-mi bs-danger" data-bs="clearall"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>সব সারি মুছুন</button>
+          </div>
+        </span>
+        <span class="ve-grp">
+          <button class="ve-btn" data-bs="undo" title="ফেরত (Ctrl+Z)" aria-label="ফেরত"><svg class="ic" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+          <button class="ve-btn" data-bs="redo" title="আবার (Ctrl+Y)" aria-label="আবার"><svg class="ic" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+        </span>
+        <span class="ve-grp">
+          <button class="ve-btn" data-bs="addEnd" title="শেষে নতুন সারি"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>সারি</span></button>
+          <span class="bs-dd bs-colwrap"><button class="ve-btn" data-bs="cols" title="কলাম দেখান / লুকান / যোগ"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg><span>কলাম</span><svg class="ic chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button><div class="bs-menu" id="bs-cols-menu" hidden></div></span>
+          <button class="ve-btn" data-bs="find" title="খুঁজে বদলান"><svg class="ic" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m20 20-5.6-5.6"/></svg><span>খুঁজে বদলান</span></button>
+        </span>
+        <span class="ve-grp ve-view seg small" role="group" aria-label="দেখার ধরন">
+          <button id="bv-table" aria-pressed="true" title="টেবিল"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></svg></button><button id="bv-text" aria-pressed="false" title="CSV লেখা"><svg class="ic" viewBox="0 0 24 24"><path d="m8 8-5 4 5 4M16 8l5 4-5 4"/></svg></button>
+        </span>
+        <span class="ve-fill"></span>
+        <span class="ve-grp ve-search"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="bulk-q" placeholder="টেবিলে খুঁজুন" aria-label="টেবিলে খুঁজুন"></span>
+        <select id="bs-filter" class="ve-select" aria-label="সারি বাছাই" title="কোন সারি দেখাবে">
+          <option value="all">সব সারি</option><option value="issues">ঘরে সমস্যা</option><option value="none">যাচাই হয়নি</option>
+          <option value="err">ত্রুটি</option><option value="warn">সতর্কতা</option><option value="ok">ঠিক আছে</option><option value="saved">সংরক্ষিত</option><option value="failed">ব্যর্থ</option>
+        </select>
       </div>
+
       <div id="bulk-grid-wrap">
-        <div class="bs-bar bs-sheetbar">
-          <input class="in" id="bulk-q" placeholder="টেবিলে খুঁজুন…" aria-label="টেবিলে খুঁজুন">
-          <select id="bs-filter" aria-label="সারি বাছাই">
-            <option value="all">সব সারি</option><option value="issues">ঘরে সমস্যা আছে</option><option value="none">যাচাই হয়নি</option>
-            <option value="err">ত্রুটি</option><option value="warn">সতর্কতা</option><option value="ok">ঠিক আছে</option><option value="saved">সংরক্ষিত</option><option value="failed">ব্যর্থ</option>
-          </select>
-          <span class="bs-sep"></span>
-          <button class="btn ghost small" data-bs="addEnd" title="শেষে নতুন সারি">+ সারি</button>
-          <button class="btn ghost small" data-bs="insert" title="বাছাই করা সারির ওপরে (Shift+Enter)">↑ ওপরে সারি</button>
-          <button class="btn ghost small" data-bs="duplicate" title="বাছাই করা সারির কপি">⧉ কপি সারি</button>
-          <button class="btn ghost small" data-bs="fillDown" title="প্রথম সারির মান নিচে পূরণ (Ctrl+D)">⇣ নিচে পূরণ</button>
-          <button class="btn ghost small bs-danger" data-bs="delRows" title="বাছাই করা সারি মুছুন">সারি মুছুন</button>
-          <span class="bs-sep"></span>
-          <button class="btn ghost small" data-bs="undo" title="Ctrl+Z">↶</button><button class="btn ghost small" data-bs="redo" title="Ctrl+Y">↷</button>
-          <span class="bs-sep"></span>
-          <span class="bs-colwrap"><button class="btn ghost small" data-bs="cols">কলাম ▾</button><div class="bs-menu" id="bs-cols-menu" hidden></div></span>
-          <button class="btn ghost small" data-bs="find">খুঁজে বদলান</button>
-          <button class="btn ghost small" data-bs="openInWizard" title="বাছাই করা সারিটি উইজার্ডে খুলে বিস্তারিত সম্পাদনা">উইজার্ডে খুলুন ↗</button>
-          <button class="btn ghost small bs-danger" data-bs="clearall">সব মুছুন</button>
-        </div>
-        <div class="bs-bar" id="bs-find" hidden>
-          <input class="in" id="bs-find-in" placeholder="খুঁজুন" aria-label="খুঁজুন"><input class="in" id="bs-rep-in" placeholder="বদলে দিন" aria-label="বদলে দিন">
+        <div class="bs-find" id="bs-find" hidden>
+          <input class="in" id="bs-find-in" placeholder="খুঁজুন" aria-label="খুঁজুন"><span class="muted">→</span><input class="in" id="bs-rep-in" placeholder="বদলে দিন" aria-label="বদলে দিন">
           <label><input type="checkbox" id="bs-find-sel"> শুধু বাছাই করা ঘরে</label>
           <button class="btn small" data-bs="replace">সব বদলান</button><span class="muted" id="bs-find-msg"></span>
         </div>
         <div class="tbl-wrap grid-wrap sheet-wrap" id="bulk-grid" aria-label="লেক্সিমের তালিকা — স্প্রেডশিট"></div>
-        <div class="bs-status"><span id="bulk-count"></span><span id="bs-sel"></span><span id="bs-saved" class="muted"></span>
-          <span class="muted bs-keys">ঘর বাছতে চাপুন বা টানুন · লিখলেই সম্পাদনা · Enter/Tab/তীর · Ctrl+C/V কপি-পেস্ট · Ctrl+D নিচে পূরণ · Ctrl+Z ফেরত</span></div>
+        <div class="bs-status"><span id="bulk-count"></span><span id="bs-sel" class="muted"></span><span id="bs-saved" class="muted"></span>
+          <span class="muted bs-keys">লিখলেই সম্পাদনা · Enter / Tab / তীর · Ctrl+C / V · Ctrl+Z</span></div>
       </div>
       <textarea id="bulk-text" rows="12" class="bn-in" hidden placeholder="এখানে CSV / JSON পেস্ট করুন"></textarea>
     </section>
 
-    <!-- Step 2: validate -->
-    <section class="blk bs-step">
-      <h3><span class="bs-n">২</span>যাচাই করুন</h3>
-      <div class="row" style="gap:16px;align-items:center">
-        <label><input type="checkbox" id="bulk-dupes" checked> উইকি উপাত্তে আগের লেক্সিম ও রূপ খুঁজে দেখুন</label>
-      </div>
-      <div class="row" style="gap:8px;margin-top:10px">
+    <section class="blk bs-card bs-actions">
+      <div class="bs-step2">
+        <h3><span class="bs-n">২</span>যাচাই</h3>
         <button class="btn" id="bulk-validate">ব্যাচ যাচাই করুন</button>
-        <button class="btn ghost" id="bulk-export" disabled>সম্পাদনা-পরিকল্পনা ডাউনলোড (JSON)</button>
+        <div id="bulk-summary" class="hint"></div>
       </div>
-      <div id="bulk-summary" class="hint" style="margin-top:10px"></div>
-    </section>
-
-    <!-- Step 3: save -->
-    <section class="blk bs-step">
-      <h3><span class="bs-n">৩</span>উইকি উপাত্তে সংরক্ষণ</h3>
-      <div class="row" style="gap:16px;align-items:center">
+      <div class="bs-step3">
+        <h3><span class="bs-n">৩</span>সংরক্ষণ</h3>
+        <div class="bs-runrow"><button class="btn bs-run" id="bulk-run" disabled>ব্যাচ চালান</button><button class="btn ghost" id="bulk-stop" disabled>থামান</button></div>
+      </div>
+      <details class="bs-more">
+        <summary>সেটিংস ও অন্যান্য</summary>
+        <label><input type="checkbox" id="bulk-dupes" checked> উইকি উপাত্তে আগের লেক্সিম ও রূপ খুঁজে দেখুন</label>
         <label>প্রতি সম্পাদনার মাঝে বিরতি <input class="in" type="number" id="bulk-delay" value="4000" min="1000" step="500" style="width:100px;display:inline-block"> মিলিসেকেন্ড</label>
-      </div>
-      <div class="row" style="gap:8px;margin-top:10px">
-        <button class="btn" id="bulk-run" disabled>ব্যাচ চালান</button>
-        <button class="btn ghost" id="bulk-stop" disabled>থামান</button>
-      </div>
-      <div class="log" id="bulk-log" style="margin-top:12px"><div class="muted">ব্যাচ চালালে এখানে দেখা যাবে।</div></div>
+        <button class="btn ghost small" id="bulk-export" disabled>সম্পাদনা-পরিকল্পনা ডাউনলোড (JSON)</button>
+      </details>
+      <div class="log" id="bulk-log"><div class="muted">ব্যাচ চালালে কাজের বিবরণ এখানে দেখা যাবে।</div></div>
     </section>
-  </main></div>
+  </main>
+</div>
 
 <footer class="foot">
   <div class="wrap">

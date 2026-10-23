@@ -46,10 +46,33 @@
   const snapshot = () => JSON.stringify({ cols: grid.cols, rows: grid.rows });
   function change(fn) {
     S.undo.push(snapshot()); if (S.undo.length > 100) S.undo.shift(); S.redo = [];
-    fn(); after();
+    const kept = keepResults();
+    fn(); after(kept);
   }
-  function after() {
-    $("#bulk-text").value = toCSV(); bulkEdited(); autosave(); render();
+  // Validation results belong to rows (the row arrays), not to positions: deleting, inserting or
+  // sorting rows keeps every other row's result. Only rows whose content changed need checking again.
+  function keepResults() {
+    const m = new Map(); if (!bulk.results.length) return m;
+    rowResults().forEach((r, i) => m.set(grid.rows[i], { r, sig: JSON.stringify(grid.rows[i]) }));
+    return m;
+  }
+  const STALE = () => ({ plan: null, errors: ["সারিটি বদলেছে — আবার যাচাই করুন"], warnings: [], status: "", stale: true });
+  function after(kept) {
+    $("#bulk-text").value = toCSV();
+    if (kept && kept.size) {
+      let changed = 0;
+      const next = [];
+      grid.rows.forEach(row => {
+        if (!row.some(x => String(x).trim())) return;            // empty rows have no result
+        const k = kept.get(row);
+        if (k && k.sig === JSON.stringify(row)) next.push(k.r); else { next.push(STALE()); changed++; }
+      });
+      bulk.results = next;
+      const ok = next.filter(r => !r.errors.length && !/সংরক্ষিত/.test(r.status || "")).length;
+      $("#bulk-run").disabled = !auth.user || ok === 0;
+      $("#bulk-summary").textContent = changed ? `${toBn(changed)}টি সারি বদলেছে বা নতুন — সেগুলো সংরক্ষণের আগে আবার যাচাই করুন। বাকি সারির যাচাই আগের মতোই আছে।` : $("#bulk-summary").textContent;
+    } else bulkEdited();
+    autosave(); render();
   }
   function restore(from, to) { if (!from.length) return; to.push(snapshot()); const s = JSON.parse(from.pop()); grid.cols = s.cols; grid.rows = s.rows; $("#bulk-text").value = toCSV(); bulkEdited(); autosave(); render(); }
   let saveT;
@@ -84,7 +107,7 @@
 
   /* ---------- row status from the last full validation ---------- */
   function statusOf(res) {
-    if (!res) return "none";
+    if (!res || res.stale) return "none";
     if (/সংরক্ষিত/.test(res.status || "")) return "saved";
     if (/ব্যর্থ/.test(res.status || "")) return "failed";
     return res.errors.length ? "err" : res.warnings.length ? "warn" : "ok";
@@ -119,9 +142,9 @@
     }).join("")}</tr>`;
     const body = S.rows.map((i, vr) => {
       const r = res.get(i), st = statusOf(r), msgs = r ? [...r.errors, ...r.warnings].join("\n") : "";
-      const tag = r ? (r.status ? r.status : STATUS_TAG[st]) + (msgs ? tipI(msgs) : "") : "";
+      const tag = r ? (r.stale ? '<span class="status-tag warn">আবার যাচাই</span>' : (r.status ? r.status : STATUS_TAG[st]) + (msgs ? tipI(msgs) : "")) : "";
       const rowSel = vr >= s.r0 && vr <= s.r1;
-      return `<tr class="${rowSel ? "rsel" : ""} st-${st}"><th class="rn" data-vr="${vr}">${toBn(i + 1)}</th><td class="stc">${tag}</td>${S.cols.map((j, vc) => {
+      return `<tr class="${rowSel ? "rsel" : ""} st-${st}"><th class="rn" data-vr="${vr}"><button type="button" class="rn-add" data-after="${vr}" title="নিচে নতুন সারি" aria-label="সারি ${toBn(i + 1)}-এর নিচে নতুন সারি">+</button><span class="rn-n">${toBn(i + 1)}</span></th><td class="stc">${tag}</td>${S.cols.map((j, vc) => {
         const v = grid.rows[i][j] ?? "", is = issue(i, j), inSel = rowSel && vc >= s.c0 && vc <= s.c1, act = vr === S.r && vc === S.c;
         const cls = ["cl", grid.cols[j] === "lemma" ? "lem" : "", is ? "is-" + is[0] : "", inSel ? "sel" : "", act ? "act" : ""].filter(Boolean).join(" ");
         const shown = ENUM[grid.cols[j]] ? (ENUM[grid.cols[j]]().find(o => o[0] === v)?.[1] || v) : v;
@@ -300,6 +323,13 @@
       const up = () => { document.removeEventListener("mousemove", mv); document.removeEventListener("mouseup", up); saveCols(); };
       document.addEventListener("mousemove", mv); document.addEventListener("mouseup", up); return;
     }
+    const add = e.target.closest(".rn-add");
+    if (add) { e.preventDefault(); e.stopPropagation(); const vr = +add.dataset.after; S.r = S.r2 = vr; OPS.insert(true); host.focus(); return; }
+    if (e.button === 2) { // right button: keep a selection that already covers the row, else select the cell/row
+      const vr = td ? +td.dataset.vr : rn ? +rn.dataset.vr : -1; const s = sel();
+      if (vr >= 0 && (vr < s.r0 || vr > s.r1)) { if (td) moveTo(vr, +td.dataset.vc); else { S.r = S.r2 = vr; S.c = 0; S.c2 = S.cols.length - 1; paintSelection(); } }
+      return;
+    }
     if (rn) { e.preventDefault(); const vr = +rn.dataset.vr; if (e.shiftKey) { S.r2 = vr; S.c = 0; S.c2 = S.cols.length - 1; } else { S.r = S.r2 = vr; S.c = 0; S.c2 = S.cols.length - 1; } paintSelection(); host.focus(); return; }
     if (!td || td.classList.contains("editing")) return;
     e.preventDefault(); host.focus();
@@ -339,6 +369,65 @@
   document.addEventListener("copy", e => { if (document.activeElement !== host || S.edit) return; e.preventDefault(); e.clipboardData.setData("text/plain", selectionText()); });
   document.addEventListener("cut", e => { if (document.activeElement !== host || S.edit) return; e.preventDefault(); e.clipboardData.setData("text/plain", selectionText()); OPS.clear(); });
   document.addEventListener("paste", e => { if (document.activeElement !== host || S.edit) return; e.preventDefault(); pasteText(e.clipboardData.getData("text/plain")); });
+
+
+  /* ---------- row menu: right-click, or long-press on touch screens ---------- */
+  const IC = {
+    up: '<path d="M12 19V5M5 12l7-7 7 7"/>', down: '<path d="M12 5v14M5 12l7 7 7-7"/>', copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+    fill: '<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>', clear: '<path d="M5 19 19 5M8 5h11v11"/>', open: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    del: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  };
+  const svg = p => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+  const ctx = document.createElement("div"); ctx.className = "bs-menu bs-ctx"; ctx.hidden = true; ctx.setAttribute("role", "menu"); document.body.appendChild(ctx);
+  function showCtx(x, y) {
+    const s = sel(), n = s.r1 - s.r0 + 1;
+    ctx.innerHTML = `
+      <button class="bs-mi" data-ctx="above">${svg(IC.up)}ওপরে নতুন সারি</button>
+      <button class="bs-mi" data-ctx="below">${svg(IC.down)}নিচে নতুন সারি <kbd>Ctrl+Enter</kbd></button>
+      <button class="bs-mi" data-ctx="duplicate">${svg(IC.copy)}${n > 1 ? toBn(n) + "টি সারির" : "সারির"} কপি</button>
+      ${n > 1 ? `<button class="bs-mi" data-ctx="fillDown">${svg(IC.fill)}নিচে পূরণ <kbd>Ctrl+D</kbd></button>` : ""}
+      <button class="bs-mi" data-ctx="clear">${svg(IC.clear)}ঘর খালি করুন <kbd>Delete</kbd></button>
+      <button class="bs-mi" data-ctx="openInWizard">${svg(IC.open)}উইজার্ডে খুলুন</button>
+      <div class="bs-msep"></div>
+      <button class="bs-mi bs-danger" data-ctx="delRows">${svg(IC.del)}${n > 1 ? toBn(n) + "টি সারি" : "সারি"} মুছুন</button>`;
+    ctx.hidden = false;
+    const w = ctx.offsetWidth, h = ctx.offsetHeight;
+    ctx.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + "px";
+    ctx.style.top = Math.max(8, Math.min(y, innerHeight - h - 8)) + "px";
+  }
+  ctx.addEventListener("click", e => {
+    const b = e.target.closest("[data-ctx]"); if (!b) return;
+    ctx.hidden = true; const a = b.dataset.ctx;
+    if (a === "above") OPS.insert(false); else if (a === "below") OPS.insert(true); else OPS[a]();
+    host.focus();
+  });
+  document.addEventListener("mousedown", e => { if (!ctx.hidden && !ctx.contains(e.target)) ctx.hidden = true; });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") ctx.hidden = true; });
+  addEventListener("scroll", () => { ctx.hidden = true; }, true);
+  host.addEventListener("contextmenu", e => {
+    if (!e.target.closest("td.cl, th.rn") || e.target.closest(".editing")) return;
+    e.preventDefault(); showCtx(e.clientX, e.clientY);
+  });
+  let pressT = null;
+  host.addEventListener("touchstart", e => {
+    const cell = e.target.closest("td.cl, th.rn"); if (!cell || e.touches.length > 1) return;
+    const t0 = e.touches[0];
+    pressT = setTimeout(() => {
+      const vr = +cell.dataset.vr; const s = sel();
+      if (vr < s.r0 || vr > s.r1) { if (cell.matches("td.cl")) moveTo(vr, +cell.dataset.vc); else { S.r = S.r2 = vr; S.c = 0; S.c2 = S.cols.length - 1; paintSelection(); } }
+      showCtx(t0.clientX, t0.clientY); navigator.vibrate?.(15);
+    }, 550);
+  }, { passive: true });
+  ["touchend", "touchmove", "touchcancel"].forEach(ev => host.addEventListener(ev, () => clearTimeout(pressT), { passive: true }));
+  /* ---------- drop-down menus (ফাইল ▾, কলাম ▾) ---------- */
+  const closeMenus = except => document.querySelectorAll("#bulk .bs-menu").forEach(m => { if (m !== except) m.hidden = true; });
+  document.addEventListener("click", e => {
+    const t = e.target.closest("[data-bs-menu]");
+    if (t) { const m = document.querySelector(`.bs-menu[data-menu="${t.dataset.bsMenu}"]`); closeMenus(m); m.hidden = !m.hidden; return; }
+    if (e.target.closest(".bs-mi")) { setTimeout(() => closeMenus(), 0); return; }   // an item was chosen
+    if (!e.target.closest(".bs-menu, [data-bs='cols']")) closeMenus();
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
 
   /* ---------- toolbar ---------- */
   document.addEventListener("click", e => {

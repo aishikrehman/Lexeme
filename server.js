@@ -7,7 +7,8 @@ const fs = require("fs");
 const path = require("path");
 const R = require("./lib/reader");
 const CFG = require("./lib/config");
-const OAUTH1 = require("./lib/oauth1"); // Wikimedia OAuth 1.0a login, server-side (secret stays here)
+const OAUTH1 = require("./lib/oauth1");
+const SEO = require("./lib/seo"); // titles, descriptions, structured data, sitemap // Wikimedia OAuth 1.0a login, server-side (secret stays here)
 
 // Port: PORT, or `node server.js 3001`, or the port of the public URL (oauth.local.json "publicUrl"), else 3000.
 const PORT = +process.env.PORT || +process.argv[2] || +(OAUTH1.publicUrl && new URL(OAUTH1.publicUrl).port) || 3000;
@@ -149,6 +150,9 @@ const server = http.createServer(async (req, res) => {
       return send(res, r.status || 500, `<!doctype html><meta charset="utf-8"><p style="font:16px sans-serif;padding:20px">লগ ইন করা যায়নি: ${String(r.error).replace(/[<&]/g, "")}</p><p style="font:16px sans-serif;padding:0 20px"><a href="/">ফিরে যান</a></p>`, "text/html; charset=utf-8");
     }
     if (p === "/auth/logout") { OAUTH1.logout(req, res); return send(res, 200, JSON.stringify({ ok: true })); }
+    // Search engines
+    if (p === "/robots.txt") return send(res, 200, SEO.robots(req), "text/plain; charset=utf-8", { "Cache-Control": "public, max-age=3600" });
+    if (p === "/sitemap.xml") return send(res, 200, SEO.sitemap(req), "application/xml; charset=utf-8", { "Cache-Control": "public, max-age=3600" });
     if (p === "/auth/me") return send(res, 200, JSON.stringify({ user: OAUTH1.userOf(req), oauth1: OAUTH1.enabled, publicUrl: OAUTH1.publicUrl, callback: OAUTH1.callbackUrl, missing: OAUTH1.missing }), undefined, { "Cache-Control": "no-store" });
     if (PROXY[p]) {
       if (req.method !== "GET" && req.method !== "POST") return send(res, 405, JSON.stringify({ error: "method not allowed" }));
@@ -166,7 +170,7 @@ const server = http.createServer(async (req, res) => {
     const moved = cleanRedirect(p, url.search);
     if (moved) { res.writeHead(301, { Location: moved }); return res.end(); }
     // Every page learns it runs behind this server (clean links; the wizard routes its Wikidata calls through /proxy).
-    for (const [rx, file] of CLEAN) { const m = p.match(rx); if (m) return sendFile(res, path.join(PUB, typeof file === "function" ? file(m) : file), nodeFlag(req)); }
+    for (const [rx, file] of CLEAN) { const m = p.match(rx); if (m) { const name = typeof file === "function" ? file(m) : file; return sendFile(res, path.join(PUB, name), h => SEO.apply(nodeFlag(req)(h), req, name, m)); } }
     // Legacy: the original single-file tool stays reachable.
     if (p === "/legacy" || p === "/legacy/") return sendFile(res, path.join(__dirname, "legacy", "index.html"));
     // Only the reader engine files are shared with browsers (not oauth1.js and other server code).

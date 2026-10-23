@@ -248,3 +248,23 @@ img,svg,video{max-width:100%}
   .ety-node{min-width:0;max-width:100%}
   .footer .wrap{flex-direction:column;gap:6px}
 }
+/* ---------- word lists: Accessible Dictionary style (accessibledictionary.gov.bd) ---------- */
+.rows:has(.dent){display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 4px}
+.rows:has(.dent)>:not(.dent){margin:0;padding:12px 10px;border-bottom:1px solid var(--line);font-size:14px}
+.dent{display:block;position:relative;padding:18px 12px 18px 46px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);color:var(--ink);text-decoration:none;font-size:17px;line-height:30px}
+.dent:last-child{border-bottom:0}
+.dent:hover{background:var(--sunken)}
+.dent:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.dent .sn{position:absolute;left:8px;top:18px;width:28px;text-align:right;color:var(--muted);font:13px/30px system-ui,sans-serif}
+.dent .lem{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:0 10px;margin-right:6px;font-size:1.2em;font-weight:600;line-height:30px;color:var(--ink);background:var(--surface)}
+.dent .pos{color:var(--muted);font-style:italic}
+.dent .g{color:var(--ink)}
+.dent .g .chip{font-size:12px;padding:0 6px;margin-right:4px;font-style:normal}
+.dent .n{margin-left:8px;color:var(--muted);font:11px system-ui,sans-serif;white-space:nowrap}
+.dent .n .lang-badge{font-size:10.5px}
+@media (max-width:640px){
+  .rows:has(.dent){padding:0;border-radius:8px}
+  .dent{padding:14px 10px 14px 38px;font-size:16px;line-height:28px}
+  .dent .sn{left:4px;top:14px;width:26px;line-height:28px}
+  .dent .lem{line-height:28px}
+}

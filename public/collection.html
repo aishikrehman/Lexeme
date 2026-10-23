@@ -13,7 +13,7 @@
   <h1 style="margin:26px 0 4px" id="title"></h1>
   <p class="muted" id="lead" style="margin:0"></p>
   <div class="toolbar"><input id="filter" lang="bn" placeholder="এই পাতায় খুঁজুন…" aria-label="এই পাতায় খুঁজুন"><span class="muted" id="count"></span><a class="btn small" id="add" href="wizard.html">+ নতুন যোগ করুন</a></div>
-  <div class="cards" id="out"></div>
+  <div class="rows" id="out"></div>
   <div id="pager"></div>
 </main>
 <script src="js/sitenav.js"></script><script src="js/auth.js"></script>
@@ -31,7 +31,7 @@ configReady.then(async () => {
   try {
     const j = await getJSON(`/api/collection?${qs({ lang: getLang(), cat, page, size: 60 })}`);
     $("#count").textContent = `${toBn(j.total)}টি`;
-    const draw = f => { $("#out").innerHTML = j.list.filter(s => !f || (s.lemma + s.gloss).includes(f)).map(s => wcard(s, cat)).join("") || `<div class="msg">কিছু পাওয়া যায়নি।</div>`; };
+    const draw = f => { $("#out").innerHTML = j.list.map((s, k) => [s, (j.page - 1) * 60 + k + 1]).filter(([s]) => !f || (s.lemma + s.gloss).includes(f)).map(([s, n]) => rowItem(s, {}, n)).join("") || `<div class="msg">কিছু পাওয়া যায়নি।</div>`; };
     draw(""); $("#filter").addEventListener("input", e => draw(e.target.value.trim()));
     $("#pager").innerHTML = pager(j.page, j.pages, n => colUrl(cat) + (n > 1 ? (colUrl(cat).includes("?") ? "&" : "?") + "page=" + n : ""));
   } catch (e) { $("#out").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }

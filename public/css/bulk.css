@@ -1,54 +1,150 @@
-/* “একসঙ্গে অনেক” (/bulk): step cards, toolbars and the spreadsheet. Uses the site's colour tokens. */
-.bs-step h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.bs-n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;background:var(--primary);color:var(--on-primary);font-size:15px;flex:none}
-.bs-bar{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:10px 0}
-.bs-grp{display:inline-flex;gap:6px;align-items:center}
-.bs-sheetbar{padding:8px;background:var(--sunken);border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
-.bs-sheetbar .in,#bs-find .in{width:220px;max-width:100%;flex:0 1 220px;padding:5px 10px;min-height:0;height:32px}
-.bs-sheetbar select,#bs-find select{width:auto!important;flex:0 0 auto;height:32px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 8px;font:inherit;font-size:14px}
-.bs-bar .btn.small{height:32px;padding:0 11px;display:inline-flex;align-items:center}
-#bs-find label{display:inline-flex;gap:6px;align-items:center;font-size:14px}
-.bs-sep{width:1px;height:22px;background:var(--line);margin:0 2px}
-.bs-danger{color:var(--err)!important;border-color:var(--err)!important}
-#bs-find{padding:8px;border:1px dashed var(--line);border-radius:10px;margin-top:0}
-#bs-find .in{max-width:200px}
-.bs-colwrap{position:relative}
-.bs-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:8px;min-width:260px;max-height:340px;overflow:auto}
-.bs-menu label{display:flex;gap:8px;align-items:center;padding:3px 4px;font-size:14px;white-space:nowrap}
-.bs-menu .en{margin-left:auto}
+/* “একসঙ্গে অনেক” (/bulk): one clean card for the sheet, one for validate + save. Site colour tokens. */
+[hidden]{display:none!important}
+.bs-card{padding:14px 16px}
+.bs-n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:999px;background:var(--primary);color:var(--on-primary);font-size:13px;flex:none;margin-right:8px}
+.bs-card h3{display:flex;align-items:center;margin:0;font-size:17px}
+
+/* header row of the sheet card */
+.bs-head{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin-bottom:10px}
+.bs-hint{font-size:13.5px}
+.bs-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+/* single toolbar */
+.bs-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px;background:var(--sunken);border:1px solid var(--line);border-radius:10px 10px 0 0;border-bottom:0}
+.bs-tools .btn.small{height:32px;padding:0 12px;display:inline-flex;align-items:center;gap:4px;font-size:14px}
+.bs-tools .btn .ic{width:14px;height:14px}
+.bs-search{width:220px!important;flex:0 1 220px;height:32px;min-height:0;padding:0 10px!important;font-size:14px}
+#bs-filter{width:auto!important;height:32px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 8px;font:inherit;font-size:14px}
+.bs-gap{flex:1}
+.bs-undo{display:inline-flex}
+.bs-undo .btn{border-radius:0;width:34px;justify-content:center;padding:0!important}
+.bs-undo .btn:first-child{border-radius:8px 0 0 8px}
+.bs-undo .btn:last-child{border-radius:0 8px 8px 0;margin-left:-1px}
+
+/* drop-down menus */
+.bs-dd{position:relative}
+.bs-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.16);padding:6px;min-width:240px;max-height:360px;overflow:auto}
+.bs-right .bs-menu{left:auto;right:0}
+.bs-mi{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:8px 10px;border-radius:7px;font:inherit;font-size:14.5px;color:var(--ink);cursor:pointer;text-align:left;white-space:nowrap}
+.bs-mi:hover{background:var(--chip)}
+.bs-mi kbd{margin-left:auto;font:11px system-ui,sans-serif;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.bs-msep{height:1px;background:var(--line);margin:5px 4px}
+.bs-danger{color:var(--err)!important}
+.bs-danger:hover{background:var(--err-soft)!important}
+#bs-cols-menu label{display:flex;gap:8px;align-items:center;padding:4px 6px;font-size:14px;white-space:nowrap;border-radius:6px}
+#bs-cols-menu label:hover{background:var(--chip)}
+#bs-cols-menu .en{margin-left:auto}
 .bs-addcol{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);margin-top:6px;padding-top:8px}
 .bs-addcol select{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:4px;font:inherit;font-size:14px;background:var(--surface)}
-.bs-status{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;padding:6px 2px;color:var(--ink)}
+
+/* find & replace (only when opened) */
+.bs-find{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px;border:1px solid var(--line);border-top:1px dashed var(--line);border-bottom:0;background:var(--surface)}
+.bs-find .in{width:180px!important;height:32px;min-height:0;padding:0 10px!important}
+.bs-find label{display:inline-flex;gap:6px;align-items:center;font-size:14px}
+
+/* status line under the sheet */
+.bs-status{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;padding:6px 4px 0}
 .bs-keys{margin-left:auto}
-@media (max-width:900px){.bs-keys{display:none}}
+
+/* validate + save card */
+.bs-actions{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;align-items:start}
+.bs-step2,.bs-step3{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.bs-step2 .hint{margin:0}
+.bs-runrow{display:flex;gap:8px}
+.bs-run{background:var(--ok);border-color:var(--ok);color:#fff}
+.bs-run:disabled{background:var(--sunken);border-color:var(--line);color:var(--muted);opacity:1}
+.bs-more{grid-column:1/-1;border-top:1px solid var(--line);padding-top:8px;font-size:14px}
+.bs-more summary{cursor:pointer;color:var(--muted)}
+.bs-more[open]{display:flex;flex-direction:column;gap:8px}
+.bs-more[open] summary{margin-bottom:2px}
+.bs-actions .log{grid-column:1/-1;margin:0}
 
 /* the sheet */
-.sheet-wrap{max-height:62vh;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);outline:none}
+.sheet-wrap{max-height:62vh;overflow:auto;border:1px solid var(--line);border-radius:0 0 10px 10px;background:var(--surface);outline:none}
 .sheet-wrap:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 table.sheet{border-collapse:separate;border-spacing:0;font-size:14px;user-select:none;min-width:100%}
-table.sheet th,table.sheet td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:30px;box-sizing:border-box}
-table.sheet thead th{position:sticky;top:0;z-index:3;background:var(--sunken);padding:0;text-align:left;white-space:nowrap;position:sticky}
+table.sheet th,table.sheet td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:32px;box-sizing:border-box}
+table.sheet thead th{position:sticky;top:0;z-index:3;background:var(--sunken);padding:0;text-align:left;white-space:nowrap}
 table.sheet thead th.hsel{background:var(--chip)}
-table.sheet .sortb{border:0;background:none;padding:6px 10px;font:600 13px/1.2 "Tiro Bangla",serif;color:var(--ink);cursor:pointer;width:100%;text-align:left}
+table.sheet .sortb{border:0;background:none;padding:7px 10px;font:600 13px/1.2 "Tiro Bangla",serif;color:var(--ink);cursor:pointer;width:100%;text-align:left}
 table.sheet .rz{position:absolute;right:-3px;top:0;bottom:0;width:7px;cursor:col-resize;z-index:4}
 table.sheet .rz:hover{background:var(--accent);opacity:.5}
-table.sheet th.rn{position:sticky;left:0;z-index:2;background:var(--sunken);min-width:44px;text-align:right;padding:0 8px;color:var(--muted);font:12px system-ui,sans-serif;cursor:pointer}
+table.sheet th.rn{position:sticky;left:0;z-index:2;background:var(--sunken);min-width:42px;text-align:right;padding:0 8px;color:var(--muted);font:12px system-ui,sans-serif;cursor:pointer}
 table.sheet thead th.rn{z-index:5;cursor:default}
 table.sheet tr.rsel th.rn{background:var(--chip);color:var(--ink)}
-table.sheet td.stc,table.sheet th.stc{min-width:92px;padding:0 6px;white-space:nowrap;background:var(--surface)}
-table.sheet thead th.stc{background:var(--sunken);padding:6px 8px;font:600 13px "Tiro Bangla",serif}
-table.sheet td.cl{padding:4px 8px;min-width:120px;max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:cell;background:var(--surface)}
+table.sheet td.stc,table.sheet th.stc{min-width:86px;padding:0 6px;white-space:nowrap;background:var(--surface)}
+table.sheet thead th.stc{background:var(--sunken);padding:7px 8px;font:600 13px "Tiro Bangla",serif}
+table.sheet td.cl{padding:4px 9px;min-width:120px;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:cell;background:var(--surface)}
+table.sheet tbody tr:nth-child(even) td.cl{background:color-mix(in srgb,var(--sunken) 55%,var(--surface))}
 table.sheet td.lem,table.sheet th.lem{font-weight:600}
-table.sheet td.cl.sel{background:color-mix(in srgb,var(--primary) 12%,var(--surface))}
+table.sheet td.cl.sel{background:color-mix(in srgb,var(--primary) 13%,var(--surface))!important}
 table.sheet td.cl.act{outline:2px solid var(--primary);outline-offset:-2px}
-table.sheet td.cl.is-err{box-shadow:inset 3px 0 0 var(--err);background:var(--err-soft)}
-table.sheet td.cl.is-warn{box-shadow:inset 3px 0 0 var(--warn);background:var(--warn-soft)}
-table.sheet td.cl.is-err.sel,table.sheet td.cl.is-warn.sel{background:color-mix(in srgb,var(--primary) 16%,var(--surface))}
+table.sheet td.cl.is-err{box-shadow:inset 3px 0 0 var(--err);background:var(--err-soft)!important}
+table.sheet td.cl.is-warn{box-shadow:inset 3px 0 0 var(--warn);background:var(--warn-soft)!important}
 table.sheet tr.st-saved td.cl{color:var(--ok)}
 table.sheet td.editing{padding:0;overflow:visible;position:relative}
-table.sheet .ed{position:relative;z-index:6;display:block;width:100%;min-height:30px;margin:0;border:2px solid var(--primary);border-radius:0;padding:4px 7px;font:inherit;background:var(--surface);color:var(--ink);resize:none;box-sizing:border-box;box-shadow:0 6px 18px rgba(0,0,0,.12);white-space:pre-wrap}
+table.sheet .ed{position:relative;z-index:6;display:block;width:100%;min-height:32px;margin:0;border:2px solid var(--primary);border-radius:0;padding:4px 8px;font:inherit;background:var(--surface);color:var(--ink);resize:none;box-sizing:border-box;box-shadow:0 6px 18px rgba(0,0,0,.12);white-space:pre-wrap}
 table.sheet select.ed{padding:3px 4px}
-.sheet-empty{padding:28px 18px;text-align:center;color:var(--muted)}
+.sheet-empty{padding:30px 18px;text-align:center;color:var(--muted)}
 
-/* page split: the single-word wizard and the bulk page are separate pages now */
+/* page split: the single-word wizard and the bulk page are separate pages */
 .top .seg{display:none}
+
+/* phones */
+@media (max-width:760px){
+  .bs-right{margin-left:0;width:100%;justify-content:space-between}
+  .bs-hint{display:none}
+  .bs-search{flex:1 1 100%;width:100%!important}
+  .bs-gap{display:none}
+  .bs-actions{grid-template-columns:1fr}
+  .bs-keys{display:none}
+  .bs-menu{min-width:220px}
+  .bs-tools .bs-dd:last-of-type .bs-menu{left:auto;right:0}
+}
+
+/* ---------- VisualEditor-style toolbar ---------- */
+.bs-title{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0 0 10px!important}
+.bs-title .bs-hint{font-weight:400;font-size:13px}
+.ve-bar{display:flex;align-items:center;flex-wrap:wrap;gap:0;min-height:42px;padding:3px 4px;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;box-shadow:0 1px 0 var(--line)}
+.ve-grp{display:inline-flex;align-items:center;gap:1px;padding:0 4px;position:relative}
+.ve-grp+.ve-grp{border-left:1px solid var(--line)}
+.ve-btn{display:inline-flex;align-items:center;gap:5px;height:34px;min-width:34px;padding:0 9px;border:0;border-radius:6px;background:none;color:var(--ink);font:500 14px "Tiro Bangla",serif;cursor:pointer;white-space:nowrap}
+.ve-btn:hover{background:var(--chip)}
+.ve-btn:active,.ve-btn[aria-expanded="true"]{background:color-mix(in srgb,var(--primary) 18%,var(--surface))}
+.ve-bar .ic,.bs-menu .ic,.bs-ctx .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ve-btn .chev{width:13px;height:13px;margin-left:-2px;opacity:.7}
+.ve-view{gap:0}
+.ve-view.seg{border:0;padding:0 4px;background:none}
+.ve-view button{height:34px;width:36px;padding:0;display:inline-grid;place-items:center;border:0;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
+.ve-view button[aria-pressed="true"]{background:var(--chip);color:var(--primary)}
+.ve-fill{flex:1}
+.ve-search{border:0!important;gap:6px;height:32px;margin:0 4px;padding:0 10px;border-radius:999px;background:var(--sunken)}
+.ve-search .ic{width:16px;height:16px;color:var(--muted)}
+.ve-search input{border:0;background:none;outline:none;font:14px "Tiro Bangla",serif;color:var(--ink);width:150px}
+.ve-select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font:14px "Tiro Bangla",serif;padding:0 6px;margin:0 4px 0 2px;color:var(--ink)}
+.bs-mi small{color:var(--muted);font-size:12px}
+.bs-mi .ic{color:var(--muted)}
+.bs-danger .ic{color:var(--err)}
+#bulk-grid-wrap .bs-find{border-radius:0}
+
+/* row number: number, and a “+” on hover to add a row below */
+table.sheet th.rn{min-width:52px}
+table.sheet th.rn .rn-add{display:none;position:absolute;left:4px;top:50%;transform:translateY(-50%);width:20px;height:20px;padding:0;border:1px solid var(--primary);border-radius:999px;background:var(--surface);color:var(--primary);font:700 14px/1 system-ui,sans-serif;cursor:pointer}
+table.sheet tbody tr:hover th.rn .rn-add,table.sheet tr.rsel th.rn .rn-add{display:inline-grid;place-items:center}
+table.sheet th.rn .rn-add:hover{background:var(--primary);color:var(--on-primary)}
+@media (hover:none){table.sheet th.rn .rn-add{display:inline-grid;place-items:center;opacity:.75}}
+
+/* right-click / long-press row menu */
+.bs-ctx{position:fixed;top:0;left:0;z-index:100;min-width:230px}
+
+@media (max-width:760px){
+  .ve-bar{padding:3px 2px}
+  .ve-grp{padding:0 2px}
+  .ve-btn span{display:none}
+  .ve-btn{padding:0 7px}
+  .ve-fill{display:none}
+  .ve-search{flex:1 1 100%;order:10;margin:4px 2px 2px}
+  .ve-search input{width:100%}
+  .ve-select{order:11;flex:1;margin:0 2px 4px}
+  .bs-title .bs-hint{display:none}
+}

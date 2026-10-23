@@ -96,8 +96,15 @@ function liveResults(input, out, { limit = 20 } = {}) {
   });
 }
 /* shared renderers */
-// `num` (1, 2, …) puts the serial number at the start of the row.
-const rowItem = (s, labels, num) => `<a class="row-item${num ? " numbered" : ""}" href="${hitUrl(s)}">${num ? `<span class="sn">${toBn(num)}.</span>` : ""}<span class="lem">${esc(s.lemma)}${s.form && s.form !== s.lemma ? ` <small class="muted">(${esc(s.form)})</small>` : ""}</span><span class="g">${esc(s.gloss) || '<span class="muted">—</span>'}</span><span class="n"><span class="chip">${esc(catLabel(s.category, labels))}</span> ${s.id}</span></a>`;
+// Word lists look like a printed dictionary: number in the margin, bold headword, abbreviated word class,
+// definition, all as one running entry with a hanging indent. `num` (1, 2, …) is the serial number.
+const POS_ABBR = { Q1084: "বি.", Q147276: "নাম.", Q36224: "সর্ব.", Q24905: "ক্রি.", Q34698: "বিণ.", Q380057: "ক্রি-বিণ.", Q161873: "অনু.", Q36484: "সংযো.",
+  Q83034: "আবেগ.", Q63116: "সংখ্যা.", Q187931: "বাক্যাংশ", Q184511: "বাগ.", Q35102: "প্রবাদ", Q134830: "উপ.", Q10976085: "ক্রি-পদ.", Q102047: "প্রত্য.", Q184943: "অব্য.", Q170239: "ধ্বন্যা." };
+const posAbbr = (q, labels) => POS_ABBR[q] || catLabel(q, labels);
+// Entry layout follows the Accessible Dictionary (accessibledictionary.gov.bd): headword in a light box,
+// the word class written out in (italics), then the definition; one entry per line, thin rule between.
+const rowItem = (s, labels, num) => `<a class="dent" href="${hitUrl(s)}">${num ? `<span class="sn">${toBn(num)}</span>` : ""}<span class="lem">${esc(s.lemma)}</span>${s.form && s.form !== s.lemma ? ` <small class="muted">(${esc(s.form)})</small>` : ""}${s.category ? ` <em class="pos">(${esc(catLabel(s.category, labels))})</em>` : ""} <span class="g">${s.gloss ? esc(s.gloss.replace(/[।.]\s*$/, "")) + "।" : '<span class="muted">—</span>'}</span><span class="n">${s.id}</span></a>`;
+// Card used on the home page (word of the day area, idioms, proverbs).
 const wcard = (s, cls = "") => `<a class="wcard ${cls}" href="${wordUrl(s.id)}"><div class="lem">${esc(s.lemma)}</div>${s.gloss ? `<div class="g">${esc(s.gloss)}</div>` : ""}</a>`;
 function pager(cur, pages, href) {
   if (pages <= 1) return "";

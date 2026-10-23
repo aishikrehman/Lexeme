@@ -3,43 +3,82 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>লেক্সিম.বাংলা · অভিধান</title>
-<meta name="description" content="বাংলা লিপির ভাষাগুলোর উন্মুক্ত অভিধান — উইকি উপাত্ত লেক্সিম থেকে অর্থ, রূপ, ব্যুৎপত্তি, বাগধারা ও প্রবাদ।">
+<title>লেক্সিম.বাংলা — বাংলা অভিধান: অর্থ, রূপ, ব্যুৎপত্তি, বাগধারা ও প্রবাদ</title>
+<meta name="description" content="বাংলা লিপির ভাষাগুলোর উন্মুক্ত অনলাইন অভিধান। ১১ হাজারের বেশি বাংলা শব্দের অর্থ, রূপ, উচ্চারণ, গভীর ব্যুৎপত্তি, বাগধারা ও প্রবাদ — উইকি উপাত্ত লেক্সিম থেকে, বিনামূল্যে।">
+<!--SEO-->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css">
+<link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css"><link rel="stylesheet" href="css/home.css">
 </head>
 <body>
-<main class="wrap">
-  <section class="hero">
-    <h1>লেক্সিম<b>.</b>বাংলা</h1>
-    <p>বাংলা লিপির ভাষাগুলোর উন্মুক্ত অভিধান · অর্থ, রূপ, উচ্চারণ ও গভীর ব্যুৎপত্তি</p>
-    <form class="bigsearch" action="search.html" role="search">
-      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input name="q" id="q" lang="bn" placeholder="শব্দ, অর্থ বা ইংরেজি লিখুন…" autocomplete="off" aria-label="শব্দ খুঁজুন" autofocus>
-    </form>
-    <p style="margin:8px 0 0;font-size:14px"><a href="search.html" data-mode="advanced">উন্নত অনুসন্ধান</a> — হুবহু, দিয়ে শুরু, দিয়ে শেষ, ভেতরে আছে, সংজ্ঞায়, সব ভাষায়</p>
-    <div class="rows" id="home-results" style="max-width:760px;margin:12px auto 0;text-align:left"></div>
-    <div class="langpick" id="langpick" role="group" aria-label="ভাষা"></div>
-    <div class="letters" id="letters" aria-label="বর্ণ ধরে শব্দক্রম"></div>
+<main>
+  <section class="h-hero">
+    <div class="wrap">
+      <h1>লেক্সিম<b>.</b>বাংলা</h1>
+      <p class="h-tag">বাংলা লিপির ভাষাগুলোর উন্মুক্ত অভিধান — অর্থ, রূপ, উচ্চারণ আর শব্দের গভীর ইতিহাস</p>
+      <form class="bigsearch" action="search.html" role="search">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input name="q" id="q" lang="bn" placeholder="শব্দ, অর্থ বা ইংরেজি লিখুন…" autocomplete="off" aria-label="শব্দ খুঁজুন" autofocus>
+      </form>
+      <p class="h-adv"><a href="search.html" data-mode="advanced">উন্নত অনুসন্ধান</a> · হুবহু, দিয়ে শুরু, দিয়ে শেষ, ভেতরে আছে, সংজ্ঞায়, সব ভাষায়</p>
+      <div class="langpick" id="langpick" role="group" aria-label="ভাষা"></div>
+      <div class="rows" id="home-results"></div>
+      <div class="letters" id="letters" aria-label="বর্ণ ধরে শব্দক্রম"></div>
+    </div>
   </section>
 
-  <div class="stats" id="stats"></div>
+  <div class="wrap h-layout">
+    <div class="h-main">
+      <section aria-labelledby="t-wotd">
+        <h2 class="sec" id="t-wotd">আজকের নির্বাচিত শব্দ <span class="muted" id="wotd-date"></span></h2>
+        <div id="wotd" class="card wotd"><div><div class="skel" style="width:50%;height:60px"></div></div></div>
+      </section>
 
-  <h2 class="sec">আজকের নির্বাচিত শব্দ <span class="muted" id="wotd-date" style="font-size:14px;font-weight:400"></span></h2>
-  <div id="wotd" class="card wotd"><div><div class="skel" style="width:50%;height:60px"></div></div></div>
+      <section aria-labelledby="t-prov" class="h-quote-wrap">
+        <h2 class="sec" id="t-prov">আজকের প্রবাদ</h2>
+        <figure class="h-quote" id="quote"><div class="skel" style="width:70%;height:34px"></div></figure>
+      </section>
 
-  <h2 class="sec">বাগধারা <span class="en">Idioms</span><a href="collection.html?cat=idiom">সব দেখুন →</a></h2>
-  <div class="cards" id="idioms"></div>
+      <section aria-labelledby="t-quiz">
+        <h2 class="sec" id="t-quiz">শব্দ-খেলা <span class="muted">অর্থ দেখে বাগধারা চিনুন</span></h2>
+        <div class="card h-quiz" id="quiz"><div class="skel" style="width:60%"></div></div>
+      </section>
 
-  <h2 class="sec">প্রবাদ-প্রবচন <span class="en">Proverbs</span><a href="collection.html?cat=proverb">সব দেখুন →</a></h2>
-  <div class="cards" id="proverbs"></div>
+      <section aria-labelledby="t-idiom">
+        <h2 class="sec" id="t-idiom">বাগধারা <span class="en">Idioms</span><a href="collection.html?cat=idiom">সব দেখুন →</a></h2>
+        <div class="cards" id="idioms"></div>
+      </section>
 
-  <h2 class="sec">অভিধানে অবদান রাখুন</h2>
-  <div class="cards">
-    <a class="wcard" href="wizard.html"><div class="lem">নতুন শব্দ যোগ করুন</div><div class="g">লেক্সিম উইজার্ডে ধাপে ধাপে অর্থ, রূপ, ব্যুৎপত্তি ও উদাহরণ যুক্ত করুন।</div></a>
-    <a class="wcard" href="wizard.html?mode=bulk"><div class="lem">একসঙ্গে অনেক</div><div class="g">CSV বা JSON থেকে অনেক লেক্সিম একসঙ্গে তৈরি ও সম্পাদনা।</div></a>
-    <a class="wcard" href="browse.html"><div class="lem">শব্দক্রম ধরে পড়ুন</div><div class="g">বর্ণানুক্রমে পাতায় পাতায় সব শব্দ।</div></a>
+      <section aria-labelledby="t-proverb">
+        <h2 class="sec" id="t-proverb">প্রবাদ-প্রবচন <span class="en">Proverbs</span><a href="collection.html?cat=proverb">সব দেখুন →</a></h2>
+        <div class="rows" id="proverbs"></div>
+      </section>
+    </div>
+
+    <aside class="h-side" aria-label="পাশের তথ্য">
+      <section class="card h-contrib">
+        <h2>অভিধানে অবদান রাখুন</h2>
+        <p class="muted">এই অভিধান সবার লেখা। একটি শব্দ যোগ করলেই তা উইকি উপাত্তে সবার জন্য উন্মুক্ত হয়।</p>
+        <a class="h-act" href="wizard.html"><span class="h-ic">✚</span><span><b>নতুন শব্দ যোগ করুন</b><small>অর্থ, রূপ, ব্যুৎপত্তি ও উদাহরণ ধাপে ধাপে</small></span></a>
+        <a class="h-act" href="wizard.html?mode=bulk"><span class="h-ic">▦</span><span><b>একসঙ্গে অনেক</b><small>স্প্রেডশিটে লিখুন বা পেস্ট করুন</small></span></a>
+        <a class="h-act" href="browse.html"><span class="h-ic">অ</span><span><b>শব্দক্রম ধরে পড়ুন</b><small>বর্ণানুক্রমে পাতায় পাতায়</small></span></a>
+      </section>
+
+      <section class="card">
+        <h2>অভিধানে আছে</h2>
+        <div class="h-stats" id="stats"></div>
+      </section>
+
+      <section class="card">
+        <h2>শব্দশ্রেণি ধরে</h2>
+        <div class="taglist" id="cats"></div>
+      </section>
+
+      <section class="card h-about">
+        <h2>এই অভিধান সম্পর্কে</h2>
+        <p>সব তথ্য আসে <a href="https://www.wikidata.org/wiki/Wikidata:Lexicographical_data" target="_blank" rel="noopener">উইকি উপাত্তের লেক্সিম</a> থেকে, CC0 লাইসেন্সে — যে কেউ বিনা অনুমতিতে ব্যবহার করতে পারেন। বাংলা ছাড়াও অসমীয়া, সিলেটি, চাটগাঁইয়া ও কুড়মালি শব্দ আছে।</p>
+      </section>
+    </aside>
   </div>
 </main>
 <script src="js/sitenav.js"></script><script src="js/auth.js"></script>

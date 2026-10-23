@@ -1,0 +1,67 @@
+/* Homepage: hero band, main column + side column, featured proverb, quiz. Uses the site's colour tokens. */
+.h-hero{background:none;padding:40px 0 26px;text-align:center}
+.h-hero h1{font-size:clamp(38px,6vw,60px);margin:0;line-height:1.15}
+.h-hero h1 b{color:var(--accent)}
+.h-tag{color:var(--muted);margin:8px auto 20px;max-width:640px}
+.h-hero .bigsearch input{box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.h-adv{margin:10px 0 0;font-size:14px;color:var(--muted)}
+.h-hero .langpick{margin-top:14px}
+#home-results{max-width:760px;margin:14px auto 0;text-align:left}
+#home-results:empty{display:none}
+
+.h-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;padding:8px 0 50px}
+.h-main>section:first-child h2.sec{margin-top:22px}
+.h-side{display:flex;flex-direction:column;gap:14px;padding-top:22px}
+.h-side .card h2{font-size:16px;margin:0 0 10px}
+.h-side .card p{font-size:14.5px;margin:0 0 10px}
+
+/* contribute */
+.h-contrib{border-top:4px solid var(--ok)}
+.h-act{display:flex;gap:12px;align-items:center;padding:10px;margin:0 -6px;border-radius:10px;text-decoration:none;color:var(--ink)}
+.h-act:hover{background:var(--sunken)}
+.h-act b{display:block;font-size:15.5px}
+.h-act small{display:block;color:var(--muted);font-size:13px}
+.h-ic{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--ok-soft);color:var(--ok);font-size:18px;font-weight:700}
+
+/* stats */
+.h-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.h-stat{background:var(--sunken);border-radius:10px;padding:10px 12px}
+.h-stat b{display:block;font-size:22px;line-height:1.2}
+.h-stat span{font-size:13px;color:var(--muted)}
+
+.h-letters{justify-content:flex-start;margin:0;gap:4px}
+.h-letters a{min-width:30px;padding:2px 4px;font-size:16px}
+.h-about p{color:var(--muted)}
+
+/* featured proverb */
+.h-quote{margin:0;position:relative;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:12px;padding:22px 24px 14px 58px}
+.h-quote::before{content:"“";position:absolute;left:16px;top:-4px;font:700 72px/1 Georgia,serif;color:var(--accent);opacity:.55}
+.h-quote blockquote{margin:0;font-size:clamp(21px,2.6vw,27px);font-weight:700;line-height:1.45}
+.h-quote blockquote a{color:var(--ink);text-decoration:none}
+.h-quote blockquote a:hover{color:var(--primary)}
+.h-quote figcaption{margin-top:8px;color:var(--muted);font-size:15.5px}
+.h-quote-acts{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px}
+
+/* quiz */
+.h-quiz{border-top:4px solid var(--primary)}
+.h-q-def{font-size:19px;margin:0 0 6px}
+.h-q-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.h-q-opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 12px;font:600 16px "Tiro Bangla",serif;cursor:pointer;text-align:center}
+.h-q-opt:hover:not(:disabled){border-color:var(--primary);background:var(--chip)}
+.h-q-opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.h-q-opt.wrong{border-color:var(--err);background:var(--err-soft);color:var(--err)}
+.h-q-opt:disabled{cursor:default}
+.h-q-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;min-height:32px;font-size:14.5px}
+
+.h-main .cards{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+
+@media (max-width:920px){
+  .h-layout{grid-template-columns:minmax(0,1fr)}
+  .h-side{padding-top:0}
+}
+@media (max-width:640px){
+  .h-hero{padding:26px 0 18px}
+  .h-quote{padding:18px 16px 12px 44px}
+  .h-quote::before{font-size:56px;left:10px}
+  .h-q-opts{grid-template-columns:1fr}
+}
