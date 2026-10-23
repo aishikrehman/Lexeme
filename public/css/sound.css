@@ -428,3 +428,444 @@ select.sb{padding:0 4px}
 .ez-mark[hidden]{display:none}
 .blink{animation:markblink .35s}
 @keyframes markblink{0%{transform:scale(1.06);filter:brightness(1.3)}100%{transform:none;filter:none}}
+/* ===== two-column studio ===== */
+.studio{grid-template-columns:270px minmax(0,1fr)!important}
+.st-transport{justify-content:space-between;gap:10px 16px;padding:6px 10px}
+.st-tcenter{flex:1;justify-content:center;flex-wrap:wrap}
+.tb-txt{width:auto!important;padding:0 12px!important;font:600 14px "Tiro Bangla",sans-serif!important}
+.st-menu{position:relative}
+.st-menu-pop{display:none;position:absolute;left:0;top:calc(100% + 6px);min-width:260px;background:var(--pn);border:1px solid var(--ln);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:6px;z-index:60}
+.st-menu.open .st-menu-pop{display:block}
+.st-menu-pop button{display:block;width:100%;text-align:left;border:0;background:none;color:var(--tx);padding:9px 12px;border-radius:6px;font:14.5px "Tiro Bangla",sans-serif;cursor:pointer}
+.st-menu-pop button:hover{background:var(--ac-soft);color:var(--ac)}
+.mode-row{display:flex;gap:8px;flex-wrap:wrap}
+.mode-row .sw{flex:1;justify-content:center;padding:8px 10px;font-size:14.5px}
+/* tabs in the main column */
+.st-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln)}
+.st-tabs button{border:0;background:none;padding:9px 18px;font:600 15px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;display:inline-flex;align-items:center;gap:6px}
+.st-tabs button[aria-selected=true]{color:var(--ac);border-bottom-color:var(--ac)}
+.st-tabpane{display:flex;flex-direction:column;gap:10px}
+.st-tabpane[hidden]{display:none!important}
+/* toolbar groups with small labels */
+.st-toolbar{padding:4px 8px 6px;gap:2px 6px;align-items:stretch}
+.st-toolbar .tg{flex-direction:row;flex-wrap:wrap;position:relative;padding:14px 6px 0;border-right:1px solid var(--sub);border-radius:0}
+.st-toolbar .tg:last-child{border-right:0}
+.st-toolbar .tg::before{content:attr(data-label);position:absolute;top:1px;left:8px;font-size:10.5px;color:var(--mu);white-space:nowrap}
+.st-toolbar .tg-mark{background:none!important}
+.st-toolbar .tg-mark::before{color:var(--ac)}
+/* drawers for effects and mix */
+.st-drawer{background:var(--pn);border:1px solid var(--ac);border-radius:12px;padding:10px 12px}
+.st-drawer[hidden]{display:none}
+.dr-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.dr-head b{font-size:15px}
+.dr-head select{height:30px}
+.dr-head .s-fill{flex:1}
+.st-drawer .fx{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 16px}
+.st-drawer .fx-mod{border-bottom:0!important}
+.s-fill{flex:1}
+/* tracks */
+.st-tracks{display:flex;flex-direction:column;gap:3px}
+.trk{display:grid;grid-template-columns:28px minmax(80px,1fr) 64px 30px 30px 90px 30px;align-items:center;gap:6px;background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:3px 6px}
+.trk.on{border-color:var(--ac);box-shadow:inset 3px 0 0 var(--ac)}
+.trk.muted{opacity:.55}
+.trk-pick{border:0;background:none;color:var(--ac);font-size:15px;cursor:pointer}
+.trk-name{border:0!important;background:none!important;padding:2px 4px!important;font-weight:600}
+.trk-len{font-size:12px;color:var(--mu);text-align:right}
+.trk-b{width:28px;height:26px;border:1px solid var(--ln);border-radius:6px;background:var(--pn2);color:var(--mu);font:700 12px sans-serif;cursor:pointer}
+.trk-b.act{background:var(--ac);border-color:var(--ac);color:#fff}
+.trk-add{align-self:flex-start;border:1px dashed var(--ln2);background:none;color:var(--ac);border-radius:8px;padding:4px 12px;font:14px "Tiro Bangla",sans-serif;cursor:pointer}
+/* choice dialog, Commons bar */
+.ch-in{max-width:420px}
+.ch-opts{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+.ch-in .sbtn{min-height:42px;border-radius:8px;border:1px solid #a2a9b1;background:#f8f9fa;color:#202122;font:600 15px "Tiro Bangla",sans-serif;cursor:pointer;width:100%}
+.ch-in .sbtn:hover{border-color:#3366cc;color:#3366cc}
+.ch-in .sbtn.ghost{border-color:transparent;background:none;font-weight:400}
+.cm-item{grid-template-columns:auto auto 1fr!important}
+.cm-item.got{background:#e6f4ef}.cm-item.bad{background:#fee7e6}
+.cm-bar{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.cm-bar label{display:flex;gap:6px;align-items:center;font-size:14px}
+@media (max-width:1100px){.studio{grid-template-columns:230px minmax(0,1fr)!important}}
+@media (max-width:860px){.studio{grid-template-columns:1fr!important}.trk{grid-template-columns:24px 1fr 30px 30px 70px 30px}.trk-len{display:none}}
+@media (max-width:860px){.st-transport{order:-2}.st-center{order:-1}}
+
+/* ===== minimal pass: three columns, icon toolbar, quiet panels ===== */
+.studio{grid-template-columns:250px minmax(0,1fr) 320px!important;gap:10px!important;padding:10px 14px 20px!important}
+.st-right-col{grid-column:3;display:flex;flex-direction:column;gap:10px;min-height:0}
+.pn{border-color:var(--sub);box-shadow:none;padding:10px 12px}
+.pn h3{font:600 13.5px "Tiro Bangla",sans-serif;color:var(--mu);border:0;padding:0;margin:0 0 8px;letter-spacing:.2px}
+.pn h3 .cnt{margin-left:2px}
+.st-transport{border-color:var(--sub);box-shadow:none}
+.tb{border-color:transparent;background:none}
+.tb:hover{background:var(--sub);border-color:transparent}
+.tb-rec{border:1px solid var(--ln)}
+/* icon toolbar */
+.st-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:0;padding:4px 6px!important;border-color:var(--sub);box-shadow:none}
+.st-toolbar .tg{display:flex;align-items:center;gap:1px;padding:0 6px!important;border:0!important;border-right:1px solid var(--sub)!important;background:none!important;border-radius:0}
+.st-toolbar .tg::before{content:none!important}
+.st-toolbar .tg:last-child{border-right:0!important}
+.st-toolbar .tg-r{margin-left:auto}
+.ic-b{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:32px;height:32px;padding:0 6px;border:0;border-radius:7px;background:none;color:var(--tx);cursor:pointer;font:13px "Tiro Bangla",sans-serif}
+.ic-b svg{width:18px;height:18px}
+.ic-b:hover:not(:disabled){background:var(--sub);color:var(--ac)}
+.ic-b:disabled{opacity:.3;cursor:default}
+.ic-b.tog[aria-pressed=true]{background:var(--ac-soft);color:var(--ac)}
+.ic-b.mk{color:var(--ac)}
+.ic-b.mk b{font-size:15px}
+.ic-b.mk.on{background:var(--ok);color:#fff}
+.ic-sel{height:28px;border:1px solid var(--sub)!important;border-radius:7px;background:none!important;font-size:12.5px!important;padding:0 4px!important;color:var(--tx)}
+.ic-chk{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--mu);padding:0 6px;cursor:pointer;white-space:nowrap}
+.tg-mark{background:none!important}
+/* drawers */
+.st-drawer{border-color:var(--sub);box-shadow:0 4px 14px rgba(0,0,0,.05)}
+/* tracks (only with 2+) */
+.st-tracks[hidden]{display:none!important}
+.trk-mix{font-size:12.5px;color:var(--mu);display:flex;align-items:center;gap:6px;padding:0 4px 2px}
+.trk{border-color:var(--sub)}
+/* parts: compact cards */
+.r-tools{display:flex;gap:6px;margin-bottom:8px}
+.r-tools input{flex:1;min-width:0}
+.r-tools select{width:120px}
+.r-list{display:flex;flex-direction:column;gap:4px;overflow:auto;max-height:46vh;margin-bottom:8px}
+.rg{border:1px solid var(--sub);border-radius:8px;padding:5px 7px;display:flex;flex-direction:column;gap:4px}
+.rg.skip{opacity:.45}
+.rg.hl{border-color:var(--ac);background:var(--ac-soft)}
+.rg-top{display:flex;align-items:center;gap:6px}
+.rg-top input{flex:1;min-width:0;border:0!important;background:none!important;padding:3px 2px!important;font-size:15px!important;font-weight:600}
+.rg-top input:focus{background:var(--pn2)!important;box-shadow:inset 0 -2px 0 var(--ac)!important}
+.rg-n{font-size:12px;color:var(--mu);min-width:16px}
+.rg-sub{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mu);flex-wrap:wrap}
+.rg-sub select{height:24px;padding:0 4px!important;font-size:12px!important;border-color:var(--sub)!important}
+.rg-sub .ib{width:24px;height:24px;border-color:transparent;background:none}
+.rg-sub .ib:hover,.rg-top .ib:hover{background:var(--sub)}
+.rg-skip{display:inline-flex;align-items:center;gap:3px;cursor:pointer}
+.rg-text{font-size:13px!important;padding:3px 6px!important}
+.rg .dot{width:8px;height:8px;border-radius:50%;flex:none}
+#pn-queue .q-list{max-height:none}
+.q-item{border:0;border-bottom:1px solid var(--sub);border-left:3px solid var(--ln);border-radius:0;background:none;padding:6px 4px}
+@media (max-width:1250px){.studio{grid-template-columns:230px minmax(0,1fr)!important}.st-right-col{grid-column:2;display:grid;grid-template-columns:1fr 1fr;align-items:start}}
+@media (max-width:860px){.studio{grid-template-columns:1fr!important}.st-right-col{grid-column:1;grid-template-columns:1fr}.st-toolbar .tg-r{margin-left:0}}
+.mode-row .sw{white-space:nowrap;padding:6px 8px!important;font-size:13.5px!important}
+.bt-word b.empty{font-size:18px;font-weight:500;color:var(--mu)}
+
+#e-undo svg,#e-redo svg{fill:none!important;stroke:currentColor!important;stroke-width:2}
+.r-map{margin:0 0 8px!important;min-height:30px;font-weight:500;font-size:13.5px}
+
+.trk-head{display:flex;align-items:center;justify-content:space-between}
+.trk-clear{border:0;background:none;color:var(--rec);font:12.5px "Tiro Bangla",sans-serif;cursor:pointer;padding:2px 6px;border-radius:6px}
+.trk-clear:hover{background:var(--sub)}
+.st-menu-pop .danger{color:var(--rec)!important;border-top:1px solid var(--sub)!important;border-radius:0 0 6px 6px!important}
+
+/* ===== whole studio inside the screen height; columns scroll inside ===== */
+@media (min-width:861px){
+  .sd-body:not(.easy-mode){height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+  .sd-body:not(.easy-mode) > footer,.sd-body:not(.easy-mode) .site-footer{display:none}
+  .sd-body:not(.easy-mode) .studio{flex:1;min-height:0;width:100%;grid-template-rows:auto minmax(0,1fr)!important;overflow:hidden}
+  .studio .st-left,.studio .st-center,.studio .st-right-col{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+  .studio .st-center{padding-right:2px}
+  .studio .st-right-col #pn-queue{min-height:180px}
+  .studio .r-list,.studio #pn-queue .q-list{max-height:none}
+  .studio .w-list{max-height:none}
+}
+/* lower waveform */
+.st-wavewrap{height:clamp(140px,24vh,240px)!important}
+/* play button: filled blue circle with a white icon */
+.studio .tb-play{background:var(--ac)!important;border-color:var(--ac)!important;color:#fff!important}
+.studio .tb-play:hover{background:var(--ac-h)!important}
+.studio .tb-play svg{width:20px;height:20px;fill:#fff!important}
+.studio .tb-rec svg{fill:var(--rec)!important}
+.studio .tb-rec.on svg{fill:#fff!important}
+/* ===== full studio: no site header; logo + account in the top bar; login gate ===== */
+
+.st-logo{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--tx);padding-right:10px;margin-right:4px;border-right:1px solid var(--sub)}
+.st-logo .logo-mark,.st-gate .logo-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--ac);color:#fff;font:700 18px "Tiro Bangla",serif;padding-top:2px;box-sizing:border-box}
+.st-logo-t{font:700 15px "Tiro Bangla",serif;white-space:nowrap}
+.st-acct{margin-left:4px}
+.st-menu-r{left:auto!important;right:0}
+.st-menu-pop a{display:block;padding:9px 12px;border-radius:6px;color:var(--tx);text-decoration:none;font:14.5px "Tiro Bangla",sans-serif}
+.st-menu-pop a:hover{background:var(--ac-soft);color:var(--ac)}
+#t-user{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-gate{position:fixed;inset:0;z-index:90;background:var(--bg,#f6f7f9);display:grid;place-items:center;padding:20px}
+.st-gate[hidden]{display:none}
+.st-gate-in{max-width:420px;text-align:center;background:var(--pn,#fff);border:1px solid var(--sub,#eef0f3);border-radius:16px;padding:28px 26px;color:var(--tx,#202122)}
+.st-gate .logo-mark.big{width:54px;height:54px;font-size:30px;border-radius:14px;margin:0 auto 10px}
+.st-gate h2{margin:0 0 8px;font-size:22px}
+.st-gate p{color:var(--mu,#54595d);font-size:14.5px;line-height:1.6}
+.st-gate .sbtn{min-height:44px;padding:0 22px;font-size:15.5px;margin:6px 0 4px}
+.gate-alt{font-size:13.5px}
+.gated .studio > :not(.st-gate){visibility:hidden}
+@media (max-width:860px){.st-logo-t{display:none}}
+.sd-body > footer.footer{display:none!important} /* no site footer in the studio or Libre */
+
+.st-right-col .pn.collapsed{flex:none!important;min-height:0!important}
+
+/* ===== one studio: simple view (no editor) ===== */
+.no-editor .st-toolbar,.no-editor .st-drawer,.no-editor .st-tracks{display:none!important}
+.no-editor.word-mode .st-stage,.no-editor.word-mode .st-status #s-sel,.no-editor.word-mode .st-status #s-info{display:none!important}
+.no-editor .st-batch{padding:22px 20px}
+.no-editor .bt-word b{font-size:clamp(44px,6vw,72px)}
+.mode-chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx);margin:8px 0 4px}
+#t-mictest{margin-top:6px;font-weight:500}
+.st-mnav{display:none}
+/* phones: tabs for the three columns; most tools still work */
+@media (max-width:860px){
+  .st-mnav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--sub);border-radius:12px;padding:4px;position:sticky;top:0;z-index:20;order:-1}
+  .st-mnav button{border:0;background:none;border-radius:9px;padding:9px 4px;font:600 14px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer}
+  .st-mnav button[aria-current]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .st-transport{order:-2}
+  body[data-mview="center"] .st-left,body[data-mview="center"] .st-right-col,
+  body[data-mview="left"] .st-center,body[data-mview="left"] .st-right-col,
+  body[data-mview="right"] .st-left,body[data-mview="right"] .st-center{display:none!important}
+  .st-transport .st-meter,.st-transport #t-input,#t-layout{display:none}
+  .st-toolbar{overflow-x:auto;flex-wrap:nowrap!important}
+  .st-toolbar .tg{flex:none}
+  .bt-acts .sbtn{flex:1 1 40%}
+}
+/* ===== top bar on phones: tools on one row, playback on a second ===== */
+@media (max-width:860px){
+  .studio .st-transport{display:grid!important;grid-template-columns:1fr auto;align-items:center;gap:6px 4px;padding:6px 8px!important}
+  .st-transport > .st-tgroup:first-child{grid-column:1;flex-wrap:nowrap;gap:2px}
+  .st-transport .st-right{grid-column:2;justify-self:end;margin:0;flex-wrap:nowrap;gap:2px}
+  .st-transport .st-tcenter{grid-column:1/-1;grid-row:2;display:flex;flex-wrap:nowrap;justify-content:space-between;gap:2px;border-top:1px solid var(--sub);padding-top:6px;overflow-x:auto}
+  .studio .tb{width:34px;height:34px}
+  .studio .tb-txt{height:34px;padding:0 9px!important;font-size:13.5px!important}
+  .studio .tb-play,.studio .tb-rec{width:40px!important;height:40px!important;flex:none}
+  .st-transport .st-clock{min-width:0;padding:2px 8px;flex:none}
+  .st-transport .st-clock span{font-size:16px;letter-spacing:0}
+  .st-transport .st-clock small{display:none}
+  .studio .tb-mark{height:34px;padding:0 8px!important;font-size:13px!important}
+  #t-editor{font-size:0!important;width:34px;padding:0!important}
+  #t-editor::before{content:"✎";font-size:17px}
+  #t-editor[aria-pressed=true]{background:var(--ac-soft);color:var(--ac)}
+}
+@media (max-width:380px){ #t-prev,#t-next{display:none} }
+.studio .bt-word b.empty{font-size:17px!important;font-weight:500;color:var(--mu)}
+
+/* ===== phones: only what the moment needs ===== */
+.tb-more,.bt-live{display:none}
+@media (max-width:860px){
+  /* top bar: just “⋯”; it opens the tools */
+  .studio .st-transport{display:flex!important;flex-wrap:wrap;justify-content:flex-end;padding:4px 6px!important;border:0;background:none}
+  .tb-more{display:grid;font-size:20px!important;font-weight:700}
+  .st-transport > .st-tgroup:first-of-type,.st-transport .st-right{display:none!important}
+  .more-open .st-transport{background:var(--pn);border:1px solid var(--sub)}
+  .more-open .st-transport > .st-tgroup:first-of-type,.more-open .st-transport .st-right{display:flex!important;width:100%;justify-content:flex-start;gap:4px;flex-wrap:wrap}
+  .more-open .st-transport .st-right #t-input{display:block!important;flex:1;min-width:0}
+  /* playback: a fixed player at the bottom … */
+  .st-transport .st-tcenter{position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--pn);border-top:1px solid var(--ln)!important;padding:6px 8px calc(6px + env(safe-area-inset-bottom))!important;box-shadow:0 -4px 14px rgba(0,0,0,.08);justify-content:space-around!important}
+  .studio{padding-bottom:76px!important}
+  /* … except in the plain word-list view: the word card has its own controls */
+  .no-editor.word-mode .st-transport .st-tcenter{display:none!important}
+  .no-editor.word-mode .studio{padding-bottom:20px!important}
+  .no-editor.word-mode .bt-live{display:flex;align-items:center;gap:8px;justify-content:center;margin:2px 0 6px;font:600 13px "JetBrains Mono",monospace;color:var(--mu)}
+  .no-editor.word-mode:not(.is-rec) .bt-live{visibility:hidden;height:0;margin:0}
+  .is-rec .bt-live #bt-clock{color:var(--rec)}
+  .bt-mt{width:120px;height:6px;border-radius:3px;background:var(--sub);overflow:hidden}
+  .bt-mt i{display:block;height:100%;width:0;background:#14866d;transition:width 60ms}
+  .bt-mt i.hot{background:#d73333}
+  .studio .st-batch #bt-go{min-height:52px;font-size:17px;flex-basis:100%}
+}
+/* ===== tablets and small laptops (861–1250px): word list on the left; record | upload as two tabs ===== */
+@media (min-width:861px) and (max-width:1250px){
+  .studio{grid-template-columns:240px minmax(0,1fr)!important;grid-template-rows:auto auto minmax(0,1fr)!important}
+  .studio .st-transport{grid-column:1/-1;grid-row:1}
+  .st-mnav{display:grid;grid-template-columns:1fr 1fr;gap:4px;grid-column:2;grid-row:2;background:var(--sub);border-radius:10px;padding:3px}
+  .st-mnav [data-mv="left"]{display:none}
+  .st-mnav button{border:0;background:none;border-radius:8px;padding:7px 4px;font:600 14px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer}
+  .st-mnav button[aria-current]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .studio .st-left{grid-column:1;grid-row:2/4}
+  .studio .st-center,.studio .st-right-col{grid-column:2!important;grid-row:3}
+  .studio .st-right-col{display:flex!important;flex-direction:column;grid-template-columns:none!important}
+  body:not([data-mview="right"]) .studio .st-right-col{display:none!important}
+  body[data-mview="right"] .studio .st-center{display:none!important}
+  .st-transport .st-meter{min-width:110px}
+  .st-transport #t-input{max-width:140px}
+}@media (min-width:861px) and (max-width:1250px){
+  .studio .st-left{contain:size} /* the long left column must not stretch the tab row */
+  .st-mnav{align-self:start}
+  .st-transport{flex-wrap:nowrap!important;gap:6px!important}
+  .st-transport .st-tcenter{gap:2px!important}
+  .st-transport .st-meter{min-width:70px!important}
+  .st-transport .st-meter small,.st-transport .st-clock small{display:none}
+  .st-transport .st-clock{min-width:0!important;padding:3px 8px!important}
+  .st-transport .st-clock span{font-size:18px!important}
+  .st-transport #t-input{max-width:110px!important}
+  .studio .tb{width:32px;height:32px}
+  .studio .tb-play,.studio .tb-rec{width:38px!important;height:38px!important}
+}
+@media (min-width:861px) and (max-width:1250px){ .sd-body:not(.easy-mode) .studio{grid-template-rows:auto auto minmax(0,1fr)!important} }
+
+.h-acts{margin-left:auto;display:inline-flex;gap:2px}
+.h-a{border:0;background:none;color:var(--mu);font:12px "Tiro Bangla",sans-serif;padding:2px 6px;border-radius:6px;cursor:pointer}
+.h-a:hover{background:var(--sub);color:var(--ac)}
+.h-a.red:hover{color:var(--rec)}
+.pn.collapsed .h-acts{display:none}
+.pn h3 .h-acts ~ .dk-fold{margin-left:4px}
+
+/* right column: two tabs */
+.rt-tabs{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--sub);border-radius:10px;padding:3px;flex:none}
+.rt-tabs button{border:0;background:none;border-radius:8px;padding:7px 4px;font:600 14px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.rt-tabs button[aria-selected=true]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.rt-tabs .cnt{background:var(--sub);border-radius:999px;padding:0 7px;font-size:11.5px;color:var(--mu)}
+.st-right-col > .pn[hidden]{display:none!important}
+.st-right-col > .pn{flex:1;min-height:0;display:flex;flex-direction:column}
+.st-right-col > .pn > h3{font-size:0;margin-bottom:6px}
+.st-right-col > .pn > h3 > *{font-size:13px}
+.st-right-col > .pn > h3 .cnt{display:none}
+.st-right-col .r-list,.st-right-col #pn-queue .q-list{flex:1;max-height:none!important}
+/* ===== player bar fixed at the bottom (every screen size) ===== */
+.studio .st-player{position:fixed!important;left:0;right:0;bottom:0;z-index:60;display:flex!important;justify-content:center;align-items:center;background:var(--pn)!important;border:0!important;border-top:1px solid var(--ln)!important;border-radius:0!important;padding:6px 12px calc(6px + env(safe-area-inset-bottom))!important;box-shadow:0 -4px 14px rgba(0,0,0,.06)!important;grid-row:auto!important}
+.studio .st-player .st-tcenter{display:flex!important;position:static!important;flex:0 1 auto;justify-content:center!important;flex-wrap:nowrap;gap:4px!important;border:0!important;box-shadow:none!important;background:none!important;padding:0!important;overflow-x:auto}
+.sd-body{box-sizing:border-box;padding-bottom:60px}
+@media (min-width:1251px){.sd-body:not(.easy-mode) .studio{grid-template-rows:minmax(0,1fr)!important}.studio .st-left,.studio .st-center,.studio .st-right-col{grid-row:1}}
+@media (max-width:860px){
+  .no-editor.word-mode .studio .st-player{display:none!important} /* the word card has its own controls */
+  .no-editor.word-mode.sd-body{padding-bottom:0}
+}
+
+/* ===== left column: settings ===== */
+#pn-mode .set-grp{display:grid;grid-template-columns:54px 1fr;gap:6px;align-items:start;padding:6px 0;border-top:1px solid var(--sub)}
+#pn-mode .set-grp:first-of-type{border-top:0;padding-top:0}
+.set-l{font-size:12px;color:var(--mu);padding-top:5px}
+.set-row{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.set-row select{flex:1;min-width:0;height:30px;font-size:13px!important}
+.chip-b{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid var(--ln);border-radius:999px;background:var(--pn);color:var(--tx);font:13px "Tiro Bangla",sans-serif;cursor:pointer;white-space:nowrap}
+.chip-b:hover:not(:disabled){border-color:var(--ac);color:var(--ac)}
+.chip-b:disabled{opacity:.4;cursor:default}
+.chip-b.ic{width:30px;padding:0;justify-content:center}
+.chip-b.ic svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
+.chip-b.tog[aria-pressed=true]{background:var(--ac);border-color:var(--ac);color:#fff}
+.chip-b.red{color:var(--rec)}
+#pn-mode .mode-row{gap:4px}
+#pn-mode .mode-row .sw{padding:4px 8px!important;font-size:13px!important;flex:1;justify-content:center}
+#pn-mode .mode-chk{margin:6px 0 0;font-size:12.5px}
+.set-foot{display:flex;gap:10px;padding-top:6px;border-top:1px solid var(--sub)}
+.link-b{border:0;background:none;color:var(--mu);font:12.5px "Tiro Bangla",sans-serif;cursor:pointer;padding:2px 0}
+.link-b:hover{color:var(--ac)}
+
+/* ===== left column: word list ===== */
+#pn-words h3 .cnt{font-family:"JetBrains Mono",monospace}
+.w-prog{height:4px;border-radius:2px;background:var(--sub);overflow:hidden;margin:0 0 8px}
+.w-prog i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s}
+.w-add{display:flex;gap:4px;margin-bottom:6px}
+.w-add input{flex:1;min-width:0;height:34px}
+.w-add .ib{width:34px;height:34px;font-size:16px}
+.w-many{margin-bottom:6px}
+.w-many textarea{width:100%;margin-bottom:4px}
+.w-many[hidden]{display:none}
+.studio .w-list{counter-reset:none;border:0;margin:0}
+.studio .w-list li{display:grid;grid-template-columns:26px 1fr auto auto;align-items:center;gap:6px;padding:6px 6px;border:0;border-radius:8px;margin-bottom:1px}
+.studio .w-list li:hover{background:var(--pn2)}
+.studio .w-list li .wn{font:12px "JetBrains Mono",monospace;color:var(--mu);text-align:center;width:22px;height:22px;line-height:22px;border-radius:50%;background:var(--sub)}
+.studio .w-list li .wt{display:flex;flex-direction:column;min-width:0}
+.studio .w-list li .wt .t{font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.studio .w-list li .wt small{max-width:none;font-size:11.5px;color:var(--mu)}
+.studio .w-list li.done .t::before{content:none}
+.studio .w-list li.done .wn{background:#e6f4ef;color:var(--ok);font-weight:700}
+.studio .w-list li.done .t{color:var(--mu)}
+.studio .w-list li.cur{background:var(--ac-soft);box-shadow:none}
+.studio .w-list li.cur .wn{background:var(--ac);color:#fff}
+.studio .w-list li .x{opacity:0}
+.studio .w-list li:hover .x{opacity:1}
+.studio .w-list li.empty{display:block;color:var(--mu);font-size:13px;line-height:1.6;padding:10px 4px}
+#pn-words{min-height:260px}#pn-mode .set-grp{grid-template-columns:1fr!important;gap:4px!important}
+.set-l{padding-top:0!important;font-size:11.5px!important;letter-spacing:.2px}
+#pn-mode .mode-row{display:grid!important;grid-template-columns:1fr 1fr}
+#pn-mode .mode-row .sw{white-space:nowrap}
+@media (min-width:1251px){.studio{grid-template-columns:270px minmax(0,1fr) 320px!important}}
+/* ===== left: Photoshop-like menu ===== */
+.ps-menu{display:flex;flex-direction:column;gap:1px;padding:6px 4px 10px;border-bottom:1px solid var(--sub);margin-bottom:6px}
+.ps-title{font-size:11.5px;color:var(--mu);padding:2px 10px 6px}
+.ps-it{display:grid;grid-template-columns:22px 1fr auto auto;align-items:center;gap:6px;width:100%;text-align:left;border:0;background:none;color:var(--tx,#202122);padding:7px 10px;border-radius:7px;font:14.5px "Tiro Bangla",sans-serif;cursor:pointer}
+.ps-it:hover:not(:disabled),.ps-it.open{background:var(--ac-soft,#eaf3ff);color:var(--ac,#36c)}
+.ps-it:disabled{opacity:.4;cursor:default}
+.ps-it.danger{color:var(--rec,#d73333)}
+.ps-ic{text-align:center;font-size:13px;color:var(--ac,#36c)}
+.ps-it kbd{font:11px "JetBrains Mono",monospace;color:var(--mu,#54595d)}
+.ps-arr{color:var(--mu,#54595d);font-size:11px}
+.ps-sep{height:1px;background:var(--sub,#eef0f3);margin:4px 8px}
+.ps-sub{position:fixed;z-index:120;min-width:230px;max-width:320px;max-height:70vh;overflow:auto;background:#fff;border:1px solid #e1e4e8;border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.16);padding:5px;display:flex;flex-direction:column;gap:1px;--ac:#3366cc;--ac-soft:#eaf3ff;--tx:#202122;--mu:#54595d;--sub:#eef0f3;--rec:#d73333}
+:root[data-theme="dark"] .ps-sub{background:#1b2025;border-color:#3a3f45;--tx:#eaecf0;--mu:#a2a9b1;--sub:#27292d;--ac:#6d8af0;--ac-soft:#233566}
+.ps-sub.inline{position:static;box-shadow:none;border:0;border-left:2px solid var(--sub);border-radius:0;margin:0 0 4px 16px;max-height:none;min-width:0;padding:2px 0 2px 4px}
+/* centre tabs */
+.ct-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);flex:none}
+.ct-tabs button{border:0;background:none;padding:8px 16px;font:600 15px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;display:inline-flex;align-items:center;gap:6px}
+.ct-tabs button[aria-selected=true]{color:var(--ac);border-bottom-color:var(--ac)}
+.ct-tabs .cnt{background:var(--sub);border-radius:999px;padding:0 7px;font-size:11.5px;color:var(--mu)}
+.ct-pane{display:flex;flex-direction:column;gap:10px;min-height:0}
+.ct-pane[hidden]{display:none!important}
+.ct-pane #pn-words{max-width:760px;width:100%;margin:0 auto}
+.ct-pane .w-list{max-height:none!important;columns:2 260px;column-gap:16px}
+.ct-pane .w-list li{break-inside:avoid}
+.w-go{min-height:28px!important;padding:0 12px!important;font-size:13px!important;margin-left:6px}
+/* left bar: just the menu — narrow, white */
+@media (min-width:1251px){.studio{grid-template-columns:190px minmax(0,1fr) 320px!important}}
+@media (min-width:861px) and (max-width:1250px){.studio{grid-template-columns:190px minmax(0,1fr)!important}}
+.studio .st-left{background:var(--pn);border:1px solid var(--sub);border-radius:12px;padding:4px!important;align-self:start;max-height:100%}
+.studio .ps-menu{border:0;margin:0;padding:4px 2px}
+.studio .ps-it{padding:8px 8px;grid-template-columns:20px 1fr auto auto}
+.ps-sub{margin-left:-6px} /* close to the menu */
+/* setup tab */
+.ct-setup{max-width:760px;width:100%;margin:0 auto}
+.ct-setup .pn{padding:14px 16px}
+.ct-setup #pn-speaker h3,.ct-setup #pn-proj h3{font-size:15px}
+.ct-setup .sp-form .two{grid-template-columns:1fr 1fr}
+.ct-warn{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--warn);color:#fff;font-size:11px;font-weight:700}
+.ct-warn[hidden]{display:none}
+@media (max-width:860px){.studio .st-left{border:0;background:none}}
+.ps-ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block;margin:auto}
+.ps-it .ps-ic{color:var(--mu)}
+.ps-it:hover .ps-ic,.ps-it.open .ps-ic{color:var(--ac)}
+.ps-sub .ps-ic{color:var(--ac);font-weight:700}
+
+/* ===== speaker setup: professional, minimal ===== */
+.spk{padding:18px 20px!important}
+.spk-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.spk-head h3{font-size:17px!important;margin:0!important;color:var(--tx)!important}
+.spk-status{font-size:12.5px}
+.spk-status.ok{color:var(--ok)}
+.spk-status.warn{color:var(--warn)}
+.spk-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-bottom:14px;margin-bottom:6px;border-bottom:1px solid var(--sub)}
+.spk-chips{display:contents}
+.spk-chip{display:inline-flex;align-items:baseline;gap:6px;height:32px;padding:0 12px;border:1px solid var(--ln);border-radius:999px;background:var(--pn);color:var(--tx);font:14px "Tiro Bangla",sans-serif;cursor:pointer}
+.spk-chip small{font-size:11.5px;color:var(--mu)}
+.spk-chip.on{border-color:var(--ac);background:var(--ac-soft);color:var(--ac);font-weight:600}
+.spk-chip.new{border-style:dashed}
+.spk-form fieldset{border:0;margin:0;padding:14px 0 10px;border-bottom:1px solid var(--sub)}
+.spk-form fieldset:last-of-type{border-bottom:0}
+.spk-form legend{float:left;width:100%;padding:0 0 10px;font-size:12px;font-weight:600;color:var(--mu);letter-spacing:.3px}
+.spk-grid{clear:both;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.spk-grid .span2{grid-column:1/-1}
+.spk-grid label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--mu)}
+.spk-grid label i{color:var(--rec);font-style:normal}
+.spk-grid input,.spk-grid select{height:38px;border:1px solid var(--ln)!important;border-radius:8px!important;padding:0 12px!important;font-size:15px!important;background:var(--pn)!important;width:100%}
+.spk-grid input:focus,.spk-grid select:focus{border-color:var(--ac)!important;box-shadow:0 0 0 3px var(--ac-soft)!important}
+.spk-consent{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--pn2);font-size:13.5px;line-height:1.55;color:var(--tx);cursor:pointer}
+.spk-consent input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--ac)}
+.spk-foot{display:flex;align-items:center;gap:10px;padding-top:14px}
+.spk-foot .sbtn{min-height:38px;padding:0 22px}
+.link-b.red{color:var(--rec)}
+@media (max-width:560px){.spk-grid{grid-template-columns:1fr}}
+.spk-grid label{display:block!important}
+.spk-grid label > input,.spk-grid label > select{display:block;margin-top:5px}
+
+/* centre tabs use the whole width */
+.ct-setup,.ct-pane #pn-words{max-width:none!important;margin:0!important}
+.ct-setup .spk-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.ct-setup{display:grid!important;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px;align-items:start}
+.ct-setup[hidden]{display:none!important}
+@media (max-width:1100px){.ct-setup{grid-template-columns:1fr}}
+.ct-pane #pn-words{flex:1}
+.ct-pane .w-list{columns:3 240px!important}
+/* menu ticks */
+.ps-ic.ck{color:var(--ac)!important;font-weight:700;font-size:14px}
+.ps-pills{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:8px 4px 2px;padding:3px;background:var(--sub);border-radius:999px}
+.ps-pill{border:0;background:none;border-radius:999px;padding:6px 4px;font:600 13px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;white-space:nowrap}
+.ps-pill[aria-pressed=true]{background:var(--ac);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.ps-sw{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:6px;width:100%;text-align:left;border:0;background:none;color:var(--tx);padding:7px 8px;border-radius:7px;font:14px "Tiro Bangla",sans-serif;cursor:pointer}
+.ps-sw:hover{background:var(--pn2)}
+.ps-sw .ps-ic{color:var(--mu)}
+.ps-sw[aria-checked=true] .ps-ic{color:var(--ac)}
+.tgl{position:relative;width:30px;height:17px;border-radius:999px;background:var(--ln);transition:background .15s;flex:none}
+.tgl::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.ps-sw[aria-checked=true] .tgl{background:var(--ac)}
+.ps-sw[aria-checked=true] .tgl::after{left:15px}

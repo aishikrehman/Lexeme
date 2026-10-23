@@ -57,12 +57,15 @@ function saveSpeakers() { store("lx_snd_speakers", SPK); store("lx_snd_spcur", S
 function drawPick() {
   $("#sp-pick").innerHTML = SPK.map(s => `<option value="${s.id}"${s.id === SP.id ? " selected" : ""}>${esc(s.name)}${s.district ? " — " + esc(s.district) : ""}</option>`).join("")
     + (SPK.some(s => s.id === SP.id) ? "" : `<option value="" selected>— নতুন বক্তা —</option>`);
+  const ch = $("#spk-chips"); if (ch) ch.innerHTML = SPK.map(s => `<button type="button" class="spk-chip${s.id === SP.id ? " on" : ""}" data-sid="${s.id}"><span>${esc(s.name)}</span>${s.district ? `<small>${esc(s.district)}</small>` : ""}</button>`).join("")
+    + (SPK.some(s => s.id === SP.id) ? "" : `<button type="button" class="spk-chip on new"><span>নতুন বক্তা</span></button>`);
 }
 function readSpeaker() {
   SP = { id: SP.id, ...Object.fromEntries(Object.entries(SP_FIELDS).map(([k, s]) => [k, $(s).value.trim()])), consent: $("#sp-consent").checked };
   if (SP.name) { const i = SPK.findIndex(s => s.id === SP.id); if (i < 0) SPK.push(SP); else SPK[i] = SP; saveSpeakers(); }
   $("#sp-other-l").hidden = langOf(SP.lang)[3] !== "other"; drawSpeaker();
 }
+$("#spk-chips").addEventListener("click", e => { const b = e.target.closest("[data-sid]"); if (!b) return; $("#sp-pick").value = b.dataset.sid; $("#sp-pick").dispatchEvent(new Event("change")); });
 $("#sp-pick").onchange = e => { const s = SPK.find(x => x.id === e.target.value); if (!s) return; SP = s; fillSpeaker(); saveSpeakers(); drawSpeaker(); };
 $("#sp-new").onclick = () => { SP = { id: uid(), lang: SP.lang, district: SP.district, license: SP.license }; fillSpeaker(); drawPick(); drawSpeaker(); $("#sp-form").hidden = false; $("#sp-name").focus(); };
 $("#sp-del").onclick = () => { if (!SPK.some(s => s.id === SP.id) || !confirm(`বক্তা “${SP.name}” মুছবেন?`)) return; SPK = SPK.filter(s => s.id !== SP.id); SP = SPK[0] || { id: uid() }; fillSpeaker(); saveSpeakers(); drawSpeaker(); };
@@ -81,22 +84,28 @@ function speakerWhy() {
 }
 function drawSpeaker() {
   const w = speakerWhy(), L = langOf(SP.lang);
+  const sw = $("#ct-sw"); if (sw) sw.hidden = !w;
+  const st = $("#sp-status"); if (st) { st.textContent = w ? "⚠ " + w : "✓ প্রস্তুত"; st.className = "spk-status " + (w ? "warn" : "ok"); }
   $("#sp-summary").innerHTML = SP.name ? `<b>${esc(SP.name)}</b><span>${esc(L[3] === "other" ? SP.other || "" : L[2])}${SP.dialect ? " · " + esc(SP.dialect) : ""}</span><span>${esc([SP.place, SP.district].filter(Boolean).join(", "))}</span>${w ? `<em>⚠ ${w}</em>` : `<em class="ok">✓ আপলোডের জন্য প্রস্তুত</em>`}`
     : `<em>⚠ আপলোডের আগে বক্তার তথ্য দিন</em>`;
 }
 $("#pn-speaker").addEventListener("input", readSpeaker); $("#pn-speaker").addEventListener("change", readSpeaker);
 $("#sp-toggle").addEventListener("click", () => { $("#sp-form").hidden = !$("#sp-form").hidden; });
-$("#sp-done").addEventListener("click", () => { readSpeaker(); const w = speakerWhy(); if (!w) $("#sp-form").hidden = true; else msg(w); });
-drawSpeaker(); $("#sp-form").hidden = !!SP.name && !speakerWhy();
+$("#sp-done").addEventListener("click", () => { readSpeaker(); const w = speakerWhy(); $("#sp-status").textContent = w ? "⚠ " + w : "✓ সংরক্ষিত"; $("#sp-status").className = "spk-status " + (w ? "warn" : "ok"); });
+drawSpeaker(); // the form is always open in the setup tab
 
 /* ================= word list ================= */
 let WORDS = load("lx_snd_words", []); let wordPos = load("lx_snd_pos", 0);
 const saveWords = () => { store("lx_snd_words", WORDS); store("lx_snd_pos", wordPos); drawWords(); pushWords(); };
 function drawWords() {
-  $("#w-count").textContent = toBn(WORDS.length);
+  const done = WORDS.filter(w => w.done).length;
+  $("#w-count").textContent = WORDS.length ? `${toBn(done)}/${toBn(WORDS.length)}` : "০";
+  const ctwc = $("#ct-wc"); if (ctwc) ctwc.textContent = WORDS.length ? toBn(WORDS.length) : "";
+  $("#w-bar").style.width = WORDS.length ? `${(done / WORDS.length) * 100}%` : "0";
   wordPos = Math.max(0, Math.min(wordPos, WORDS.length - 1));
-  $("#w-list").innerHTML = WORDS.map((w, i) => `<li class="${i === wordPos ? "cur" : ""}${w.done ? " done" : ""}" data-i="${i}"><span class="t">${esc(w.word)}</span>${w.gloss ? `<small>${esc(w.gloss)}</small>` : ""}${w.lexeme ? `<a href="https://www.wikidata.org/wiki/Lexeme:${esc(w.lexeme)}" target="_blank" rel="noopener">${esc(w.lexeme)}</a>` : ""}<button type="button" class="x" aria-label="সরান">✕</button></li>`).join("")
-    || `<li class="empty">শব্দ যোগ করে “শব্দ-তালিকা মোড” চালু করুন — প্রতিটি শব্দ আলাদা অংশ হবে।</li>`;
+  // one row per word: number, word (+ meaning), lexeme; recorded ✓, current highlighted
+  $("#w-list").innerHTML = WORDS.map((w, i) => `<li class="${i === wordPos ? "cur" : ""}${w.done ? " done" : ""}" data-i="${i}"><span class="wn">${w.done ? "✓" : toBn(i + 1)}</span><span class="wt"><span class="t">${esc(w.word)}</span>${w.gloss ? `<small>${esc(w.gloss)}</small>` : ""}</span>${w.lexeme ? `<a href="https://www.wikidata.org/wiki/Lexeme:${esc(w.lexeme)}" target="_blank" rel="noopener">${esc(w.lexeme)}</a>` : ""}<button type="button" class="x" aria-label="সরান">✕</button></li>`).join("")
+    || `<li class="empty">ওপরে শব্দ লিখে Enter চাপুন, বা ≡ চেপে অনেকগুলো একসঙ্গে দিন। প্রতিটি শব্দ আলাদা রেকর্ড হবে।</li>`;
   $("#w-list li.cur")?.scrollIntoView({ block: "nearest" });
   drawBatch();
 }
@@ -108,11 +117,12 @@ function drawBatch() {
   $("#bt-pos").textContent = WORDS.length ? `${toBn(wordPos + 1)} / ${toBn(WORDS.length)}` : "তালিকা খালি";
   $("#bt-bar").style.width = WORDS.length ? `${(done / WORDS.length) * 100}%` : "0";
   $("#bt-done").textContent = `${toBn(done)}টি রেকর্ড হয়েছে`;
-  $("#bt-word").textContent = w ? w.word : "বাঁ দিকের তালিকায় শব্দ যোগ করুন";
+  $("#bt-word").textContent = w ? w.word : "বাঁ দিকের শব্দ-তালিকায় শব্দ যোগ করুন"; $("#bt-word").classList.toggle("empty", !w);
   $("#bt-gloss").textContent = w?.gloss || (w?.lexeme ? w.lexeme : "");
   $("#bt-word").classList.toggle("done", !!w?.done);
   $("#bt-upcoming").innerHTML = WORDS.slice(wordPos + 1, wordPos + 6).map(x => `<span${x.done ? " class=done" : ""}>${esc(x.word)}</span>`).join("");
-  $("#bt-go").textContent = recording ? "■ থামান" : "● ব্যাচ রেকর্ড শুরু"; $("#bt-go").classList.toggle("on", recording);
+  $("#bt-go").textContent = recording ? "■ থামান" : $("#t-auto").checked ? "● একটানা রেকর্ড শুরু" : "● এই শব্দ রেকর্ড"; $("#bt-go").classList.toggle("on", recording);
+  $("#bt-hint").textContent = $("#t-auto").checked ? "শব্দটি বলে থামুন — রেকর্ড শেষে নিজে থেকে পরের শব্দ শুরু হবে। থামাতে R বা ■।" : "শব্দটি বলে থামুন — রেকর্ড শেষ হবে। ▶ শুনুন বা ↺ আবার নিন, তারপর ▶ পরের শব্দে যান।";
   $("#bt-go").disabled = !w;
 }
 $("#w-list").addEventListener("click", e => {
@@ -130,7 +140,10 @@ async function addWordLines(text) {
   for (const w of list) w.lexeme = await findLexeme(w.word);
   WORDS.push(...list); saveWords(); return list.length;
 }
-$("#w-add").addEventListener("click", async () => { await addWordLines($("#w-text").value); $("#w-text").value = ""; });
+$("#w-add").addEventListener("click", async () => { await addWordLines($("#w-text").value); $("#w-text").value = ""; $("#w-many").hidden = true; });
+// one word at a time: type, Enter
+$("#w-addf").addEventListener("submit", async e => { e.preventDefault(); const v = $("#w-one").value.trim(); if (!v) return; const n = await addWordLines(v); $("#w-one").value = ""; if (!n) msg("এই শব্দ তালিকায় আগেই আছে"); });
+$("#w-many-t").onclick = () => { const m = $("#w-many"); m.hidden = !m.hidden; if (!m.hidden) $("#w-text").focus(); };
 $("#w-clear").addEventListener("click", () => { if (WORDS.length && confirm("তালিকার সব শব্দ সরাবেন?")) { WORDS = []; wordPos = 0; saveWords(); } });
 $("#w-wd").addEventListener("click", async () => {
   const qid = langOf(SP.lang)[1];
@@ -148,15 +161,31 @@ $("#w-wd").addEventListener("click", async () => {
 
 /* ================= project (timeline) ================= */
 const P = { pcm: new Float32Array(0), rate: 48000, regions: [], sel: null, cursor: 0 };
+// Tracks: P.pcm / P.regions always belong to the active track (all editing works on it); playback mixes the
+// audible tracks (mute / solo / volume).
+const TR = { list: [{ id: "t1", name: "ট্র্যাক ১", pcm: P.pcm, regions: P.regions, gain: 1, mute: false, solo: false }], cur: 0 };
+const curTrack = () => TR.list[TR.cur];
+function storeCur() { const t = curTrack(); t.pcm = P.pcm; t.regions = P.regions; }
+function loadTrack(i) { storeCur(); TR.cur = Math.max(0, Math.min(TR.list.length - 1, i)); const t = curTrack(); P.pcm = t.pcm; P.regions = t.regions; P.sel = null; P.cursor = Math.min(P.cursor, t.pcm.length); }
+const maxLen = () => { storeCur(); return Math.max(0, ...TR.list.map(t => t.pcm.length)); };
+const audible = () => { storeCur(); const solo = TR.list.some(t => t.solo); return TR.list.filter(t => (solo ? t.solo : !t.mute) && t.pcm.length); };
+function mixRange(a, b, tracks = audible()) { const out = new Float32Array(Math.max(0, b - a)); tracks.forEach(t => { const g = t.gain; for (let i = 0, n = Math.min(b, t.pcm.length) - a; i < n; i++) out[i] += t.pcm[a + i] * g; }); return out; }
+function addTrack(pcm = new Float32Array(0), name, meta) {
+  storeCur(); const id = "t" + uid();
+  TR.list.push({ id, name: name || `ট্র্যাক ${toBn(TR.list.length + 1)}`, pcm, regions: pcm.length ? [newRegion(0, pcm.length, meta)] : [], gain: 1, mute: false, solo: false });
+  loadTrack(TR.list.length - 1); normalize(); drawTracks(); drawAll(); drawRegions(); saveProject();
+}
 const H = { undo: [], redo: [] };
 let clip = null; // clipboard
 const N = () => P.pcm.length;
-const snap = () => ({ pcm: P.pcm, regions: P.regions.map(r => ({ ...r })) });
+const snap = () => ({ tid: curTrack().id, pcm: P.pcm, regions: P.regions.map(r => ({ ...r })) });
+// Undo/redo land on the track they were made on.
+function restore(u) { const i = TR.list.findIndex(t => t.id === u.tid); if (i >= 0 && i !== TR.cur) { loadTrack(i); drawTracks(); } P.pcm = u.pcm; P.regions = u.regions; P.sel = null; normalize(); }
 function commit(fn, label) {
   stop(); H.undo.push(snap()); if (H.undo.length > 30) H.undo.shift(); H.redo = [];
   fn(); normalize(); afterEdit(label);
 }
-function afterEdit(label) { if (label) msg(label); drawAll(); drawRegions(); saveProject(); }
+function afterEdit(label) { if (label) msg(label); drawAll(); drawRegions(); saveProject(); if (typeof drawMenu === "function" && !psOpen.length) drawMenu(); }
 // Regions always cover the whole timeline, in order, without gaps.
 function normalize() {
   const n = N();
@@ -184,7 +213,7 @@ function splitAt(x) {
   const r2 = newRegion(x, r.b, { kind: r.kind }); r.b = x; P.regions.push(r2);
 }
 let saveT;
-function saveProject() { clearTimeout(saveT); saveT = setTimeout(() => DB.putProj({ pcm: P.pcm, rate: P.rate, regions: P.regions }).catch(() => {}), 800); }
+function saveProject() { clearTimeout(saveT); saveT = setTimeout(() => { storeCur(); DB.putProj({ rate: P.rate, cur: TR.cur, tracks: TR.list.map(t => ({ ...t })) }).catch(() => {}); drawTracks(); }, 800); }
 
 /* ================= audio helpers ================= */
 async function decodeRaw(blob) {
@@ -246,7 +275,7 @@ function drawAll(play) {
   const [W, Hh] = fit(cW); clampView();
   const g = cW.getContext("2d"); g.clearRect(0, 0, W, Hh);
   $("#drop").hidden = N() > 0;
-  $("#t-total").textContent = "/ " + fmt(N() / P.rate);
+  $("#t-total").textContent = "/ " + fmt(maxLen() / P.rate);
   if (!N()) { drawRuler(); drawOver(); status(); return; }
   const d = dpr();
   P.regions.forEach((r, k) => { const x0 = Math.max(0, xOf(r.a)), x1 = Math.min(W, xOf(r.b)); if (x1 < 0 || x0 > W) return;
@@ -321,7 +350,7 @@ function drawSpec(g, W, Hh) {
 function status() {
   const s = P.sel;
   $("#s-sel").textContent = s ? `নির্বাচিত ${fmt(s[0] / P.rate)} – ${fmt(s[1] / P.rate)} (${fmtS((s[1] - s[0]) / P.rate)})` : `কার্সর ${fmt(P.cursor / P.rate)}`;
-  $("#s-info").textContent = N() ? `${toBn(P.rate)} Hz · মোনো · ${toBn(P.regions.length)}টি অংশ` : "";
+  $("#s-info").textContent = N() ? `${TR.list.length > 1 ? curTrack().name + " · " : ""}${toBn(P.rate)} Hz · ${toBn(P.regions.length)}টি অংশ` : "";
   if (!recording) $("#t-clock").textContent = fmt((src && !previewing ? playPos() : P.cursor) / P.rate);
   $$("[data-sel]").forEach(b => { b.disabled = !s; });
   $("#e-undo").disabled = !H.undo.length; $("#e-redo").disabled = !H.redo.length; $("#e-paste").disabled = !clip;
@@ -359,24 +388,38 @@ const ctxA = () => actx || (actx = new (window.AudioContext || window.webkitAudi
 const looping = () => $("#t-loop").getAttribute("aria-pressed") === "true";
 let pRate = 1;
 const playPos = () => { if (!src) return P.cursor; const t = (ctxA().currentTime - playT0) * P.rate * pRate, len = playB - playA; return playA + (looping() && P.sel ? t % len : Math.min(t, len)); };
-function playBuffer(pcm, a, b, { loop = false, preview = false } = {}) {
+function playBuffer(pcm, a, b, { loop = false, preview = false, data = null } = {}) {
   stop(); const c = ctxA(); if (c.state === "suspended") c.resume();
-  const buf = c.createBuffer(1, Math.max(1, b - a), P.rate); buf.copyToChannel(pcm.slice(a, b), 0);
+  const buf = c.createBuffer(1, Math.max(1, b - a), P.rate); buf.copyToChannel(data || pcm.slice(a, b), 0);
   src = c.createBufferSource(); src.buffer = buf; src.loop = loop; pRate = preview ? 1 : +$("#t-rate").value || 1; src.playbackRate.value = pRate; src.connect(c.destination); src.start();
   playT0 = c.currentTime; playA = a; playB = b; previewing = preview; $("#t-play").classList.add("on");
-  src.onended = () => { if (!previewing) P.cursor = Math.min(N(), playB); stop(); };
+  src.onended = () => { if (!previewing) P.cursor = Math.min(maxLen(), playB); stop(); };
   const tick = () => { if (!src) return; if (!previewing) { const p = playPos(); followPlay(p); drawAll(p); $("#t-clock").textContent = fmt(p / P.rate); } raf = requestAnimationFrame(tick); }; tick();
 }
 function followPlay(p) { const x = xOf(p); if (x > viewW() * 0.95 || x < 0) { V.start = p - viewW() * V.spp * 0.1; clampView(); } }
 function playFromCursor() {
-  if (!N()) return;
-  if (P.sel) playBuffer(P.pcm, P.sel[0], P.sel[1], { loop: looping() }); else playBuffer(P.pcm, P.cursor >= N() - 10 ? 0 : P.cursor, N());
+  const end = maxLen(); if (!end) return;
+  const [a, b] = P.sel || [P.cursor >= end - 10 ? 0 : P.cursor, end];
+  // only the active track plays, unless “সব ট্র্যাক একসঙ্গে” is on (then mute, solo and volume apply)
+  const multi = TR.list.length > 1 && load("lx_snd_mixplay", false);
+  playBuffer(P.pcm, a, b, { loop: looping() && !!P.sel, data: multi ? mixRange(a, b) : null });
 }
-function stop() { cancelAnimationFrame(raf); if (src) { src.onended = null; try { src.stop(); } catch (e) {} } src = null; previewing = false; $("#t-play").classList.remove("on"); $("#fx-preview").classList.remove("on"); drawAll(); }
+// Clip previews (upload list, simple mode) share one player, so only one thing sounds at a time.
+let clipPlayer = null;
+function playBlob(blob) { stop(); clipPlayer = new Audio(URL.createObjectURL(blob)); clipPlayer.onended = () => URL.revokeObjectURL(clipPlayer.src); clipPlayer.play(); }
+function stop() { if (clipPlayer) { clipPlayer.pause(); clipPlayer = null; } cancelAnimationFrame(raf); if (src) { src.onended = null; try { src.stop(); } catch (e) {} } src = null; previewing = false; $("#t-play").classList.remove("on"); $("#fx-preview").classList.remove("on"); drawAll(); }
 $("#t-play").onclick = () => (src ? stop() : playFromCursor());
 $("#t-stop").onclick = () => stop();
 $("#t-home").onclick = () => { stop(); P.cursor = 0; V.start = 0; drawAll(); };
-$("#t-end").onclick = () => { stop(); P.cursor = N(); V.start = N(); drawAll(); };
+// previous / next part of the active track
+function jumpRegion(dir) {
+  const starts = P.regions.map(r => r.a), c = src && !previewing ? playPos() : P.cursor;
+  const to = dir > 0 ? starts.find(a => a > c + P.rate * 0.05) : [...starts].reverse().find(a => a < c - P.rate * 0.3);
+  const playing = src && !previewing; stop(); P.cursor = to ?? (dir > 0 ? N() : 0); P.sel = null;
+  if (xOf(P.cursor) < 0 || xOf(P.cursor) > viewW()) { V.start = P.cursor - viewW() * V.spp * 0.1; clampView(); }
+  drawAll(); if (playing) playFromCursor();
+}
+$("#t-prev").onclick = () => jumpRegion(-1); $("#t-next").onclick = () => jumpRegion(1);
 $("#t-loop").onclick = () => { const b = $("#t-loop"); b.setAttribute("aria-pressed", String(!looping())); };
 
 /* ================= recording ================= */
@@ -408,10 +451,11 @@ function meter() {
   const rms = Math.sqrt(s / a.length), db = 20 * Math.log10(rms + 1e-9), pdb = 20 * Math.log10(p + 1e-9);
   const pct = v => Math.max(0, Math.min(100, (v + 60) / 60 * 100));
   $("#t-meter").style.width = pct(db) + "%"; $("#t-meter").classList.toggle("hot", pdb > -3);
+  $("#bt-meter").style.width = pct(db) + "%"; $("#bt-meter").classList.toggle("hot", pdb > -3); // the same level inside the word card (phones)
   if (pdb > peakHold || performance.now() - peakT > 1500) { peakHold = pdb; peakT = performance.now(); }
   $("#t-peak").style.left = pct(peakHold) + "%"; $("#t-db").textContent = `${toBn(Math.max(-60, Math.round(pdb)))} dB`;
   vadTick(rms);
-  if (recording) $("#t-clock").textContent = fmt((Date.now() - recT0) / 1000);
+  if (recording) { const s = (Date.now() - recT0) / 1000; $("#t-clock").textContent = fmt(s); $("#bt-clock").textContent = fmt(s).slice(0, 8); }
   meterRaf = requestAnimationFrame(meter);
 }
 // Word-list mode: stop by itself after the word is said (silence after speech).
@@ -462,20 +506,25 @@ async function finishRec(word) {
     }
   }, marks.length ? `✓ রেকর্ড ${toBn(marks.length + 1)} ভাগে ভাগ হলো (দাগ ধরে)` : word ? `✓ “${word.word}” রেকর্ড হলো` : `✓ ${fmtS(pcm.length / P.rate)} রেকর্ড যোগ হলো`);
   zoomFit();
-  if (word) { word.done = true; if (wordPos < WORDS.length - 1) { wordPos++; saveWords(); if ($("#t-auto").checked) setTimeout(startRec, 450); } else { saveWords(); msg("✓ তালিকা শেষ!"); } }
+  if (word && $("#t-autoq").checked) { const r = [...P.regions].reverse().find(x => x.name === word.word); if (r) exportRegion(r).then(() => { drawQueue(); saveProject(); }); }
+  // একটানা: on to the next word and record it; otherwise stay (listen, retake) until ▶ is pressed.
+  if (word) { word.done = true; if ($("#t-auto").checked && wordPos < WORDS.length - 1) { wordPos++; saveWords(); setTimeout(startRec, 450); } else { saveWords(); msg(wordPos >= WORDS.length - 1 ? "✓ তালিকা শেষ!" : `✓ “${word.word}” রেকর্ড হলো — শুনে নিন, তারপর ▶ পরের শব্দ`); } }
 }
 $("#t-rec").onclick = () => (recording ? stopRec() : startRec());
 $("#t-mark").onclick = addMark;
 $("#t-wordmode").onchange = () => { store("lx_snd_wm", $("#t-wordmode").checked); drawBatch(); };
-$("#t-wordmode").checked = load("lx_snd_wm", false);
-$("#bt-go").onclick = () => { $("#t-auto").checked = true; recording ? stopRec() : startRec(); };
+$("#t-wordmode").checked = load("lx_snd_wm", true); // word list is the default mode
+$("#t-auto").checked = load("lx_snd_auto", false);
+$("#t-auto").onchange = () => { store("lx_snd_auto", $("#t-auto").checked); drawBatch(); };
+$("#bt-play").onclick = () => { const w = WORDS[wordPos], r = w && [...P.regions].reverse().find(x => x.name === w.word); if (r) playBuffer(P.pcm, r.a, r.b); else msg("এই শব্দের রেকর্ড নেই"); };
+$("#bt-go").onclick = () => (recording ? stopRec() : startRec());
 $("#bt-prev").onclick = () => { if (recording) return; wordPos = Math.max(0, wordPos - 1); saveWords(); };
 $("#bt-next").onclick = () => { if (recording) stopRecCancel(); wordPos = Math.min(WORDS.length - 1, wordPos + 1); saveWords(); };
 // Retake: the earlier take of this word leaves the timeline, then record again.
 $("#bt-redo").onclick = () => {
   if (recording) return; const w = WORDS[wordPos]; if (!w) return;
   const old = [...P.regions].reverse().find(r => r.name === w.word);
-  if (old) { const { a, b } = old; commit(() => replaceRange(a, b, EMPTY), `“${w.word}”-এর আগের রেকর্ড সরানো হলো`); }
+  if (old) { const c = sentClip(old); if (c && c.status !== "done") { DB.del(c.id); Q = Q.filter(x => x !== c); drawQueue(); } const { a, b } = old; commit(() => replaceRange(a, b, EMPTY), `“${w.word}”-এর আগের রেকর্ড সরানো হলো`); }
   w.done = false; saveWords(); startRec();
 };
 $("#bt-export").onclick = () => $("#r-export").click();
@@ -483,6 +532,35 @@ $("#bt-export").onclick = () => $("#r-export").click();
 function stopRecCancel() { if (!recording) return; recording = false; $("#t-rec").classList.remove("on"); document.body.classList.remove("is-rec"); if (rec) { rec.onstop = null; if (rec.state !== "inactive") rec.stop(); } drawBatch(); }
 
 /* ================= import ================= */
+// Several files: one after another on the active track, or each on its own track.
+async function importFiles(files) {
+  files = [...files].filter(f => /^audio\/|\.(wav|mp3|ogg|oga|opus|m4a|aac|flac|webm)$/i.test(f.type || f.name)); if (!files.length) return;
+  let sep = false;
+  const where = files.length > 1 || N() ? await choose(`${toBn(files.length)}টি অডিও কোথায় যাবে?`, [["queue", "সরাসরি আপলোড তালিকায় — নাম পরে লিখব"], ["same", files.length > 1 ? "টাইমলাইনে, একই ট্র্যাকে পরপর" : "সক্রিয় ট্র্যাকের শেষে"], ["sep", files.length > 1 ? "টাইমলাইনে, প্রতিটি আলাদা ট্র্যাকে" : "নতুন ট্র্যাকে"]]) : "same";
+  if (!where) return; sep = where === "sep";
+  if (where === "queue") { // each file becomes one upload, named after the file until renamed
+    for (const f of files) { try { msg(`“${f.name}” পড়া হচ্ছে…`); await tick0(); const a = await decode(f); await window.StudioLibre.addClip({ word: f.name.replace(/\.[^.]+$/, ""), kind: $("#r-kindall").value || "word", dur: a.pcm.length / a.rate, blob: encodeWav(a.pcm, a.rate) }); } catch (e) { msg(`“${f.name}” পড়া যায়নি`); } }
+    msg(`✓ ${toBn(files.length)}টি অডিও আপলোড তালিকায় — ডানে নাম লিখুন (Enter চাপলে পরেরটিতে যায়)`); $("#q-list [data-f=word]")?.focus(); return;
+  }
+  for (const f of files) {
+    msg(`“${f.name}” পড়া হচ্ছে…`); await tick0();
+    try {
+      const a = await decode(f); if (!maxLen()) P.rate = Math.min(a.rate, 48000);
+      const pcm = await resample(a.pcm, a.rate, P.rate), name = f.name.replace(/\.[^.]+$/, "");
+      if (sep && (N() || TR.list.length > 1 || f !== files[0])) addTrack(pcm, name, { name }); else commit(() => appendPart(pcm, { name }));
+    } catch (e) { msg(`“${f.name}” পড়া যায়নি: ${e.message}`); }
+  }
+  zoomFit(); msg(`✓ ${toBn(files.length)}টি অডিও যোগ হলো`);
+}
+// A small question with buttons; resolves to the chosen value (or null).
+function choose(title, options) {
+  return new Promise(ok => {
+    const d = document.createElement("div"); d.className = "st-help";
+    d.innerHTML = `<div class="st-help-in ch-in"><h3>${esc(title)}</h3><div class="ch-opts">${options.map(([v, l]) => `<button type="button" class="sbtn" data-v="${esc(v)}">${esc(l)}</button>`).join("")}</div><button type="button" class="sbtn ghost" data-v="">বাতিল</button></div>`;
+    document.body.appendChild(d);
+    d.addEventListener("click", e => { const b = e.target.closest("[data-v]"); if (!b && e.target !== d) return; d.remove(); ok(b ? b.dataset.v || null : null); });
+  });
+}
 async function importFile(f) {
   msg("ফাইল পড়া হচ্ছে…"); await tick0();
   try {
@@ -491,19 +569,57 @@ async function importFile(f) {
     commit(() => appendPart(pcm, { name: f.name.replace(/\.[^.]+$/, "") }), `✓ “${f.name}” যোগ হলো`); zoomFit();
   } catch (e) { msg("এই ফাইলটি পড়া যায়নি: " + e.message); }
 }
-$("#f-file").addEventListener("change", e => { if (e.target.files[0]) importFile(e.target.files[0]); e.target.value = ""; });
-$("#e-import").onclick = async () => { const f = await pickFile(); if (f) importFile(f); };
+$("#f-file").addEventListener("change", e => { importFiles(e.target.files); e.target.value = ""; });
+$("#e-import").onclick = () => { const i = document.createElement("input"); i.type = "file"; i.accept = "audio/*"; i.multiple = true; i.onchange = () => importFiles(i.files); i.click(); };
 $("#stage").addEventListener("dragover", e => { e.preventDefault(); $("#stage").classList.add("over"); });
 $("#stage").addEventListener("dragleave", () => $("#stage").classList.remove("over"));
-$("#stage").addEventListener("drop", e => { e.preventDefault(); $("#stage").classList.remove("over"); const f = e.dataTransfer.files[0]; if (f) importFile(f); });
-$("#e-export").onclick = () => { if (!N()) return; const [a, b] = P.sel || [0, N()]; const u = URL.createObjectURL(encodeWav(P.pcm.slice(a, b), P.rate)); const l = document.createElement("a"); l.href = u; l.download = `chapaswar-${new Date().toISOString().slice(0, 10)}.wav`; l.click(); setTimeout(() => URL.revokeObjectURL(u), 2000); };
-$("#e-new").onclick = () => { if (N() && !confirm("টাইমলাইন খালি করে নতুন প্রজেক্ট শুরু করবেন? (আপলোড তালিকা থাকবে)")) return; commit(() => { P.pcm = new Float32Array(0); P.regions = []; P.sel = null; P.cursor = 0; }, "নতুন প্রজেক্ট"); };
+$("#stage").addEventListener("drop", e => { e.preventDefault(); $("#stage").classList.remove("over"); importFiles(e.dataTransfer.files); });
+const saveAs = (pcm, name) => { const u = URL.createObjectURL(encodeWav(pcm, P.rate)); const l = document.createElement("a"); l.href = u; l.download = name.replace(/[\\/:*?"<>|]/g, "_") + ".wav"; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); };
+$("#e-export").onclick = async () => {
+  if (!maxLen()) { msg("নামানোর মতো অডিও নেই"); return; }
+  const day = new Date().toISOString().slice(0, 10), base = (PJ.name || "libre-studio") + "-" + day;
+  const opts = [...(P.sel ? [["sel", "নির্বাচিত অংশ"]] : []), ["track", `সক্রিয় ট্র্যাক (${curTrack().name})`], ...(TR.list.length > 1 ? [["mix", "সব ট্র্যাক মিশিয়ে একটি ফাইল"], ["tracks", "প্রতিটি ট্র্যাক আলাদা ফাইল"]] : []), ["parts", "প্রতিটি অংশ আলাদা ফাইল (“বাদ” ছাড়া)"]];
+  const c = await choose("কী নামাবেন? (WAV)", opts); if (!c) return;
+  const pause = () => new Promise(r => setTimeout(r, 350)); // browsers allow a series of downloads with small gaps
+  if (c === "sel") saveAs(P.pcm.slice(P.sel[0], P.sel[1]), base + "-নির্বাচিত");
+  if (c === "track") saveAs(P.pcm, base + "-" + curTrack().name);
+  if (c === "mix") saveAs(mixRange(0, maxLen()), base + "-মিক্স");
+  if (c === "tracks") { storeCur(); for (const t of TR.list) { if (t.pcm.length) { saveAs(t.pcm, base + "-" + t.name); await pause(); } } }
+  if (c === "parts") { let k = 0; for (const r of P.regions) { if (r.skip) continue; k++; saveAs(P.pcm.slice(r.a, r.b), `${base}-${String(k).padStart(2, "0")}${r.name ? "-" + r.name : ""}`); await pause(); } }
+};
+// Remove every track (all audio); the word list, speakers and upload list stay.
+function clearAll(question, label) {
+  stop(); if (recording) stopRecCancel();
+  if (question && maxLen() && !confirm(question)) return;
+  stop(); H.undo = []; H.redo = []; P.pcm = new Float32Array(0); P.regions = []; P.sel = null; P.cursor = 0; V.start = 0; markIn = null;
+  TR.list = [{ id: "t" + uid(), name: "ট্র্যাক ১", pcm: P.pcm, regions: P.regions, gain: 1, mute: false, solo: false }]; TR.cur = 0;
+  afterEdit(label); drawTracks();
+}
+// Empty the upload list: only what is already on Commons, or everything.
+async function clearQueue(all) {
+  const gone = Q.filter(c => all || c.status === "done"); if (!gone.length) { msg("সরানোর মতো কিছু নেই"); return 0; }
+  for (const c of gone) { await DB.del(c.id); if (SYNC()) fetch(`/store/clips/${c.id}`, { method: "DELETE" }).catch(() => {}); }
+  Q = Q.filter(c => !gone.includes(c)); P.regions.forEach(r => { if (gone.some(c => c.id === r.clipId)) r.clipId = ""; });
+  drawQueue(); saveProject(); return gone.length;
+}
+$("#e-new").onclick = async () => {
+  stop(); if (recording) stopRecCancel();
+  const c = await choose("নতুন প্রজেক্ট", [["all", "সব নতুন করে — অডিও, অংশ আর আপলোড তালিকা"], ["audio", "শুধু অডিও ও অংশ — আপলোড তালিকা থাকবে"]]); if (!c) return;
+  const left = Q.filter(x => x.status !== "done").length;
+  if (c === "all" && left && !confirm(`আপলোড তালিকায় ${toBn(left)}টি এখনো কমন্সে ওঠেনি — এগুলোও মুছে যাবে। নিশ্চিত?`)) return;
+  clearAll(null, "নতুন প্রজেক্ট"); if (c === "all") await clearQueue(true);
+};
+$("#q-clear-done").onclick = async () => { const n = await clearQueue(false); if (n) msg(`✓ কমন্সে ওঠা ${toBn(n)}টি তালিকা থেকে সরানো হলো`); };
+$("#q-clear-all").onclick = async () => { const left = Q.filter(x => x.status !== "done").length; if (!Q.length) return; if (!confirm(left ? `আপলোড তালিকার সব সরাবেন? ${toBn(left)}টি এখনো ওঠেনি — সেগুলোও মুছে যাবে।` : "আপলোড তালিকার সব সরাবেন?")) return; const n = await clearQueue(true); msg(`✓ আপলোড তালিকা খালি (${toBn(n)}টি সরানো হলো)`); };
+$("#r-unsplit").onclick = () => { if (P.regions.length < 2) return; P.sel = null; $("#e-merge").click(); };
+$("#r-clear").onclick = () => $("#e-clear").click();
+$("#e-clear").onclick = () => clearAll("সব অডিও ট্র্যাক মুছবেন? (শব্দ-তালিকা, বক্তা আর আপলোড তালিকা থাকবে)", "সব ট্র্যাক মুছে ফেলা হলো");
 
 /* ================= edits ================= */
 const selOrAll = () => (P.sel ? P.sel.slice() : [0, N()]);
 const EMPTY = new Float32Array(0);
-$("#e-undo").onclick = () => { const u = H.undo.pop(); if (!u) return; stop(); H.redo.push(snap()); P.pcm = u.pcm; P.regions = u.regions; P.sel = null; normalize(); afterEdit("পূর্বাবস্থায় ফেরানো হলো"); };
-$("#e-redo").onclick = () => { const u = H.redo.pop(); if (!u) return; stop(); H.undo.push(snap()); P.pcm = u.pcm; P.regions = u.regions; P.sel = null; normalize(); afterEdit("পুনরায় করা হলো"); };
+$("#e-undo").onclick = () => { const u = H.undo.pop(); if (!u) return; stop(); const i = TR.list.findIndex(t => t.id === u.tid); if (i >= 0 && i !== TR.cur) { loadTrack(i); drawTracks(); } H.redo.push(snap()); restore(u); afterEdit("পূর্বাবস্থায় ফেরানো হলো"); };
+$("#e-redo").onclick = () => { const u = H.redo.pop(); if (!u) return; stop(); const i = TR.list.findIndex(t => t.id === u.tid); if (i >= 0 && i !== TR.cur) { loadTrack(i); drawTracks(); } H.undo.push(snap()); restore(u); afterEdit("পুনরায় করা হলো"); };
 $("#e-copy").onclick = () => { if (!P.sel) return; clip = P.pcm.slice(P.sel[0], P.sel[1]); msg(`কপি: ${fmtS(clip.length / P.rate)}`); status(); };
 $("#e-cut").onclick = () => { if (!P.sel) return; clip = P.pcm.slice(P.sel[0], P.sel[1]); const [a, b] = P.sel; commit(() => { replaceRange(a, b, EMPTY); P.cursor = a; P.sel = null; }, "কাটা হলো"); };
 $("#e-paste").onclick = () => { if (!clip) return; const [a, b] = P.sel || [P.cursor, P.cursor]; commit(() => { replaceRange(a, b, clip); P.sel = [a, a + clip.length]; }, "পেস্ট হলো"); };
@@ -512,7 +628,7 @@ $("#e-crop").onclick = () => { if (!P.sel) return; const [a, b] = P.sel; commit(
 $("#e-silence").onclick = () => { if (!P.sel) return; const [a, b] = P.sel; commit(() => replaceRange(a, b, new Float32Array(b - a)), "নিঃশব্দ করা হলো"); };
 $("#e-insil").onclick = () => { const n = Math.round(P.rate * 0.5); commit(() => replaceRange(P.cursor, P.cursor, new Float32Array(n)), "আধা সেকেন্ড নীরবতা যোগ হলো"); };
 $("#e-reverse").onclick = () => { if (!P.sel) return; const [a, b] = P.sel; commit(() => replaceRange(a, b, P.pcm.slice(a, b).reverse()), "উল্টো করা হলো"); };
-$("#e-split").onclick = () => { if (src && !previewing) { const x = snapQuiet(playPos()); markEdit(() => splitAt(x), "চলার মধ্যেই ভাগ হলো"); return; } const pts = P.sel ? P.sel : [P.cursor]; commit(() => pts.forEach(splitAt), "ভাগ হলো"); };
+$("#e-split").onclick = () => { if (src && !previewing) { const x = snapQuiet(playPos()); markEdit(() => splitAt(x), "চলার মধ্যেই ভাগ হলো"); mapWords(true); return; } const pts = P.sel ? P.sel : [P.cursor]; commit(() => pts.forEach(splitAt), "ভাগ হলো"); mapWords(true); };
 
 /* mark words while listening: A = word starts, D = word ends (snapped to the nearest quiet moment) */
 var markIn = null; // var: drawAll may run before this line
@@ -573,6 +689,7 @@ $("#e-autosplit").onclick = () => {
     normalize(); const pk = peakOf(P.pcm);
     P.regions.forEach(r => { if (peakOf(P.pcm, r.a, r.b) < pk * 0.12) r.skip = true; });
   }, `${toBn(cuts.length + 1)}টি কথার অংশ পাওয়া গেছে (নীরব অংশ “বাদ”)`);
+  mapWords(true);
 };
 
 /* ================= DSP ================= */
@@ -652,7 +769,7 @@ async function processFx(pcm) {
 }
 
 /* ================= effects rack UI ================= */
-const FX_FMT = { "#fx-nr": v => toBn(v) + "%", "#fx-hp": v => toBn(v), "#fx-bass": v => toBn(v) + " dB", "#fx-mid": v => toBn(v) + " dB", "#fx-treble": v => toBn(v) + " dB", "#fx-comp": v => toBn(v) + " dB", "#fx-pitch": v => (v > 0 ? "+" : "") + toBn(v), "#fx-tempo": v => toBn(v) + "%", "#fx-gain": v => (v > 0 ? "+" : "") + toBn(v) + " dB", "#mx-vol": v => toBn(v) + " dB", "#sp-vstr": v => toBn(v) + "%" };
+const FX_FMT = { "#fx-nr": v => toBn(v) + "%", "#fx-hp": v => toBn(v), "#fx-bass": v => toBn(v) + " dB", "#fx-mid": v => toBn(v) + " dB", "#fx-treble": v => toBn(v) + " dB", "#fx-comp": v => toBn(v) + " dB", "#fx-pitch": v => (v > 0 ? "+" : "") + toBn(v), "#fx-tempo": v => toBn(v) + "%", "#fx-gain": v => (v > 0 ? "+" : "") + toBn(v) + " dB", "#mx-vol": v => toBn(v) + " dB", "#mx-tvol": v => (v > 0 ? "+" : "") + toBn(v) + " dB", "#sp-vstr": v => toBn(v) + "%" };
 function fxLabels() {
   Object.entries(FX_FMT).forEach(([id, f]) => { const el = $(id); if (el) el.nextElementSibling.textContent = f(+el.value); });
   $$(".fx-mod").forEach(m => { const c = m.querySelector(".fx-h input"); if (c) m.classList.toggle("on", c.checked); });
@@ -752,24 +869,35 @@ $("#sp-noband").onclick = () => voiceBand(false);
 /* ================= regions table ================= */
 const kindOpts = sel => Object.entries(KINDS).map(([k, v]) => `<option value="${k}"${k === sel ? " selected" : ""}>${v[0]}</option>`).join("");
 $("#r-kindall").innerHTML = `<option value="">সব অংশের ধরন…</option>` + kindOpts("");
+// Compact cards in the right column: name and play on top; time, kind and the small tools below.
 function drawRegions() {
   $("#r-count").textContent = toBn(P.regions.length);
-  $("#r-body").innerHTML = P.regions.map((r, k) => `<tr data-id="${r.id}" class="${r.skip ? "skip" : ""}">
-    <td><span class="dot" style="background:${REG_COLORS[k % REG_COLORS.length]}"></span>${toBn(k + 1)}</td>
-    <td class="acts"><button type="button" class="ib" data-act="play" title="শুনুন">▶</button><button type="button" class="ib" data-act="sel" title="নির্বাচন">⌖</button><button type="button" class="ib${infoCount(r) ? " has" : ""}" data-act="info" title="শব্দের বিস্তারিত (অর্থ ইত্যাদি)">ⓘ${infoCount(r) ? `<sup>${toBn(infoCount(r))}</sup>` : ""}</button>${k < P.regions.length - 1 ? `<button type="button" class="ib" data-act="join" title="পরের অংশের সঙ্গে জোড়া">⤓</button>` : ""}</td>
-    <td class="mono">${fmt(r.a / P.rate)}</td><td class="mono">${fmtS((r.b - r.a) / P.rate)}</td>
-    <td><div class="nm"><input data-f="name" value="${esc(r.name)}" placeholder="শব্দ বা শিরোনাম">${r.lexeme ? `<a class="lx" href="https://www.wikidata.org/wiki/Lexeme:${esc(r.lexeme)}" target="_blank" rel="noopener">${esc(r.lexeme)}</a>` : ""}</div></td>
-    <td><select data-f="kind">${kindOpts(r.kind)}</select></td>
-    <td><input data-f="text" value="${esc(r.text)}" placeholder="ঐচ্ছিক"></td>
-    <td><input type="checkbox" data-f="skip"${r.skip ? " checked" : ""} title="আপলোডে বাদ"></td></tr>`).join("") || `<tr><td colspan="8" class="empty">রেকর্ড করলে বা ফাইল আনলে অংশগুলো এখানে আসবে। ✂ দিয়ে ভাগ করুন, ⤓ দিয়ে জোড়া দিন।</td></tr>`;
+  $("#r-body").innerHTML = P.regions.map((r, k) => `<div class="rg${r.skip ? " skip" : ""}" data-id="${r.id}">
+    <div class="rg-top"><span class="dot" style="background:${REG_COLORS[k % REG_COLORS.length]}"></span><span class="rg-n">${toBn(k + 1)}</span>
+      <input data-f="name" value="${esc(r.name)}" placeholder="শব্দ বা শিরোনাম">
+      <button type="button" class="ib" data-act="play" title="শুনুন">▶</button></div>
+    <div class="rg-sub"><span class="mono">${fmt(r.a / P.rate).slice(0, 8)} · ${fmtS((r.b - r.a) / P.rate)}</span>
+      <select data-f="kind">${kindOpts(r.kind)}</select>
+      ${r.lexeme ? `<a class="lx" href="https://www.wikidata.org/wiki/Lexeme:${esc(r.lexeme)}" target="_blank" rel="noopener">${esc(r.lexeme)}</a>` : ""}
+      <span class="s-fill"></span>
+      <button type="button" class="ib${infoCount(r) ? " has" : ""}" data-act="info" title="শব্দের বিস্তারিত (অর্থ ইত্যাদি)">ⓘ</button>
+      <button type="button" class="ib" data-act="sel" title="টাইমলাইনে নির্বাচন">⌖</button>
+      ${k < P.regions.length - 1 ? `<button type="button" class="ib" data-act="join" title="পরের অংশের সঙ্গে জোড়া">⤓</button>` : ""}
+      <label class="rg-skip" title="আপলোডে বাদ"><input type="checkbox" data-f="skip"${r.skip ? " checked" : ""}>বাদ</label></div>
+    ${r.kind !== "word" ? `<input class="rg-text" data-f="text" value="${esc(r.text)}" placeholder="কথা / লিরিক (ঐচ্ছিক)">` : ""}</div>`).join("") || `<p class="hint">রেকর্ড করলে বা ফাইল আনলে অংশগুলো এখানে আসবে। ✂ দিয়ে ভাগ করুন, ⤓ দিয়ে জোড়া দিন।</p>`;
 }
-const regOf = el => P.regions.find(r => r.id === el.closest("tr")?.dataset.id);
+const regOf = el => P.regions.find(r => r.id === el.closest("[data-id]")?.dataset.id);
 $("#r-body").addEventListener("change", async e => {
   const r = regOf(e.target), f = e.target.dataset.f; if (!r || !f) return;
   r[f] = e.target.type === "checkbox" ? e.target.checked : e.target.value.trim();
   if (f === "name" || f === "kind") { r.lexeme = r.kind === "word" ? await findLexeme(r.name) : ""; drawRegions(); }
-  if (f === "skip") e.target.closest("tr").classList.toggle("skip", r.skip);
+  if (f === "skip") e.target.closest(".rg").classList.toggle("skip", r.skip);
   drawAll(); saveProject();
+});
+// Enter in a name box moves to the next part's name — quick naming of many recordings.
+$("#r-body").addEventListener("keydown", e => {
+  if (e.key !== "Enter" || e.target.dataset.f !== "name") return; e.preventDefault();
+  const all = $$("#r-body [data-f=name]"), i = all.indexOf(e.target); e.target.blur(); setTimeout(() => all[i + 1]?.focus() || $$("#r-body [data-f=name]")[i + 1]?.focus(), 30);
 });
 $("#r-body").addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return; const r = regOf(b);
@@ -778,19 +906,36 @@ $("#r-body").addEventListener("click", e => {
   if (b.dataset.act === "info") { r.word = r.name; openInfo(r, () => { delete r.word; drawRegions(); saveProject(); }); return; }
   if (b.dataset.act === "join") commit(() => { const i = P.regions.indexOf(r), nx = P.regions[i + 1]; if (nx) { r.b = nx.b; P.regions.splice(i + 1, 1); } }, "অংশ জোড়া হলো");
 });
-function highlightRow(id) { const tr = $(`#r-body tr[data-id="${id}"]`); if (tr) { tr.scrollIntoView({ block: "nearest" }); tr.classList.add("hl"); setTimeout(() => tr.classList.remove("hl"), 900); } }
-$("#r-kindall").onchange = e => { if (!e.target.value) return; P.regions.forEach(r => { r.kind = e.target.value; }); drawRegions(); saveProject(); e.target.value = ""; };
+function highlightRow(id) { const tr = $(`#r-body [data-id="${id}"]`); if (tr) { tr.scrollIntoView({ block: "nearest" }); tr.classList.add("hl"); setTimeout(() => tr.classList.remove("hl"), 900); } }
+// The chosen kind stays shown: it is set on every part now and used for new parts.
+$("#r-kindall").onchange = e => { const k = e.target.value; store("lx_snd_kindall", k); if (!k) return; P.regions.forEach(r => { r.kind = k; if (k !== "word") r.lexeme = ""; }); drawRegions(); saveProject(); msg(`সব অংশের ধরন: ${KINDS[k][0]}`); };
+$("#r-kindall").value = load("lx_snd_kindall", "");
+/* word list → parts: unnamed parts take the list's next unrecorded words, in order */
+function mapWords(quiet) {
+  const open = () => { for (let k = 0; k < WORDS.length; k++) if (!WORDS[k].done) return k; return -1; };
+  let n = 0;
+  P.regions.forEach(r => {
+    if (r.name || r.skip) return; const i = open(); if (i < 0) return; const w = WORDS[i];
+    r.name = w.word; r.kind = "word"; r.lexeme = w.lexeme || ""; if (w.gloss) r.info = { ...(r.info || {}), gloss: w.gloss }; w.done = true; n++;
+  });
+  if (n) { wordPos = Math.max(0, open()); saveWords(); drawRegions(); drawAll(); saveProject(); }
+  if (!quiet || n) msg(n ? `✓ ${toBn(n)}টি অংশে শব্দ-তালিকার নাম বসল (ক্রমানুসারে)` : WORDS.some(w => !w.done) ? "নামহীন অংশ নেই" : "শব্দ-তালিকায় বাকি শব্দ নেই");
+  return n;
+}
+$("#r-map").onclick = () => mapWords(false);
+const sentClip = r => r.clipId && Q.find(c => c.id === r.clipId);
+async function exportRegion(r, name) {
+  const old = sentClip(r); if (old) { if (old.status === "done") return null; await DB.del(old.id); Q = Q.filter(x => x !== old); } // re-sent: the newer audio wins
+  let pcm = P.pcm.slice(r.a, r.b); const pk = peakOf(pcm); if (pk > 0.99) pcm = pcm.map(v => v * 0.98 / pk);
+  const c = { id: uid(), word: name ?? r.name, kind: r.kind || "word", text: r.text || "", lexeme: r.lexeme || "", info: r.info || (r.text && r.kind === "word" ? { gloss: r.text } : undefined), dur: (r.b - r.a) / P.rate, blob: encodeWav(pcm, P.rate), status: "new", created: new Date().toISOString(), speaker: { ...SP }, project: PJ.name, extra: PJ.extra };
+  await DB.put(c); Q.push(c); syncClip(c, true); r.clipId = c.id; return c;
+}
 $("#r-export").onclick = async () => {
-  const list = P.regions.filter(r => !r.skip && r.b - r.a > P.rate * 0.15);
-  if (!list.length) { msg("পাঠানোর মতো কোনো অংশ নেই।"); return; }
+  const list = P.regions.filter(r => !r.skip && r.b - r.a > P.rate * 0.15 && !sentClip(r));
+  if (!list.length) { msg(P.regions.some(sentClip) ? "সব অংশ আগেই আপলোড তালিকায় আছে" : "পাঠানোর মতো কোনো অংশ নেই।"); return; }
   const base = $("#r-title").value.trim();
-  for (const [i, r] of list.entries()) {
-    let pcm = P.pcm.slice(r.a, r.b); const pk = peakOf(pcm); if (pk > 0.99) pcm = pcm.map(v => v * 0.98 / pk);
-    const name = r.name || (base ? (list.length > 1 ? `${base} (${toBn(i + 1)})` : base) : "");
-    const c = { id: uid(), word: name, kind: r.kind || "word", text: r.text || "", lexeme: r.lexeme || "", info: r.info || (r.text && r.kind === "word" ? { gloss: r.text } : undefined), dur: (r.b - r.a) / P.rate, blob: encodeWav(pcm, P.rate), status: "new", created: new Date().toISOString(), speaker: { ...SP }, project: PJ.name, extra: PJ.extra };
-    await DB.put(c); Q.push(c); syncClip(c, true);
-  }
-  drawQueue(); msg(`✓ ${toBn(list.length)}টি অংশ আপলোড তালিকায় গেছে →`);
+  for (const [i, r] of list.entries()) await exportRegion(r, r.name || (base ? (list.length > 1 ? `${base} (${toBn(i + 1)})` : base) : ""));
+  drawQueue(); drawRegions(); saveProject(); setRTab("pn-queue"); msg(`✓ ${toBn(list.length)}টি অংশ আপলোড তালিকায় গেছে`);
 };
 
 /* ================= upload list ================= */
@@ -813,9 +958,14 @@ const qOf = el => Q.find(c => c.id === el.closest(".q-item")?.dataset.id);
 document.addEventListener("click", async e => {
   const b = e.target.closest(".q-list [data-act]"); if (!b) return; const c = qOf(b);
   if (b.dataset.act === "info") { if (c.status === "done") { msg("আপলোড হয়ে গেছে — বিস্তারিত কমন্সে সরাসরি বদলান।"); } openInfo(c, async () => { await DB.put(c); drawQueue(); syncClip(c, false); }); return; }
-  if (b.dataset.act === "open") { try { const a = await decode(await getBlob(c)); if (!N()) P.rate = a.rate; const pcm = await resample(a.pcm, a.rate, P.rate); commit(() => appendPart(pcm, { name: c.word, kind: c.kind, text: c.text, lexeme: c.lexeme }), `✓ “${c.word || "নামহীন"}” টাইমলাইনে খোলা হলো`); zoomFit(); document.querySelector("#t-easy") && document.body.classList.contains("easy-mode") && $("#ez-full").click(); } catch (err) { msg("খোলা যায়নি: " + err.message); } return; }
-  if (b.dataset.act === "play") { const a = new Audio(URL.createObjectURL(await getBlob(c))); a.onended = () => URL.revokeObjectURL(a.src); a.play(); }
+  if (b.dataset.act === "open") { try { const a = await decode(await getBlob(c)); if (!N()) P.rate = a.rate; const pcm = await resample(a.pcm, a.rate, P.rate); commit(() => appendPart(pcm, { name: c.word, kind: c.kind, text: c.text, lexeme: c.lexeme }), `✓ “${c.word || "নামহীন"}” টাইমলাইনে খোলা হলো`); setEditor(true); zoomFit(); } catch (err) { msg("খোলা যায়নি: " + err.message); } return; }
+  if (b.dataset.act === "play") playBlob(await getBlob(c));
   if (b.dataset.act === "del") { if (c.status !== "done" && !confirm(`“${c.word || "নামহীন"}” মুছবেন?`)) return; await DB.del(c.id); Q = Q.filter(x => x !== c); drawQueue(); if (SYNC()) fetch(`/store/clips/${c.id}`, { method: "DELETE" }).catch(() => {}); }
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || !e.target.closest(".q-list") || e.target.dataset.f !== "word") return; e.preventDefault();
+  const list = e.target.closest(".q-list"), all = [...list.querySelectorAll("[data-f=word]")], i = all.indexOf(e.target); e.target.blur();
+  setTimeout(() => [...list.querySelectorAll("[data-f=word]")][i + 1]?.focus(), 60);
 });
 document.addEventListener("change", async e => { if (!e.target.closest(".q-list")) return; const c = qOf(e.target); if (!c || e.target.dataset.f !== "word") return; c.word = e.target.value.trim(); c.lexeme = c.kind === "word" ? await findLexeme(c.word) : ""; await DB.put(c); syncClip(c, false); });
 
@@ -947,8 +1097,9 @@ function commonsDialog() {
   if (!d) {
     d = document.createElement("div"); d.id = "cm-dlg"; d.className = "st-help";
     d.innerHTML = `<div class="st-help-in cm-in"><h3>কমন্স থেকে অডিও আনুন</h3>
-      <form class="row" id="cm-f"><input id="cm-q" placeholder="শব্দ, গানের নাম বা File:… নাম" style="flex:1"><button class="sbtn pri">খুঁজুন</button></form>
-      <div class="cm-list" id="cm-list"><p class="hint">যেমন: “Bn-জল” বা “Bengali folk song”। শুধু অডিও ফাইল আসবে।</p></div>
+      <form class="row" id="cm-f"><input id="cm-q" placeholder="শব্দ, File:… বা Category:…" style="flex:1"><button class="sbtn pri">খুঁজুন</button></form>
+      <div class="cm-list" id="cm-list"><p class="hint">নাম দিয়ে খুঁজুন (যেমন “Bengali pronunciation”), একটি ফাইল (File:…), বা পুরো বিষয়শ্রেণি (Category:…)। শুধু অডিও আসবে।</p></div>
+      <div class="cm-bar" id="cm-bar" hidden><label><input type="checkbox" id="cm-all"> সব বাছুন</label><span class="s-fill"></span><button type="button" class="sbtn pri" id="cm-get" disabled>ফাইল বাছুন</button></div>
       <button type="button" class="sbtn" id="cm-x">বন্ধ</button></div>`;
     document.body.appendChild(d);
     d.addEventListener("click", e => { if (e.target === d || e.target.id === "cm-x") d.hidden = true; });
@@ -957,24 +1108,252 @@ function commonsDialog() {
       e.preventDefault(); const q = $("#cm-q").value.trim(); if (!q) return; $("#cm-list").innerHTML = `<p class="hint">খোঁজা হচ্ছে…</p>`;
       try {
         const j = /^file:/i.test(q) ? await api({ action: "query", titles: q, prop: "imageinfo", iiprop: "url|size|mime" })
-          : await api({ action: "query", generator: "search", gsrsearch: `${q} filetype:audio`, gsrnamespace: 6, gsrlimit: 20, prop: "imageinfo", iiprop: "url|size|mime" });
+          : /^(category|বিষয়শ্রেণী|বিষয়শ্রেণি):/i.test(q) ? await api({ action: "query", generator: "categorymembers", gcmtitle: "Category:" + q.replace(/^[^:]+:/, ""), gcmtype: "file", gcmlimit: 100, prop: "imageinfo", iiprop: "url|size|mime" })
+          : await api({ action: "query", generator: "search", gsrsearch: `${q} filetype:audio`, gsrnamespace: 6, gsrlimit: 40, prop: "imageinfo", iiprop: "url|size|mime" });
         const pages = Object.values(j.query?.pages || {}).filter(p => p.imageinfo?.[0]?.mime?.startsWith("audio") || /\.(ogg|oga|wav|mp3|flac|opus|webm)$/i.test(p.title));
-        $("#cm-list").innerHTML = pages.map(p => { const i = p.imageinfo?.[0] || {}; return `<div class="cm-item"><audio controls preload="none" src="${esc(i.url || "")}"></audio><div><b>${esc(p.title.replace(/^File:/, ""))}</b><small>${i.size ? toBn(Math.round(i.size / 1024)) + " KB" : ""} · <a href="${esc(i.descriptionurl || "https://commons.wikimedia.org/wiki/" + encodeURIComponent(p.title))}" target="_blank" rel="noopener">কমন্স</a></small></div><button type="button" class="sbtn pri" data-url="${esc(i.url || "")}" data-title="${esc(p.title)}">আনুন</button></div>`; }).join("") || `<p class="hint">কিছু পাওয়া যায়নি।</p>`;
+        $("#cm-list").innerHTML = pages.map(p => { const i = p.imageinfo?.[0] || {}; return `<div class="cm-item"><input type="checkbox" class="cm-pick" data-url="${esc(i.url || "")}" data-title="${esc(p.title)}"><audio controls preload="none" src="${esc(i.url || "")}"></audio><div><b>${esc(p.title.replace(/^File:/, ""))}</b><small>${i.size ? toBn(Math.round(i.size / 1024)) + " KB" : ""} · <a href="${esc(i.descriptionurl || "https://commons.wikimedia.org/wiki/" + encodeURIComponent(p.title))}" target="_blank" rel="noopener">কমন্স</a></small></div></div>`; }).join("") || `<p class="hint">কিছু পাওয়া যায়নি।</p>`;
+        $("#cm-bar").hidden = !pages.length; $("#cm-all").checked = false; cmCount();
       } catch (err) { $("#cm-list").innerHTML = `<p class="hint">খোঁজা যায়নি: ${esc(err.message)}</p>`; }
     };
-    $("#cm-list").addEventListener("click", async e => {
-      const b = e.target.closest("[data-url]"); if (!b) return; b.disabled = true; b.textContent = "আনা হচ্ছে…";
-      try {
-        const blob = await (await fetch(b.dataset.url)).blob(); const a = await decode(blob);
-        if (!N()) P.rate = Math.min(a.rate, 48000); const pcm = await resample(a.pcm, a.rate, P.rate);
-        const name = b.dataset.title.replace(/^File:/, "").replace(/\.[^.]+$/, "");
-        commit(() => appendPart(pcm, { name, text: `উৎস: ${b.dataset.title}` }), `✓ কমন্স থেকে “${name}” আনা হলো`); zoomFit(); d.hidden = true;
-      } catch (err) { b.textContent = "এই ব্রাউজারে চালানো যায়নি"; }
-    });
+    const cmCount = () => { const n = $$(".cm-pick:checked").length; $("#cm-get").disabled = !n; $("#cm-get").textContent = n ? `নির্বাচিত ${toBn(n)}টি আনুন` : "ফাইল বাছুন"; };
+    $("#cm-list").addEventListener("change", cmCount);
+    $("#cm-all").onchange = e => { $$(".cm-pick").forEach(c => { c.checked = e.target.checked; }); cmCount(); };
+    $("#cm-get").onclick = async () => {
+      const picks = $$(".cm-pick:checked"); if (!picks.length) return;
+      const sep = picks.length > 1 ? (await choose(`${toBn(picks.length)}টি ফাইল কোথায় বসবে?`, [["same", "একই ট্র্যাকে, পরপর"], ["sep", "প্রতিটি আলাদা ট্র্যাকে"]])) : "same"; if (!sep) return;
+      let ok = 0;
+      for (const [k, c] of picks.entries()) {
+        $("#cm-get").textContent = `আনা হচ্ছে ${toBn(k + 1)}/${toBn(picks.length)}…`;
+        try {
+          const a = await decode(await (await fetch(c.dataset.url)).blob()); if (!maxLen()) P.rate = Math.min(a.rate, 48000);
+          const pcm = await resample(a.pcm, a.rate, P.rate), name = c.dataset.title.replace(/^File:/, "").replace(/\.[^.]+$/, ""), meta = { name, text: `উৎস: ${c.dataset.title}` };
+          if (sep === "sep" && (N() || k > 0)) addTrack(pcm, name, meta); else commit(() => appendPart(pcm, meta));
+          ok++; c.closest(".cm-item").classList.add("got");
+        } catch (err) { c.closest(".cm-item").classList.add("bad"); }
+      }
+      zoomFit(); msg(`✓ কমন্স থেকে ${toBn(ok)}টি ফাইল আনা হলো${ok < picks.length ? ` (${toBn(picks.length - ok)}টি এই ব্রাউজারে চালানো যায়নি)` : ""}`); if (ok) d.hidden = true; cmCount();
+    };
   }
   d.hidden = false; $("#cm-q").focus();
 }
 $("#e-commons").onclick = commonsDialog;
+
+/* ================= tracks strip ================= */
+function drawTracks() {
+  const el = $("#tracks"); if (!el) return; storeCur();
+  el.hidden = TR.list.length < 2; // one track needs no track list
+  el.innerHTML = `<div class="trk-head"><label class="trk-mix" title="বন্ধ থাকলে শুধু সক্রিয় ট্র্যাক বাজে"><input type="checkbox" id="trk-mixplay"${load("lx_snd_mixplay", false) ? " checked" : ""}> সব ট্র্যাক একসঙ্গে শুনুন</label><button type="button" class="trk-clear" id="trk-clear" title="সব অডিও ট্র্যাক মুছুন">সব ট্র্যাক মুছুন ✕</button></div>` + TR.list.map((t, i) => `<div class="trk${i === TR.cur ? " on" : ""}${t.mute ? " muted" : ""}" data-i="${i}">
+      <button type="button" class="trk-pick" title="এই ট্র্যাক সম্পাদনা করুন">${i === TR.cur ? "●" : "○"}</button>
+      <input class="trk-name" value="${esc(t.name)}" title="নাম বদলান">
+      <span class="trk-len">${t.pcm.length ? fmtS(t.pcm.length / P.rate) : "খালি"}</span>
+      <button type="button" class="trk-b${t.mute ? " act" : ""}" data-a="mute" title="বন্ধ (মিউট)">M</button>
+      <button type="button" class="trk-b${t.solo ? " act" : ""}" data-a="solo" title="শুধু এটি (সোলো)">S</button>
+      <input type="range" class="trk-vol" min="0" max="150" value="${Math.round(t.gain * 100)}" title="ভলিউম ${toBn(Math.round(t.gain * 100))}%">
+      ${TR.list.length > 1 ? `<button type="button" class="trk-b" data-a="del" title="ট্র্যাক মুছুন">✕</button>` : ""}</div>`).join("")
+    ;
+  // the mix source list
+  const src2 = $("#mx-src"); if (src2) src2.innerHTML = TR.list.map((t, i) => i === TR.cur ? "" : `<option value="${i}">${esc(t.name)}</option>`).join("") || `<option value="">অন্য ট্র্যাক নেই</option>`;
+}
+$("#tracks").addEventListener("click", e => {
+  if (e.target.id === "trk-clear") { $("#e-clear").click(); return; }
+  const row = e.target.closest(".trk"); if (!row) return; const i = +row.dataset.i, t = TR.list[i], a = e.target.closest("[data-a]")?.dataset.a;
+  if (a === "mute") t.mute = !t.mute;
+  else if (a === "solo") t.solo = !t.solo;
+  else if (a === "del") { if (t.pcm.length && !confirm(`“${t.name}” ট্র্যাক মুছবেন?`)) return; stop(); storeCur(); TR.list.splice(i, 1); TR.cur = Math.min(TR.cur >= i ? Math.max(0, TR.cur - (TR.cur > i ? 1 : 0)) : TR.cur, TR.list.length - 1); const c = curTrack(); P.pcm = c.pcm; P.regions = c.regions; P.sel = null; H.undo = H.undo.filter(x => x.tid !== t.id); H.redo = []; normalize(); drawRegions(); zoomFit(); }
+  else if (!e.target.matches(".trk-vol")) {
+    if (i !== TR.cur) {
+      stop(); loadTrack(i); normalize(); drawRegions(); zoomFit(); msg(`“${t.name}” সম্পাদনা হচ্ছে`);
+      if (e.target.matches(".trk-name")) { drawTracks(); const inp = $(`.trk[data-i="${i}"] .trk-name`); inp.focus(); const n = inp.value.length; inp.setSelectionRange(n, n); return; } // the click was meant for the name: keep typing there
+    } else if (e.target.matches(".trk-name")) return;
+  }
+  drawTracks(); saveProject();
+});
+$("#tracks").addEventListener("change", e => { if (e.target.id === "trk-mixplay") { store("lx_snd_mixplay", e.target.checked); return; } const row = e.target.closest(".trk"); if (!row) return; const t = TR.list[+row.dataset.i];
+  if (e.target.matches(".trk-name")) t.name = e.target.value.trim() || t.name;
+  if (e.target.matches(".trk-vol")) t.gain = +e.target.value / 100;
+  drawTracks(); saveProject(); status(); });
+
+/* ================= mix tracks ================= */
+$("#mx-track").onclick = () => {
+  const i = +$("#mx-src").value; if (!Number.isInteger(i) || !TR.list[i] || i === TR.cur) { msg("মেশানোর মতো অন্য ট্র্যাক নেই — ＋ নতুন ট্র্যাক বা একাধিক ফাইল আনুন"); return; }
+  storeCur(); const s = TR.list[i].pcm, g = Math.pow(10, +$("#mx-tvol").value / 20);
+  const a = P.sel ? P.sel[0] : P.cursor >= N() ? 0 : P.cursor, len = P.sel ? Math.min(P.sel[1] - P.sel[0], s.length) : s.length;
+  commit(() => { const o = new Float32Array(Math.max(N(), a + len)); o.set(P.pcm); for (let k = 0; k < len; k++) o[a + k] += s[k] * g; const pk = peakOf(o, a, a + len); if (pk > 0.99) for (let k = a; k < a + len; k++) o[k] *= 0.98 / pk; P.pcm = o; }, `✓ “${TR.list[i].name}” সক্রিয় ট্র্যাকে মেশানো হলো`);
+};
+$("#trk-new").onclick = () => { stop(); addTrack(); msg("নতুন ট্র্যাক — এখন রেকর্ড বা ফাইল এখানে আসবে"); };
+$("#mx-bounce").onclick = () => { const end = maxLen(); if (!end) return; const m = mixRange(0, end), pk = peakOf(m); if (pk > 0.99) for (let k = 0; k < m.length; k++) m[k] *= 0.98 / pk; addTrack(m, "মিক্স", { name: "মিক্স" }); msg("✓ সব শোনা-যায় এমন ট্র্যাক মিশিয়ে নতুন ট্র্যাক হলো"); };
+
+/* ================= one studio: simple view, or with the editor ================= */
+// Without the editor: word list, record (listen, retake, skip), parts and the upload list — the old লিব্রে.
+// With it: timeline, toolbar, effects, mix and tracks as well. /libre opens it without the editor.
+function setEditor(on) {
+  if (typeof drawMenu === "function") setTimeout(() => { if (!psOpen.length) drawMenu(); });
+  document.body.classList.toggle("no-editor", !on); $("#t-editor").setAttribute("aria-pressed", String(on)); store("lx_snd_editor", on);
+  if (on) requestAnimationFrame(() => zoomFit());
+}
+$("#t-editor").onclick = () => setEditor(!document.body.classList.contains("no-editor") ? false : true);
+if (/\/libre\/?$/.test(location.pathname)) { store("lx_snd_editor", false); if (window.LX_NODE) history.replaceState(null, "", "/studio" + location.search); }
+setEditor(load("lx_snd_editor", false));
+// Phones: one column at a time (list, record, upload).
+function setMView(v) { if (v === "left" && matchMedia("(min-width: 861px)").matches) v = "center"; document.body.dataset.mview = v; $$("#st-mnav [data-mv]").forEach(b => b.toggleAttribute("aria-current", b.dataset.mv === v)); store("lx_snd_mview", v); if (v === "center") requestAnimationFrame(() => drawAll()); }
+// Phones: file menu, undo/redo, the editor switch and the rest fold behind “⋯”.
+$("#st-mnav").addEventListener("click", e => { const b = e.target.closest("[data-mv]"); if (b) setMView(b.dataset.mv); });
+setMView(load("lx_snd_mview", "center"));
+document.addEventListener("sl-queue", e => { $("#mnav-q").textContent = e.detail.left ? toBn(e.detail.left) : ""; });
+// Microphone test: 3 seconds, then played back; the level shows in the top bar.
+$("#t-mictest").onclick = async () => {
+  const b = $("#t-mictest"); try { await openMic(); } catch (e) { msg("মাইক্রোফোন চালু করা যায়নি: " + e.message); return; }
+  const r = new MediaRecorder(stream), ch = []; r.ondataavailable = e => ch.push(e.data);
+  r.onstop = () => { playBlob(new Blob(ch, { type: r.mimeType })); b.disabled = false; b.textContent = "🎙 আবার পরীক্ষা"; msg("শুনুন — পরিষ্কার শোনা গেলে ঠিক আছে"); };
+  r.start(); b.disabled = true; b.textContent = "রেকর্ড হচ্ছে… ৩ সেকেন্ড"; msg("কিছু বলুন — ওপরের মিটার সবুজে নড়বে"); setTimeout(() => r.stop(), 3000);
+};
+$("#t-autoq").checked = load("lx_snd_autoq", true);
+$("#t-autoq").onchange = () => store("lx_snd_autoq", $("#t-autoq").checked);
+
+/* ================= centre: word list | record wizard ================= */
+function setCTab(id) {
+  $$("#ct-tabs [data-ct]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ct === id)));
+  $$(".ct-pane").forEach(p => { p.hidden = p.dataset.ct !== id; });
+  store("lx_snd_ctab", id); if (id === "wizard") requestAnimationFrame(() => drawAll());
+  if (id === "setup" && speakerWhy()) $("#sp-form").hidden = false; // speaker details still missing: show the form
+}
+$("#ct-tabs").addEventListener("click", e => { const b = e.target.closest("[data-ct]"); if (b) setCTab(b.dataset.ct); });
+$("#w-go").onclick = () => setCTab("wizard");
+setCTab(load("lx_snd_ctab", speakerWhy() ? "setup" : WORDS.length ? "wizard" : "words"));
+// double-click a word: record it now
+$("#w-list").addEventListener("dblclick", e => { const li = e.target.closest("li[data-i]"); if (li) { wordPos = +li.dataset.i; saveWords(); setCTab("wizard"); } });
+
+/* ================= left: a Photoshop-like menu (menu › submenu › submenu) ================= */
+// Every item drives the existing controls (kept, hidden, in the settings panel), so all behaviour stays in one place.
+const clickEl = sel => () => $(sel).click();
+const toggleEl = sel => () => { const el = $(sel); el.checked = !el.checked; el.dispatchEvent(new Event("change", { bubbles: true })); };
+const isOn = sel => () => !!$(sel).checked;
+// speaker and project live in the centre “সেটআপ” tab
+const openPanel = id => () => { setCTab("setup"); setMView("center"); requestAnimationFrame(() => $("#" + id).scrollIntoView({ behavior: "smooth", block: "start" })); };
+// line icons for the top-level menu
+const MI = {
+  file: '<path d="M3 7h6l2 2h10v10H3z"/>', edit: '<path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/>', rec: '<circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="9"/>',
+  timeline: '<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2M21 12h0"/>', autoup: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+  proj: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/>', help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/>' };
+const micon = k => `<svg viewBox="0 0 24 24">${MI[k]}</svg>`;
+const MENU = () => [
+  { label: "পূর্বাবস্থা", key: "Ctrl+Z", icon: micon("undo"), run: clickEl("#e-undo"), off: () => !H.undo.length },
+  { label: "পুনরায়", key: "Ctrl+Y", icon: micon("redo"), run: clickEl("#e-redo"), off: () => !H.redo.length },
+  { sep: true },
+  { label: "ফাইল", icon: micon("file"), items: [
+    { label: "নতুন প্রজেক্ট…", run: clickEl("#e-new") },
+    { label: "অডিও ফাইল আনুন…", run: clickEl("#e-import") },
+    { label: "কমন্স থেকে আমদানি…", run: clickEl("#e-commons") },
+    { label: "ডাউনলোড…", run: clickEl("#e-export") },
+    { sep: true },
+    { label: "সব অডিও মুছুন", run: clickEl("#e-clear"), danger: true } ] },
+  { label: "সম্পাদনা", icon: micon("edit"), items: [
+    { label: "পূর্বাবস্থা", key: "Ctrl+Z", run: clickEl("#e-undo"), off: () => !H.undo.length },
+    { label: "পুনরায়", key: "Ctrl+Y", run: clickEl("#e-redo"), off: () => !H.redo.length },
+    { sep: true },
+    { label: "টাইমলাইন ও সম্পাদনা", check: () => !document.body.classList.contains("no-editor"), run: clickEl("#t-editor") },
+    { label: "প্রক্রিয়া", items: [
+      { label: "ইফেক্ট…", run: () => { setEditor(true); setCTab("wizard"); $("#tg-fx").click(); } },
+      { label: "মিক্স ও আলাদা করা…", run: () => { setEditor(true); setCTab("wizard"); $("#tg-mix").click(); } },
+      { label: "নীরবতায় ভাগ", run: () => { setCTab("wizard"); $("#e-autosplit").click(); } },
+      { label: "শব্দ-তালিকা থেকে নাম বসান", run: clickEl("#r-map") } ] },
+    { label: "ট্র্যাক", items: [
+      { label: "নতুন ট্র্যাক", run: clickEl("#trk-new") },
+      { label: "সব ট্র্যাক একসঙ্গে শুনুন", check: () => load("lx_snd_mixplay", false), run: () => { store("lx_snd_mixplay", !load("lx_snd_mixplay", false)); drawTracks(); } } ] } ] },
+  { label: "রেকর্ড", icon: micon("rec"), items: [
+    { label: "শব্দ-তালিকা মোড", check: isOn("#t-wordmode"), run: toggleEl("#t-wordmode") },
+    { label: "একটানা (থামলেই পরের শব্দ)", check: isOn("#t-auto"), run: toggleEl("#t-auto") },
+    { label: "রেকর্ড হলেই আপলোড তালিকায়", check: isOn("#t-autoq"), run: toggleEl("#t-autoq") },
+    { sep: true },
+    { label: "শোনার গতি", items: [["1", "১×"], ["0.85", "০.৮৫×"], ["0.7", "০.৭×"], ["0.5", "০.৫×"]].map(([v, l]) => ({ label: l, check: () => $("#t-rate").value === v, run: () => { $("#t-rate").value = v; $("#t-rate").dispatchEvent(new Event("change")); } })) } ] },
+  { label: "মাইক", icon: micon("mic"), items: [
+    { label: "মাইক্রোফোন", items: () => [...$("#t-input").options].map(o => ({ label: o.textContent, check: () => $("#t-input").value === o.value, run: () => { $("#t-input").value = o.value; $("#t-input").dispatchEvent(new Event("change")); } })) },
+    { label: "মাইক পরীক্ষা (৩ সেকেন্ড)", run: clickEl("#t-mictest") } ] },
+  { label: "বক্তা", icon: micon("user"), items: () => [
+    ...SPK.map(s => ({ label: s.name + (s.district ? ` — ${s.district}` : ""), check: () => s.id === SP.id, run: () => { $("#sp-pick").value = s.id; $("#sp-pick").dispatchEvent(new Event("change")); } })),
+    ...(SPK.length ? [{ sep: true }] : []),
+    { label: "নতুন বক্তা…", run: () => { $("#sp-new").click(); openPanel("pn-speaker")(); } },
+    { label: "বক্তার তথ্য সম্পাদনা…", run: () => { $("#sp-form").hidden = false; openPanel("pn-speaker")(); } } ] },
+  { label: "প্রজেক্ট", icon: micon("proj"), items: [
+    { label: "প্রজেক্ট ও কমন্সের তথ্য…", run: openPanel("pn-proj") },
+    { label: "অংশসমূহ দেখুন", run: () => { setRTab("pn-regions"); setMView("right"); } },
+    { label: "আপলোড তালিকা দেখুন", run: () => { setRTab("pn-queue"); setMView("right"); } } ] },
+  { label: "সাহায্য", icon: micon("help"), items: [
+    { label: "কিবোর্ড শর্টকাট", run: clickEl("#t-help") },
+    { label: "প্যানেল আগের জায়গায় ফেরান", run: clickEl("#t-layout") } ] },
+];
+// switches with an icon and an on/off slider, shown above the mode pills
+const SWITCHES = () => [
+  { icon: "timeline", label: "টাইমলাইন", tip: "টাইমলাইন ও সম্পাদনার যন্ত্র দেখান", on: !document.body.classList.contains("no-editor"), run: clickEl("#t-editor") },
+  { icon: "autoup", label: "সরাসরি আপলোড", tip: "রেকর্ড হলেই আপলোড তালিকায় পাঠান", on: $("#t-autoq").checked, run: toggleEl("#t-autoq") },
+];
+const PS = $("#ps-menu");
+const kids = it => (typeof it.items === "function" ? it.items() : it.items);
+function menuHtml(items, depth) {
+  return items.map((it, i) => it.sep ? `<div class="ps-sep"></div>`
+    : `<button type="button" class="ps-it${it.danger ? " danger" : ""}" data-path="${depth}.${i}"${it.off?.() ? " disabled" : ""}>
+        <span class="ps-ic${it.check ? " ck" : ""}">${it.check ? (it.check() ? "✓" : "") : it.icon || ""}</span><span class="ps-l">${esc(it.label)}</span>
+        ${it.key ? `<kbd>${it.key}</kbd>` : ""}${it.items ? `<span class="ps-arr">▸</span>` : ""}</button>`).join("");
+}
+let psOpen = []; // open submenus, one per level
+const narrow = () => matchMedia("(max-width: 860px)").matches;
+function closeFrom(level) { psOpen.splice(level).forEach(m => m.el.remove()); $$(".ps-it.open").forEach(b => { if (+b.dataset.lvl >= level) b.classList.remove("open"); }); }
+function openSub(btn, items, level) {
+  closeFrom(level); btn.classList.add("open"); btn.dataset.lvl = level;
+  const el = document.createElement("div"); el.className = "ps-sub"; el.innerHTML = menuHtml(items, level + 1);
+  if (narrow()) { btn.after(el); el.classList.add("inline"); } // phones: nested lists open in place
+  else {
+    document.body.appendChild(el); const r = btn.getBoundingClientRect(), lr = btn.querySelector(".ps-l").getBoundingClientRect();
+    el.style.left = `${Math.min(r.right - 6, lr.right + 28)}px`; // right beside the words, not at the far edge
+    el.style.top = `${r.top - 5}px`; const h = el.getBoundingClientRect().height; if (r.top - 5 + h > innerHeight - 70) el.style.top = `${Math.max(8, innerHeight - 70 - h)}px`; // level with the row; up only if it would run off the screen
+  }
+  psOpen[level] = { el, items };
+}
+function itemAt(btn) {
+  const [lvl, i] = btn.dataset.path.split(".").map(Number);
+  return { lvl, it: (lvl === 0 ? MENU() : psOpen[lvl - 1]?.items || [])[i] };
+}
+function onItem(btn, fromHover) {
+  const { lvl, it } = itemAt(btn); if (!it || btn.disabled) return;
+  if (it.items) { if (btn.classList.contains("open") && !fromHover) closeFrom(lvl); else openSub(btn, kids(it), lvl); return; }
+  if (fromHover) { closeFrom(lvl); return; } // hovering a plain item closes deeper submenus
+  closeFrom(0); it.run?.(); drawMenu();
+}
+// the two recording modes sit together at the bottom as pills
+function drawMenu() {
+  PS.innerHTML = `<div class="ps-title">মেনু</div>` + menuHtml(MENU(), 0)
+    + `<div class="ps-sep"></div>` + SWITCHES().map((s, i) => `<button type="button" class="ps-sw" data-sw="${i}" role="switch" aria-checked="${s.on}" title="${s.tip}"><span class="ps-ic">${micon(s.icon)}</span><span class="ps-l">${s.label}</span><span class="tgl"></span></button>`).join("")
+    + `<div class="ps-pills" role="group" aria-label="মোড"><button type="button" class="ps-pill" data-mode="#t-wordmode" aria-pressed="${$("#t-wordmode").checked}">শব্দ-তালিকা</button><button type="button" class="ps-pill" data-mode="#t-auto" aria-pressed="${$("#t-auto").checked}">একটানা</button></div>`;
+}
+PS.addEventListener("click", e => {
+  const s = e.target.closest(".ps-sw"); if (s) { SWITCHES()[+s.dataset.sw].run(); setTimeout(drawMenu); return; }
+  const b = e.target.closest(".ps-pill"); if (!b) return; toggleEl(b.dataset.mode)(); drawMenu();
+});
+document.addEventListener("click", e => { const b = e.target.closest(".ps-it"); if (b) { e.stopPropagation(); onItem(b, false); return; } if (!e.target.closest(".ps-sub")) closeFrom(0); });
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeFrom(0); });
+addEventListener("resize", () => closeFrom(0));
+["#t-wordmode", "#t-auto", "#t-autoq"].forEach(s => $(s).addEventListener("change", () => { if (!psOpen.length) drawMenu(); }));
+drawMenu();
+
+/* ================= right column: parts | upload list ================= */
+function setRTab(id) {
+  $$("#rt-tabs [data-rt]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.rt === id)));
+  ["pn-regions", "pn-queue"].forEach(k => { $("#" + k).hidden = k !== id; });
+  store("lx_snd_rtab", id);
+}
+$("#rt-tabs").addEventListener("click", e => { const b = e.target.closest("[data-rt]"); if (b) setRTab(b.dataset.rt); });
+setRTab(load("lx_snd_rtab", "pn-regions"));
+document.addEventListener("sl-queue", e => { $("#rt-q").textContent = toBn(e.detail.total); });
+new MutationObserver(() => { $("#rt-r").textContent = $("#r-count").textContent; }).observe($("#r-count"), { childList: true, characterData: true, subtree: true });
+
+/* ================= layout: file menu, tabs, drawers ================= */
+[["#tg-fx", "#pane-fx"], ["#tg-mix", "#pane-mix"]].forEach(([b, p]) => $(b).addEventListener("click", () => {
+  const open = $(p).hidden; $$(".st-drawer").forEach(d => { d.hidden = true; }); $$("#tg-fx, #tg-mix").forEach(x => x.setAttribute("aria-pressed", "false"));
+  $(p).hidden = !open; $(b).setAttribute("aria-pressed", String(open)); if (open) drawTracks();
+}));
 
 /* ================= keys, help, start ================= */
 $("#t-help").onclick = () => { $("#help").hidden = false; }; $("#help-x").onclick = () => { $("#help").hidden = true; };
@@ -1001,7 +1380,9 @@ document.addEventListener("keydown", e => {
   else if (k === "-") go(() => zoom(2));
   else if (k === "0" && !mod) go(zoomFit);
   else if (k === "home") go(() => $("#t-home").click());
-  else if (k === "end") go(() => $("#t-end").click());
+  else if (k === "end") go(() => { stop(); P.cursor = N(); V.start = N(); drawAll(); });
+  else if (k === "arrowright" && mod) go(() => jumpRegion(1));
+  else if (k === "arrowleft" && mod) go(() => jumpRegion(-1));
   else if (k === "escape") { P.sel = null; drawAll(); }
 });
 addEventListener("online", () => msg("ইন্টারনেট ফিরেছে — আপলোড করা যাবে।")); addEventListener("offline", () => msg("ইন্টারনেট নেই — কাজ চালিয়ে যান, সব এই ব্রাউজারে জমা থাকছে।"));
@@ -1010,14 +1391,15 @@ addEventListener("online", () => msg("ইন্টারনেট ফিরে�
 // Every side panel can be collapsed (click its title) and dragged by its grip to another place or the other side.
 // The layout is remembered.
 (function docks() {
-  const docks = { left: $(".st-left"), right: $(".st-right-col") };
-  const panels = () => $$(".st-left > .pn, .st-right-col > .pn");
-  const save = () => store("lx_snd_layout", { left: $$(".st-left > .pn").map(p => p.id), right: $$(".st-right-col > .pn").map(p => p.id), collapsed: panels().filter(p => p.classList.contains("collapsed")).map(p => p.id) });
-  // First visit: only the word list open, the rest folded (a click opens them).
-  const L = load("lx_snd_layout", null) || { collapsed: ["pn-speaker", "pn-proj", "pn-fx", "pn-mix", "pn-queue"] };
+  // left column and right column (parts, upload list); panels move within their own column
+  const docks = { left: $(".st-left") }; // the right column has tabs instead
+  const panels = () => $$(".st-left > .pn");
+  const save = () => store("lx_snd_layout2", { left: $$(".st-left > .pn").map(p => p.id), collapsed: panels().filter(p => p.classList.contains("collapsed")).map(p => p.id) });
+  // First visit: mode and word list open, the rest folded (a click opens them).
+  const L = load("lx_snd_layout2", null) || { collapsed: ["pn-speaker", "pn-proj"] };
   if (L) {
-    ["left", "right"].forEach(d => (L[d] || []).forEach(id => { const el = document.getElementById(id); if (el) docks[d].appendChild(el); }));
-    (L.collapsed || []).forEach(id => document.getElementById(id)?.classList.add("collapsed"));
+    ["left"].forEach(d => (L[d] || []).forEach(id => { const el = document.getElementById(id); if (el && el.parentNode === docks[d]) docks[d].appendChild(el); }));
+    (L.collapsed || []).forEach(id => { const el = document.getElementById(id); if (el?.parentNode === docks.left) el.classList.add("collapsed"); });
   }
   panels().forEach(p => {
     const h = p.querySelector("h3"); if (!h || h.querySelector(".dk")) return;
@@ -1038,11 +1420,11 @@ addEventListener("online", () => msg("ইন্টারনেট ফিরে�
       after ? dock.insertBefore(mark, after) : dock.appendChild(mark);
     });
     dock.addEventListener("drop", e => {
-      e.preventDefault(); const p = document.getElementById(e.dataTransfer.getData("text/plain")); if (!p) return;
+      e.preventDefault(); const p = document.getElementById(e.dataTransfer.getData("text/plain")); if (!p || p.parentNode !== dock) { mark.remove(); return; } // stays in its own column
       mark.parentNode === dock ? dock.insertBefore(p, mark) : dock.appendChild(p); mark.remove(); save(); drawAll();
     });
   });
-  $("#t-layout").onclick = () => { store("lx_snd_layout"); location.reload(); };
+  $("#t-layout").onclick = () => { store("lx_snd_layout2"); location.reload(); };
 })();
 
 // For tests and power users.
@@ -1053,9 +1435,11 @@ window.StudioLibre = { P, encodeWav, appendPart: (pcm, meta) => commit(() => app
   get SP() { return SP; }, get SPK() { return SPK; }, get PJ() { return PJ; }, get WORDS() { return WORDS; }, get wordPos() { return wordPos; },
   setWordPos(i) { wordPos = Math.max(0, Math.min(WORDS.length - 1, i)); saveWords(); }, addWords: addWordLines,
   async addClip(o) { const c = { id: uid(), word: "", kind: "word", text: "", lexeme: "", status: "new", created: new Date().toISOString(), speaker: { ...SP }, project: PJ.name, extra: PJ.extra, ...o }; if (c.kind === "word" && c.word && !c.lexeme) c.lexeme = await findLexeme(c.word); await DB.put(c); Q.push(c); syncClip(c, true); drawQueue(); return c; },
-  saveWords, uploadAll, openInfo, infoCount, get Q() { return Q; }, async putClip(c) { await DB.put(c); drawQueue(); syncClip(c, false); }, async delClip(c) { await DB.del(c.id); Q = Q.filter(x => x !== c); drawQueue(); if (SYNC()) fetch(`/store/clips/${c.id}`, { method: "DELETE" }).catch(() => {}); }, getBlob };
+  saveWords, uploadAll, openInfo, playBlob, stop, infoCount, get Q() { return Q; }, async putClip(c) { await DB.put(c); drawQueue(); syncClip(c, false); }, async delClip(c) { await DB.del(c.id); Q = Q.filter(x => x !== c); drawQueue(); if (SYNC()) fetch(`/store/clips/${c.id}`, { method: "DELETE" }).catch(() => {}); }, getBlob };
 drawWords(); listInputs();
 Promise.all([DB.getProj().catch(() => null), DB.all().catch(() => [])]).then(([proj, clips]) => {
-  if (proj?.pcm?.length) { P.pcm = proj.pcm; P.rate = proj.rate; P.regions = proj.regions || []; normalize(); }
+  if (proj?.tracks?.length) { P.rate = proj.rate; TR.list = proj.tracks; TR.cur = Math.min(proj.cur || 0, TR.list.length - 1); const t = curTrack(); P.pcm = t.pcm; P.regions = t.regions || []; normalize(); }
+  else if (proj?.pcm?.length) { P.pcm = proj.pcm; P.rate = proj.rate; P.regions = proj.regions || []; normalize(); }
+  drawTracks();
   Q = clips; drawQueue(); drawRegions(); zoomFit(); syncDown();
 });

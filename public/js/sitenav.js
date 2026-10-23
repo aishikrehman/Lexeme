@@ -46,7 +46,7 @@ function cleanUrl(href) {
         .map(([k, t]) => [`browse.html?cat=${k}`, t, `browse-${k}`]),
       ["collection.html?cat=idiom", "বাগধারা", "collection-idiom"], ["collection.html?cat=proverb", "প্রবাদ-প্রবচন", "collection-proverb"]], "grid"],
     ["লেক্সিম", [["wizard.html", "লেক্সিম উইজার্ড", "wizard", "একটি শব্দ যোগ বা সম্পাদনা"], ["wizard.html?mode=bulk", "একসঙ্গে অনেক", "bulk", "স্প্রেডশিটে অনেক শব্দ"], ["lexinary.html", "লেক্সিনারি উইজার্ড", "lexinary", "লেক্সিম থেকে উইকিঅভিধানের ভুক্তি"]]],
-    ["লিব্রে স্টুডিও", [["libre.html", "লিব্রে", "libre", "সহজে রেকর্ড ও আপলোড — মোবাইলে সুবিধা"], ["sound.html", "লিব্রে স্টুডিও", "sound", "পূর্ণ অডিও স্টুডিও — কাটা, ভাগ, ইফেক্ট"]]],
+    ["লিব্রে স্টুডিও", "sound.html", "sound"],
   ];
   const cur = k => (k === pageKey ? ' aria-current="page"' : "");
   const P = { index: '<path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/>', list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
