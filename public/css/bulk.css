@@ -148,3 +148,19 @@ table.sheet th.rn .rn-add:hover{background:var(--primary);color:var(--on-primary
   .ve-select{order:11;flex:1;margin:0 2px 4px}
   .bs-title .bs-hint{display:none}
 }
+/* import from bn.wiktionary (bulk-wikt.js) */
+.wk-panel{border:1px solid var(--line);border-left:4px solid var(--primary);border-radius:10px;background:var(--surface);margin:0 0 10px;padding:10px 12px}
+.wk-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wk-head #wk-close{margin-left:auto}
+.wk-tools{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin:8px 0}
+.wk-tools .in{width:200px!important;height:32px;min-height:0;padding:0 10px!important}
+.wk-tools label{display:inline-flex;gap:6px;align-items:center;font-size:14px}
+.wk-list{max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:0}
+.wk-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}
+.wk-row:hover{background:var(--sunken)}
+.wk-t{font-weight:600;font-size:16px}
+.wk-row a{font-size:12px}
+.wk-row .wk-peek{height:26px;font-size:12.5px;margin-left:auto}
+.wk-ref{flex-basis:100%;font-size:13.5px;background:var(--sunken);border-radius:6px;padding:6px 8px}
+.wk-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}
+.wk-lic{font-size:12.5px;color:var(--muted)}

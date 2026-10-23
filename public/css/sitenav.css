@@ -1,12 +1,37 @@
 /* Site-wide header, identical on every page (reader pages and the wizard).
    Everything is set explicitly here so page stylesheets (site.css / wizard.css) cannot make it differ. */
-.sitenav{background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:50;font:16px/1.5 "Tiro Bangla","Noto Sans Bengali",serif;color:var(--ink)}
-.sitenav .sn-in{max-width:1180px;margin:0 auto;padding:8px 20px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;box-sizing:border-box}
-.sitenav .logo{display:inline-flex;align-items:center;height:34px;font:700 19px/1 "Tiro Bangla",serif;color:var(--ink);text-decoration:none;margin-right:12px}
+.sitenav{background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 color-mix(in srgb,var(--line) 50%,transparent),0 4px 14px -10px rgba(0,0,0,.18);position:relative;z-index:50;font:16px/1.5 "Tiro Bangla","Noto Sans Bengali",serif;color:var(--ink)}
+.sitenav .sn-in{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;box-sizing:border-box}
+.sitenav .logo{display:inline-flex;align-items:center;gap:9px;height:36px;font:700 19px/1 "Tiro Bangla",serif;color:var(--ink);text-decoration:none;margin-right:12px}
 .sitenav .logo b{color:var(--accent)}
-.sitenav a.nl{display:inline-flex;align-items:center;height:34px;box-sizing:border-box;color:var(--muted);text-decoration:none;padding:0 12px;border-radius:999px;white-space:nowrap;font-size:16px;line-height:1}
-.sitenav a.nl:hover{background:var(--chip);color:var(--ink)}
-.sitenav a.nl[aria-current="page"]{background:var(--primary);color:var(--on-primary)}
+.sitenav .logo-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--primary);color:var(--on-primary);font:700 20px/1 "Tiro Bangla",serif;padding-top:2px;box-sizing:border-box}
+.sitenav .nl{display:inline-flex;align-items:center;height:34px;box-sizing:border-box;color:var(--muted);text-decoration:none;padding:0 12px;border-radius:8px;white-space:nowrap;font-size:16px;line-height:1;position:relative;border:0;background:none;cursor:pointer;font-family:inherit}
+.sitenav .nl:hover{background:var(--chip);color:var(--ink)}
+.sitenav a.nl[aria-current="page"],.sn-drop.on>.nl{color:var(--primary);font-weight:600}
+.sitenav a.nl[aria-current="page"]::after,.sn-drop.on>.nl::after{content:"";position:absolute;left:12px;right:12px;bottom:-11px;height:3px;border-radius:3px 3px 0 0;background:var(--primary)}
+/* অবদান রাখুন: wizard, bulk, চাপাস্বর */
+.sitenav .sn-drop{position:relative;display:inline-flex;align-items:center}
+.sitenav button.nl{border:0;background:none;box-shadow:none;margin:0;outline-offset:2px;-webkit-appearance:none;appearance:none}
+.sitenav button.nl:hover{background:var(--chip)}
+.sn-dbtn .ic{width:15px;height:15px;margin-left:4px;transition:transform .15s}
+.sn-drop.open .sn-dbtn .ic{transform:rotate(180deg)}
+.sn-dmenu{display:none;position:absolute;left:0;top:calc(100% + 8px);min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.14);padding:6px;z-index:70}
+.sn-drop.open .sn-dmenu{display:block}
+.sn-dmenu a{display:flex;align-items:flex-start;gap:10px;padding:7px 12px;text-decoration:none;color:var(--ink)}
+.sn-dmenu a:hover{color:var(--primary)}
+.sn-dmenu a[aria-current="page"]{color:var(--primary)}
+.sn-dmenu a .ic{width:17px;height:17px;flex:none;margin-top:3px;color:var(--muted)}
+.sn-dmenu a:hover .ic,.sn-dmenu a[aria-current="page"] .ic{color:var(--primary)}
+.sitenav .nl .ic{width:17px;height:17px;margin-right:6px}
+.sitenav .nl .ic:last-child:not(:first-child){margin:0 0 0 4px}
+.sn-dmenu b{display:block;font-size:15.5px;font-weight:600}
+.sn-dhead{display:none}
+.sn-drop.sn-wide .sn-dmenu{min-width:500px}
+.sn-drop.sn-wide.open .sn-dmenu{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px}
+.sn-drop.sn-wide .sn-dmenu a:first-of-type{grid-column:1/-1}
+.sn-drop.sn-wide .sn-dmenu a b{font-weight:400}
+.sn-drop.sn-wide .sn-dmenu a:first-of-type b{font-weight:600}
+.sn-dmenu small{display:block;color:var(--muted);font-size:13px}
 .nav-acct{display:flex;align-items:center;gap:8px;margin-left:auto}
 /* অনুসন্ধান: the most visible control on the right, next to login */
 .sitenav .nl-btn{display:inline-flex;align-items:center;gap:7px;height:34px;box-sizing:border-box;padding:0 16px;border-radius:999px;border:1.5px solid var(--primary);background:var(--chip);color:var(--primary);font:600 15px/1 "Tiro Bangla",serif;text-decoration:none;white-space:nowrap}
@@ -22,7 +47,7 @@
 .sn-burger{display:none;width:38px;height:34px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;cursor:pointer;padding:0;align-items:center;justify-content:center}
 .sn-burger .ic{width:20px;height:20px}
 /* tablets: tighter spacing */
-@media (max-width:1000px){.sitenav a.nl{padding:0 9px;font-size:15px}.sitenav .logo{margin-right:6px}}
+@media (max-width:1000px){.sitenav .nl{padding:0 9px;font-size:15px}.sitenav .logo{margin-right:6px}}
 /* phones: logo + buttons on one row, links in a ☰ menu */
 @media (max-width:760px){
   .sitenav .sn-in{padding:8px 12px;gap:6px;flex-wrap:nowrap}
@@ -34,7 +59,15 @@
   .sitenav .theme-btn{order:4}
   .sn-links{display:none}
   .sitenav.open .sn-links{display:flex;flex-direction:column;position:absolute;left:0;right:0;top:100%;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 10px 24px rgba(0,0,0,.12);padding:6px 12px 10px}
-  .sitenav.open .sn-links a.nl{height:42px;border-radius:10px;font-size:16px}
+  .sitenav.open .sn-links .nl{height:42px;border-radius:10px;font-size:16px;width:100%}
+  .sitenav a.nl[aria-current="page"]::after,.sn-drop.on>.nl::after{display:none}
+  .sitenav a.nl[aria-current="page"]{color:var(--primary)}
+  .sn-drop{display:block}.sn-dbtn{display:none!important}
+  .sn-dmenu,.sn-drop.sn-wide .sn-dmenu,.sn-drop.sn-wide.open .sn-dmenu{display:grid;grid-template-columns:1fr 1fr;gap:0 6px;position:static;box-shadow:none;border:0;border-radius:0;padding:6px 0 0;margin-top:6px;min-width:0}
+  .sn-dhead{display:block;grid-column:1/-1;font-size:13px;color:var(--muted);padding:2px 12px}
+  .sn-dmenu small{display:none}
+  .sn-dmenu a{padding:6px 12px}
+  .sitenav .logo-mark{width:30px;height:30px;font-size:18px}
   .lx-menu,.lx-note{right:12px;left:12px;max-width:none}
 }
 .lx-note{position:absolute;right:20px;top:calc(100% + 6px);max-width:360px;background:var(--surface);border:1px solid var(--warn);color:var(--ink);border-radius:10px;padding:8px 12px;font:14px/1.5 "Tiro Bangla",serif;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:60}

@@ -53,7 +53,7 @@ for (const k of ["cat", "size", "view"]) $("#" + k).addEventListener("change", e
 $("#lang").addEventListener("change", e => { setLang(e.target.value); location.href = hrefWith({}); });
 
 configReady.then(() => {
-  $("#lang").innerHTML = SITE.languages.filter(l => l.qid).map(l => `<option value="${l.qid}">${esc(l.bn)}</option>`).join(""); $("#lang").value = getLang();
+  $("#lang").innerHTML = SITE.languages.filter(l => l.qid).map(l => `<option value="${l.qid}">${esc(l.bn)}</option>`).join(""); $("#lang").value = getLang(); $("#lang").closest("label").hidden = SITE.languages.length < 2;
   $("#cat").innerHTML += SITE.categories.map(c => `<option value="${c.key}">${esc(c.bn)}</option>`).join("");
   $("#cat").value = st.cat; $("#size").value = st.size; $("#view").value = st.view;
   start();

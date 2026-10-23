@@ -31,7 +31,7 @@ function localApi(url) {
 }
 // Session cache (10 min) for read endpoints; `fresh=1` bypasses it, random never caches.
 const CACHE_MS = 10 * 60e3;
-async function getJSON(url, { cache = !/\/api\/random|fresh=1/.test(url) } = {}) {
+async function getJSON(url, { cache = !/\/api\/(random|config)|fresh=1/.test(url) } = {}) {
   const key = "lxc:" + url;
   if (cache) { const c = ss.get(key); if (c && c.t > Date.now() - CACHE_MS) return c.v; }
   let v;
@@ -55,7 +55,7 @@ const params = () => Object.fromEntries(new URLSearchParams(location.search));
 
 /* config + language preference */
 let SITE = { languages: [], categories: [], plabelBn: {} };
-const configReady = getJSON("/api/config").then(c => (SITE = c)).catch(() => SITE);
+const configReady = getJSON("/api/config").then(c => (SITE = c)).then(c => { if (c.languages?.length && !c.languages.some(l => l.qid === getLang())) setLang("Q9610"); return c; }).catch(() => SITE);
 // Without the Node server, load the local word index of the reading language (from IndexedDB, or build it once).
 configReady.then(() => { if (serverOk === false && window.LX?.index) LX.index.get(getLang()); });
 const getLang = () => { try { return localStorage.getItem("reader_lang") || "Q9610"; } catch (e) { return "Q9610"; } };
@@ -75,26 +75,6 @@ const hitUrl = s => (s.formId ? `${wordUrl(s.id)}#${s.formId}` : wordUrl(s.id));
 function initChrome() {  document.body.insertAdjacentHTML("beforeend", `<footer class="footer"><div class="wrap"><span><b>লেক্সিম.বাংলা</b> · তথ্য: <a href="https://www.wikidata.org/wiki/Wikidata:Lexicographical_data" target="_blank" rel="noopener">উইকি উপাত্ত লেক্সিম</a> (CC0)</span><span>নির্মাতা: <a href="https://www.wikidata.org/wiki/User:Aishik_Rehman" target="_blank" rel="noopener">ঐশিক রেহমান (User:Aishik Rehman)</a></span></div></footer>`);
 }
 
-/* search-as-you-type suggestions */
-// Search-as-you-type with the results shown inline, below the box (no popup).
-// `out` is the element that receives the result rows.
-function liveResults(input, out, { limit = 20 } = {}) {
-  if (!input || !out) return;
-  let t, seq = 0;
-  input.addEventListener("input", () => {
-    clearTimeout(t); const q = input.value.trim();
-    if (!q) { seq++; out.innerHTML = ""; return; }
-    t = setTimeout(async () => {
-      const my = ++seq; out.innerHTML = skeleton(3);
-      try {
-        const j = await getJSON(`/api/search?${qs({ q, lang: getLang(), limit })}`); if (my !== seq) return;
-        out.innerHTML = j.list.length
-          ? `<p class="muted" style="margin:6px 0">“${esc(q)}” — ${toBn(j.list.length)}টি ফল · <a href="search.html?${qs({ q })}" data-mode="advanced">উন্নত অনুসন্ধান →</a></p>` + j.list.map((s, i) => rowItem(s, j.labels, i + 1)).join("")
-          : `<div class="msg">“${esc(q)}” পাওয়া যায়নি। <a href="search.html?${qs({ q })}" data-mode="advanced">উন্নত অনুসন্ধানে চেষ্টা করুন</a> বা <a href="wizard.html?${qs({ lemma: q, return: 1 })}">নতুন শব্দ হিসেবে যোগ করুন</a></div>`;
-      } catch (e) { if (my === seq) out.innerHTML = `<div class="msg err">খোঁজা যায়নি: ${esc(e.message)}</div>`; }
-    }, 250);
-  });
-}
 /* shared renderers */
 // Word lists look like a printed dictionary: number in the margin, bold headword, abbreviated word class,
 // definition, all as one running entry with a hanging indent. `num` (1, 2, …) is the serial number.

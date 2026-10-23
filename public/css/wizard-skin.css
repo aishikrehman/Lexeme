@@ -115,3 +115,48 @@ body:not(.is-bulk) .brand .bname::after{content:"নতুন বা হাল�
   #single #lemma{font-size:24px;padding:7px 11px}
   body:not(.is-bulk) .brand .bname::after{display:none}
 }
+/* bn.wiktionary page option (wikt-page.js) */
+.wikt-box h3 .en{font-weight:400}
+.wikt-modes{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.wikt-modes label{display:flex;gap:8px;align-items:baseline;font-size:15px;cursor:pointer}
+.wikt-modes small{color:var(--muted)}
+.wikt-status .msg{margin-top:6px}
+.wikt-pre{max-height:220px;overflow:auto;background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:13px/1.5 ui-monospace,monospace;white-space:pre-wrap}
+.wikt-ref{margin-top:8px;border-left:4px solid var(--primary)}
+.wikt-ref ol{margin:4px 0 6px;padding-left:22px}
+.wikt-pos{margin-top:6px}
+.wikt-lic{margin-top:8px;font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:6px}
+
+.wikt-ref summary{cursor:pointer;list-style:none;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.wikt-ref summary::-webkit-details-marker{display:none}
+.wikt-ref summary::before{content:'▸';color:var(--primary);transition:transform .15s}
+.wikt-ref[open] summary::before{transform:rotate(90deg)}
+.wikt-ref-body{margin-top:6px}
+
+/* the floating bar is the only save button; the review tab keeps summary, log and options */
+#p-review #submit,#p-review #submit-why{display:none!important}
+.savebar{padding:6px 10px!important;gap:10px!important;border-radius:10px 10px 0 0!important;min-height:0}
+.savebar .btn{font-size:15px!important;padding:6px 16px!important;border-radius:8px}
+.savebar .why{font-size:13px!important}
+.savebar .saved{font-size:13.5px;color:var(--ok);margin-left:auto;white-space:nowrap}
+.savebar .saved a{color:var(--primary);font-weight:600}
+@media (max-width:640px){.savebar .btn{flex:0 0 auto!important;font-size:14.5px!important}.savebar .saved{margin-left:0}}
+/* [শব্দ][শব্দশ্রেণি] in one row; [ডাটা][অভিধান] খুঁজুন */
+.lemma-row{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:14px;align-items:end}
+.lemma-row .lemma-cat{margin:0}
+.lemma-row .lemma-cat select{height:44px;font-size:16px}
+.src-pick{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px;gap:2px}
+.src-pick button{border:0;background:none;color:var(--muted);border-radius:999px;padding:4px 12px;font:14.5px "Tiro Bangla",serif;cursor:pointer}
+.src-pick button[aria-pressed="true"]{background:var(--surface);color:var(--primary);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.src-pick button[aria-pressed="true"]::before{content:"✓ "}
+body.no-wikt #wikt-ref{display:none}
+@media (max-width:640px){.lemma-row{grid-template-columns:1fr}}#single .hero-row{display:flex!important;justify-content:center;align-items:center;margin-top:14px}
+#single .hero-row > .f:not(.hero-acts){display:none}
+#single .hero-acts{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;width:auto}
+#single .hero-acts .btn{height:38px;padding:0 18px;border-radius:999px}
+#single .hero-acts #lookup{padding:0 24px;font-weight:600}
+.src-pick{padding:4px}
+.src-pick button{padding:6px 14px}
+.found-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 14px;margin:12px 0 8px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.found-bar .btn{display:inline-flex;align-items:center;gap:6px}
+.found-bar .ic{width:16px;height:16px}

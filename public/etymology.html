@@ -33,7 +33,7 @@ configReady.then(async () => {
       <h2 class="sec">সারসংক্ষেপ</h2><div class="card">${summaryLines()}</div>`
       : `<div class="msg" style="margin-top:20px">এই শব্দের ব্যুৎপত্তি এখনো উইকি উপাত্তে যোগ হয়নি (P5191 “যে শব্দ থেকে উদ্ভূত”)। <a href="wizard.html?id=${ID}&return=1">লেক্সিম উইজার্ডে যোগ করুন</a></div>`}
     <h2 class="sec">এই লেক্সিম দিয়ে গঠিত</h2><section class="card" id="desc"><div class="skel" style="width:40%;height:24px"></div></section>
-    ${t.cognates.length ? `<h2 class="sec">একই মূল থেকে অন্য ভাষায় <span class="en">cognates &amp; descendants</span></h2>
+    ${t.cognates.length ? `<h2 class="sec">একই মূল থেকে অন্য ভাষায়</h2>
       ${Object.entries(cogByRoot).map(([root, byLang]) => `<div class="card" style="margin-bottom:12px"><b>${esc(N[root]?.lemma || root)}</b> ${langBadge(N[root]?.language, L)} থেকে:
         ${Object.entries(byLang).map(([lg, cs]) => `<div class="cog-lang"><h4>${langBadge(lg, L)}</h4><div class="taglist">${cs.map(c => `<a href="${wordUrl(c.id)}">${esc(c.lemma)}</a>`).join("")}</div></div>`).join("")}</div>`).join("")}` : ""}`;
   getJSON(`/api/descendants/${ID}`).then(d => { $("#desc").innerHTML = Object.keys(d.nodes).length ? descendantsTree(d, ID, { lemma: me.lemma, language: me.language }) : '<span class="muted">এই শব্দ দিয়ে গঠিত অন্য কোনো লেক্সিম এখনো নেই।</span>'; })

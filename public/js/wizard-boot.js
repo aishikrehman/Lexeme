@@ -10,6 +10,8 @@
   const ret = q.get("return") === "1";
   const readUrl = lid => (window.LX_NODE ? `/word/${lid}` : `word.html?id=${lid}`);
 
+  // One language only: the language, item and code fields have nothing to choose — hide them.
+  if (CFG.languages.length < 2) ["#lang-preset", "#lang-q", "#lang-code"].forEach(s => { const f = $(s)?.closest(".f"); if (f) f.hidden = true; });
   // Two separate pages from one engine: /wizard = one lexeme at a time, /bulk = many lexemes (spreadsheet).
   const isBulk = /\/bulk\/?$/.test(location.pathname) || q.get("mode") === "bulk";
   if (isBulk) {
@@ -23,7 +25,7 @@
   // #submit button, so the save itself, its checks and its log stay as they are.
   if (!isBulk) {
     const bar = document.createElement("div"); bar.className = "savebar";
-    bar.innerHTML = `<button type="button" class="btn" id="save-now">উইকি উপাত্তে সংরক্ষণ করুন</button><span class="why" id="save-why"></span>`;
+    bar.innerHTML = `<button type="button" class="btn" id="save-now">উইকি উপাত্তে সংরক্ষণ</button><span class="why" id="save-why"></span><span class="saved" id="save-done" hidden></span>`;
     $("#single").appendChild(bar);
     $("#save-now").addEventListener("click", () => {
       if ($("#p-review").hidden) selectTab("review");
@@ -75,6 +77,10 @@
   $("#submit").addEventListener("click", () => { saving = true; }, true);
   const origLoad = loadExisting;
   loadExisting = async function (lid) {
+    // Right after a successful save: optional follow-up steps (e.g. the bn.wiktionary page, wikt-page.js).
+    // Show the saved lexeme in the save bar: “✓ L123 সংরক্ষিত [দেখুন]”.
+    if (saving) { const d = $("#save-done"); if (d) { d.hidden = false; d.innerHTML = `✓ ${esc(lid)} সংরক্ষিত <a href="https://www.wikidata.org/wiki/Lexeme:${esc(lid)}" target="_blank" rel="noopener">[দেখুন]</a>`; } }
+    if (saving && window.LX_afterSave) { try { await window.LX_afterSave(lid); } catch (e) { console.warn(e); } }
     if (saving && ret) { saving = false; try { sessionStorage.setItem("lx_fresh", lid); } catch (e) {} location.href = readUrl(lid); return; }
     saving = false; return origLoad(lid);
   };

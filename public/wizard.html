@@ -28,13 +28,15 @@
 
   <main id="single">
     <section class="hero">
-      <div class="lemma-wrap"><label class="lemma-lbl" for="lemma">শব্দ <span class="en">lemma</span></label><input id="lemma" lang="bn" placeholder="শব্দ লিখুন" autocomplete="off" aria-label="বাংলা হরফে শব্দ (lemma)" data-bind="lemma" data-rerender="forms"></div>
+      <div class="lemma-row">
+        <div class="lemma-wrap"><label class="lemma-lbl" for="lemma">শব্দ</label><input id="lemma" lang="bn" placeholder="শব্দ লিখুন" autocomplete="off" aria-label="বাংলা হরফে শব্দ (lemma)" data-bind="lemma" data-rerender="forms"></div>
+        <label class="f lemma-cat"><span class="fl">শব্দশ্রেণি</span><select data-bind="category" data-rerender="forms" id="cat"></select></label>
+      </div>
       <div class="hero-row">
         <label class="f"><span class="fl">ভাষা</span><select id="lang-preset"></select></label>
         <label class="f" style="max-width:120px"><span class="fl">ভাষার আইটেম</span><input class="in" id="lang-q" readonly tabindex="-1" aria-readonly="true"></label>
         <label class="f" style="max-width:90px"><span class="fl">কোড</span><input class="in" id="lang-code" readonly tabindex="-1" aria-readonly="true"></label>
-        <label class="f"><span class="fl">শব্দশ্রেণি <span class="en">lexical category</span></span><select data-bind="category" data-rerender="forms" id="cat"></select></label>
-        <div class="f hero-acts"><button class="btn" id="lookup"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>উইকি উপাত্তে খুঁজুন</button><button class="btn ghost" id="reset">নতুন করে শুরু</button></div>
+        <div class="f hero-acts"><span class="src-pick" role="group" aria-label="কোথায় খুঁজবে"><button type="button" id="src-wd" aria-pressed="true">উইকিডাটা</button><button type="button" id="src-wikt" aria-pressed="true">উইকিঅভিধান</button></span><button class="btn" id="lookup"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>খুঁজুন</button><button class="btn ghost" id="reset">নতুন করে শুরু</button></div>
       </div>
       
       <div class="found" id="found" aria-live="polite"></div>
@@ -70,7 +72,7 @@
 
   <main id="bulk" hidden>
     <section class="blk bs-card">
-      <h3 class="bs-title"><span class="bs-n">১</span>তালিকা <span class="muted bs-hint">Excel / Google Sheets থেকে কপি করে টেবিলে পেস্ট করুন (Ctrl+V), বা সরাসরি লিখুন · সারিতে ডান-ক্লিক বা চেপে ধরুন: আরও কাজ</span></h3>
+      <h3 class="bs-title"><span class="bs-n">১</span>তালিকা</h3>
 
       <!-- VisualEditor-style toolbar: icon groups -->
       <div class="ve-bar" role="toolbar" aria-label="তালিকার টুলবার">
@@ -116,7 +118,7 @@
         </div>
         <div class="tbl-wrap grid-wrap sheet-wrap" id="bulk-grid" aria-label="লেক্সিমের তালিকা — স্প্রেডশিট"></div>
         <div class="bs-status"><span id="bulk-count"></span><span id="bs-sel" class="muted"></span><span id="bs-saved" class="muted"></span>
-          <span class="muted bs-keys">লিখলেই সম্পাদনা · Enter / Tab / তীর · Ctrl+C / V · Ctrl+Z</span></div>
+</div>
       </div>
       <textarea id="bulk-text" rows="12" class="bn-in" hidden placeholder="এখানে CSV / JSON পেস্ট করুন"></textarea>
     </section>
@@ -177,5 +179,6 @@
 <script src="js/wizard.js"></script>
 <script src="js/bulk-sheet.js"></script>
 <script src="js/wizard-boot.js"></script>
+<script src="../lib/wiktparse.js"></script><script src="js/wikt-page.js"></script><script src="js/bulk-wikt.js"></script>
 </body>
 </html>

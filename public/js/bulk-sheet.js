@@ -80,7 +80,9 @@
     clearTimeout(saveT);
     saveT = setTimeout(() => { LS.set("lx_bulk_sheet", { cols: grid.cols, rows: grid.rows, t: Date.now() }); const n = $("#bs-saved"); if (n) n.textContent = "স্বয়ংক্রিয়ভাবে সংরক্ষিত " + new Date().toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" }); }, 400);
   }
-  const blankRow = () => grid.cols.map(c => (c === "lang_code" ? "bn" : c === "language" ? "Q9610" : ""));
+  const blankRow = () => grid.cols.map(() => "");
+  // Bengali only: language and code columns are not needed (rowToDraft defaults to Bengali). Drop them from old sheets.
+  const dropLangCols = () => { ["lang_code", "language"].forEach(c => { const j = grid.cols.indexOf(c); if (j >= 0) { grid.cols.splice(j, 1); grid.rows.forEach(r => r.splice(j, 1)); } }); };
 
   /* ---------- checks per cell (instant, before the full validation) ---------- */
   function issue(i, j) {
@@ -151,7 +153,7 @@
         return `<td class="${cls}" data-vr="${vr}" data-vc="${vc}"${is ? ` title="${esc(is[1])}"` : ""}>${esc(shown)}</td>`;
       }).join("")}</tr>`;
     }).join("");
-    host.innerHTML = `<table class="sheet"><thead>${head}</thead><tbody>${body}</tbody></table>${!grid.rows.length ? `<div class="sheet-empty">কোনো সারি নেই। <b>Excel / Google Sheets থেকে কপি করে এখানে পেস্ট করুন</b> (Ctrl+V), ফাইল খুলুন, “নমুনা” দেখুন, বা “+ সারি” চাপুন।</div>` : !S.rows.length ? `<div class="sheet-empty">এই বাছাইয়ে কোনো সারি নেই।</div>` : ""}`;
+    host.innerHTML = `<table class="sheet"><thead>${head}</thead><tbody>${body}</tbody></table>${!grid.rows.length ? `<div class="sheet-empty">কোনো সারি নেই।</div>` : !S.rows.length ? `<div class="sheet-empty">এই বাছাইয়ে কোনো সারি নেই।</div>` : ""}`;
     const issues = grid.rows.reduce((a, _, i) => a + (grid.cols.some((__, j) => issue(i, j)) ? 1 : 0), 0);
     $("#bulk-count").textContent = `${toBn(S.rows.length)}/${toBn(grid.rows.length)}টি সারি${issues ? ` · ${toBn(issues)}টিতে ঘরের সমস্যা` : ""}`;
     drawSelInfo(); drawColMenu();
@@ -308,7 +310,7 @@
   /* ---------- columns menu ---------- */
   function drawColMenu() {
     const m = $("#bs-cols-menu"); if (!m) return;
-    m.innerHTML = grid.cols.map(c => `<label><input type="checkbox" data-col="${esc(c)}"${S.hidden.has(c) ? "" : " checked"}${c === "lemma" ? " disabled" : ""}> ${esc(label(c))} <span class="en">${esc(c)}</span></label>`).join("")
+    m.innerHTML = grid.cols.map(c => `<label><input type="checkbox" data-col="${esc(c)}"${S.hidden.has(c) ? "" : " checked"}${c === "lemma" ? " disabled" : ""}> ${esc(label(c))}</label>`).join("")
       + `<div class="bs-addcol">${Object.keys(COL_BN).filter(c => !grid.cols.includes(c)).length ? `<select id="bs-newcol"><option value="">+ কলাম যোগ…</option>${Object.keys(COL_BN).filter(c => !grid.cols.includes(c)).map(c => `<option value="${c}">${esc(label(c))} · ${c}</option>`).join("")}</select>` : ""}
         <button type="button" class="btn ghost small" data-bs="showall">সব দেখান</button></div>`;
   }
@@ -454,7 +456,7 @@
   $("#bulk-file")?.setAttribute("accept", ".csv,.tsv,.txt,.json,text/csv,text/tab-separated-values,application/json");
 
   /* ---------- take over the table drawing ---------- */
-  renderGrid = render;
+  renderGrid = function () { dropLangCols(); render(); };
   const origView = setBulkView;
   setBulkView = function (v) { if (S.edit) commit(); origView(v); };
   // TSV files: turn them into CSV before wizard.js reads them.
@@ -476,5 +478,17 @@
     grid.cols = saved.cols; grid.rows = saved.rows; $("#bulk-text").value = toCSV();
     const n = $("#bs-saved"); if (n) n.innerHTML = `আগের কাজ ফিরিয়ে আনা হয়েছে (${toBn(saved.rows.length)}টি সারি)`;
   }
-  window.BulkSheet = { render, OPS };
+  // Add rows given as { column: value } objects (unknown columns are added); one undo step.
+  function addRows(objs) {
+    if (!objs.length) return;
+    change(() => {
+      if (!grid.cols.length) gridFromText();
+      objs.forEach(o => Object.keys(o).forEach(c => { if (!grid.cols.includes(c)) { grid.cols.push(c); grid.rows.forEach(r => r.push("")); } }));
+      const empty = r => !r.some(x => String(x).trim());
+      while (grid.rows.length && empty(grid.rows[grid.rows.length - 1])) grid.rows.pop();
+      objs.forEach(o => { const r = blankRow(); Object.entries(o).forEach(([c, v]) => { r[grid.cols.indexOf(c)] = v; }); grid.rows.push(r); });
+      grid.q = ""; S.filter = "all";
+    });
+  }
+  window.BulkSheet = { render, OPS, addRows };
 })();

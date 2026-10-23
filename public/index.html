@@ -4,24 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>লেক্সিম.বাংলা — বাংলা অভিধান: অর্থ, রূপ, ব্যুৎপত্তি, বাগধারা ও প্রবাদ</title>
-<meta name="description" content="বাংলা লিপির ভাষাগুলোর উন্মুক্ত অনলাইন অভিধান। ১১ হাজারের বেশি বাংলা শব্দের অর্থ, রূপ, উচ্চারণ, গভীর ব্যুৎপত্তি, বাগধারা ও প্রবাদ — উইকি উপাত্ত লেক্সিম থেকে, বিনামূল্যে।">
+<meta name="description" content="বাংলা ভাষার উন্মুক্ত উইকি অভিধান। ১১ হাজারের বেশি বাংলা শব্দের অর্থ, রূপ, উচ্চারণ, গভীর ব্যুৎপত্তি, বাগধারা ও প্রবাদ — উইকি উপাত্ত লেক্সিম থেকে, বিনামূল্যে।">
 <!--SEO-->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css"><link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css"><link rel="stylesheet" href="css/searchpanel.css"><link rel="stylesheet" href="css/home.css">
 </head>
 <body>
 <main>
   <section class="h-hero">
     <div class="wrap">
       <h1>লেক্সিম<b>.</b>বাংলা</h1>
-      <p class="h-tag">বাংলা লিপির ভাষাগুলোর উন্মুক্ত অভিধান — অর্থ, রূপ, উচ্চারণ আর শব্দের গভীর ইতিহাস</p>
-      <form class="bigsearch" action="search.html" role="search">
-        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input name="q" id="q" lang="bn" placeholder="শব্দ, অর্থ বা ইংরেজি লিখুন…" autocomplete="off" aria-label="শব্দ খুঁজুন" autofocus>
-      </form>
-      <p class="h-adv"><a href="search.html" data-mode="advanced">উন্নত অনুসন্ধান</a> · হুবহু, দিয়ে শুরু, দিয়ে শেষ, ভেতরে আছে, সংজ্ঞায়, সব ভাষায়</p>
-      <div class="langpick" id="langpick" role="group" aria-label="ভাষা"></div>
+      <p class="h-tag">বাংলা ভাষার উন্মুক্ত উইকি অভিধান — অর্থ, রূপ, উচ্চারণ আর শব্দের গভীর ইতিহাস</p>
+      <div id="sp"></div>
       <div class="rows" id="home-results"></div>
       <div class="letters" id="letters" aria-label="বর্ণ ধরে শব্দক্রম"></div>
     </div>
@@ -45,12 +40,12 @@
       </section>
 
       <section aria-labelledby="t-idiom">
-        <h2 class="sec" id="t-idiom">বাগধারা <span class="en">Idioms</span><a href="collection.html?cat=idiom">সব দেখুন →</a></h2>
+        <h2 class="sec" id="t-idiom">বাগধারা<a href="collection.html?cat=idiom">সব দেখুন →</a></h2>
         <div class="cards" id="idioms"></div>
       </section>
 
       <section aria-labelledby="t-proverb">
-        <h2 class="sec" id="t-proverb">প্রবাদ-প্রবচন <span class="en">Proverbs</span><a href="collection.html?cat=proverb">সব দেখুন →</a></h2>
+        <h2 class="sec" id="t-proverb">প্রবাদ-প্রবচন<a href="collection.html?cat=proverb">সব দেখুন →</a></h2>
         <div class="rows" id="proverbs"></div>
       </section>
     </div>
@@ -76,14 +71,14 @@
 
       <section class="card h-about">
         <h2>এই অভিধান সম্পর্কে</h2>
-        <p>সব তথ্য আসে <a href="https://www.wikidata.org/wiki/Wikidata:Lexicographical_data" target="_blank" rel="noopener">উইকি উপাত্তের লেক্সিম</a> থেকে, CC0 লাইসেন্সে — যে কেউ বিনা অনুমতিতে ব্যবহার করতে পারেন। বাংলা ছাড়াও অসমীয়া, সিলেটি, চাটগাঁইয়া ও কুড়মালি শব্দ আছে।</p>
+        <p>সব তথ্য আসে <a href="https://www.wikidata.org/wiki/Wikidata:Lexicographical_data" target="_blank" rel="noopener">উইকি উপাত্তের লেক্সিম</a> থেকে, CC0 লাইসেন্সে — যে কেউ বিনা অনুমতিতে ব্যবহার করতে পারেন।</p>
       </section>
     </aside>
   </div>
 </main>
 <script src="js/sitenav.js"></script><script src="js/auth.js"></script>
 <script src="../lib/config.js"></script><script src="../lib/wikidata.js"></script><script src="../lib/lexindex.js"></script><script src="../lib/reader.js"></script>
-<script src="js/common.js"></script>
+<script src="js/common.js"></script><script src="js/searchpanel.js"></script>
 <script src="js/home.js"></script>
 </body>
 </html>

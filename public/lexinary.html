@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>লেক্সিনারি উইজার্ড · লেক্সিম.বাংলা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css">
+<style>
+.lx-page{max-width:880px;padding-bottom:40px}
+.lx-page [hidden]{display:none!important}
+.lx-page h1{font-size:26px;margin:24px 0 4px}
+.lx-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.lx-card h2{font-size:18px;margin:0 0 8px}
+.lx-find{display:flex;gap:8px}
+.lx-find input,.lx-card textarea{flex:1;border:1.5px solid var(--line);border-radius:10px;background:var(--sunken);padding:10px 12px;font:18px "Tiro Bangla",serif;color:var(--ink);box-sizing:border-box;width:100%}
+.lx-card textarea{font:14px/1.5 ui-monospace,Consolas,monospace;min-height:110px}
+.lx-lex{display:flex;flex-direction:column;gap:6px}
+.lx-lex label{display:flex;gap:10px;align-items:baseline;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+.lx-lex label:has(input:checked){border-color:var(--primary);background:color-mix(in srgb,var(--primary) 6%,var(--surface))}
+.lx-modes{display:flex;flex-direction:column;gap:6px}
+.lx-modes label{display:flex;gap:8px;align-items:baseline}
+.lx-modes small{color:var(--muted)}
+.lx-prev{width:100%;min-height:260px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.lx-act{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.lx-act .muted{flex:1}
+.lx-more{margin-top:10px}.lx-more input{font-size:15px}
+.lx-mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.lx-mgrid label,.lx-pos label{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--muted)}
+.lx-mgrid input,.lx-pos input,.lx-pos select,.lx-pos textarea{border:1.5px solid var(--line);border-radius:9px;background:var(--sunken);padding:7px 10px;font:15px "Tiro Bangla",serif;color:var(--ink);box-sizing:border-box;width:100%}
+.lx-pos{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;display:grid;grid-template-columns:200px 1fr;gap:10px}
+.lx-pos .x{justify-self:end;grid-column:1/-1;border:0;background:none;color:var(--muted);cursor:pointer}
+@media (max-width:640px){.lx-mgrid,.lx-pos{grid-template-columns:1fr}}
+pre.lx-pre{white-space:pre-wrap;max-height:240px;overflow:auto;background:var(--sunken);padding:10px;border-radius:8px;font-size:13px}
+</style>
+</head>
+<body>
+<main class="wrap lx-page">
+  <h1>লেক্সিনারি উইজার্ড</h1>
+  <p class="muted">উইকি উপাত্তের লেক্সিম থেকে বাংলা উইকিঅভিধানের ভুক্তি তৈরি করুন। পাতায় শুধু <code>{{লে|L…}}</code> বসে; অর্থ, রূপ, ব্যুৎপত্তি উইকিঅভিধানের মডিউল লেক্সিম থেকে দেখায় — লেক্সিম বদলালে পাতাও হালনাগাদ হয়।</p>
+
+  <section class="lx-card">
+    <h2>১. শব্দ বা লেক্সিম</h2>
+    <form class="lx-find" id="find"><input id="q" lang="bn" placeholder="শব্দ (যেমন: জল) বা লেক্সিম আইডি (L40022)" autocomplete="off"><button class="btn" type="submit">খুঁজুন</button></form>
+    <p class="muted" id="find-msg"></p>
+    <div class="lx-lex" id="lex"></div>
+    <form class="lx-find lx-more" id="more" hidden><input id="more-id" placeholder="এক পাতায় আরও লেক্সিম: L-আইডি (যেমন L1365153)" autocomplete="off"><button class="btn ghost" type="submit">যোগ করুন</button></form>
+  </section>
+
+  <section class="lx-card" id="s-manual" hidden>
+    <h2>নিজে লিখুন <span class="muted" style="font-size:14px;font-weight:400">— লেক্সিম ছাড়া, বা লেক্সিমের সঙ্গে বাড়তি অংশ</span></h2>
+    <div class="lx-mgrid">
+      <label>উচ্চারণ (আধ্বব)<input id="m-ipa" placeholder="/ɟɔl/"></label>
+      <label>ব্যুৎপত্তি<input id="m-ety" placeholder="সংস্কৃত জল থেকে"></label>
+    </div>
+    <div id="m-pos"></div>
+    <button type="button" class="btn ghost small" id="m-addpos">+ আরেকটি শব্দশ্রেণি</button>
+  </section>
+
+  <section class="lx-card" id="s-page" hidden>
+    <h2>২. উইকিঅভিধানের পাতা</h2>
+    <div id="pg-state"></div>
+    <div class="lx-modes" id="modes">
+      <label><input type="radio" name="m" value="create"> নতুন পাতা তৈরি <small>(পাতা না থাকলে)</small></label>
+      <label><input type="radio" name="m" value="append"> বিদ্যমান পাতার শেষে যোগ <small>(পুরোনো লেখা থাকবে)</small></label>
+      <label><input type="radio" name="m" value="replace"> পুরো পাতা প্রতিস্থাপন <small>(পুরোনো লেখা পাতার ইতিহাসে থাকবে)</small></label>
+    </div>
+    <details style="margin-top:10px"><summary>অতিরিক্ত উইকিটেক্সট (বিষয়শ্রেণি, টীকা ইত্যাদি)</summary><textarea id="extra" placeholder="[[বিষয়শ্রেণী:…]]"></textarea></details>
+    <details style="margin-top:6px"><summary>যা সংরক্ষিত হবে</summary><pre class="lx-pre" id="final"></pre></details>
+  </section>
+
+  <section class="lx-card" id="s-prev" hidden>
+    <h2>৩. প্রাকদর্শন</h2>
+    <iframe class="lx-prev" id="prev" sandbox="" title="প্রাকদর্শন"></iframe>
+    <div class="lx-act"><span class="muted" id="save-msg"></span><button class="btn ghost" type="button" id="refresh">প্রাকদর্শন হালনাগাদ</button><button class="btn" type="button" id="save">উইকিঅভিধানে সংরক্ষণ</button></div>
+  </section>
+</main>
+<script src="js/sitenav.js"></script><script src="js/auth.js"></script>
+<script src="../lib/config.js"></script><script src="../lib/wikidata.js"></script><script src="../lib/lexindex.js"></script><script src="../lib/reader.js"></script>
+<script src="js/common.js"></script>
+<script>
+"use strict";
+const WIKT = window.LX_NODE ? "/proxy/wikt" : "https://bn.wiktionary.org/w/api.php";
+const PAGE = t => `https://bn.wiktionary.org/wiki/${encodeURIComponent(t.replace(/ /g, "_"))}`;
+const LEX_RX = /\{\{\s*লে\s*\|\s*(L\d+)/g;
+async function wk(params, post) {
+  const all = { format: "json", formatversion: "2", ...(window.LX_NODE ? {} : { origin: "*" }), ...params };
+  const r = post ? await fetch(WIKT, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(all) })
+    : await fetch(`${WIKT}?${new URLSearchParams(all)}`);
+  const j = await r.json(); if (j.error) throw new Error(j.error.info || j.error.code); return j;
+}
+let title = "", lexes = [], page = null, mode = "create";
+
+$("#find").addEventListener("submit", async e => {
+  e.preventDefault(); const q = $("#q").value.trim(); if (!q) return;
+  $("#find-msg").textContent = "খোঁজা হচ্ছে…"; $("#lex").innerHTML = "";
+  try {
+    let list;
+    if (/^L\d+$/i.test(q)) { const { entity: e, labels } = await getJSON(`/api/word/${q.toUpperCase()}`); lexes.labels = labels;
+      list = [{ id: e.id, lemma: Object.values(e.lemmas || {})[0]?.value || "", category: e.lexicalCategory, gloss: e.senses?.[0]?.glosses?.bn?.value || "" }]; }
+    else { const j = await getJSON(`/api/search?${qs({ exact: q, field: "lemma", limit: 20 })}`); list = j.list.filter(s => s.lemma === q); lexes.labels = j.labels; }
+    title = list[0]?.lemma || q;
+    if (!list.length) $("#find-msg").innerHTML = `এই বানানে কোনো লেক্সিম নেই — নিচে নিজে লিখুন, অথবা <a href="wizard.html?${qs({ lemma: q, return: 1 })}">লেক্সিম উইজার্ডে তৈরি করুন →</a>`;
+    else {
+    $("#find-msg").textContent = `“${title}” বানানে ${toBn(list.length)}টি লেক্সিম — পাতায় যেগুলো চান বাছুন।`;
+    }
+    $("#lex").innerHTML = list.map(s => `<label><input type="checkbox" value="${s.id}" checked><span><b>${esc(s.lemma)}</b> <span class="chip">${esc(typeof catLabel === "function" ? catLabel(s.category, lexes.labels || {}) : s.category || "")}</span> <span class="muted">${esc(s.gloss || "")}</span> <a href="https://www.wikidata.org/wiki/Lexeme:${s.id}" target="_blank" rel="noopener">${s.id}</a></span></label>`).join("");
+    $("#more").hidden = false; $("#s-manual").hidden = false; if (!$("#m-pos").children.length) addPos();
+    await loadPage(); update();
+  } catch (err) { $("#find-msg").textContent = "খোঁজা যায়নি: " + err.message; }
+});
+$("#lex").addEventListener("change", update);
+// More lexemes on the same page (e.g. other word classes or spellings).
+$("#more").addEventListener("submit", async e => {
+  e.preventDefault(); const id = $("#more-id").value.trim().toUpperCase(); if (!/^L\d+$/.test(id) || $(`#lex input[value="${id}"]`)) return;
+  try {
+    const { entity: en, labels } = await getJSON(`/api/word/${id}`);
+    $("#lex").insertAdjacentHTML("beforeend", `<label><input type="checkbox" value="${id}" checked><span><b>${esc(Object.values(en.lemmas || {})[0]?.value || "")}</b> <span class="chip">${esc(catLabel(en.lexicalCategory, labels))}</span> <a href="https://www.wikidata.org/wiki/Lexeme:${id}" target="_blank" rel="noopener">${id}</a></span></label>`);
+    $("#more-id").value = ""; update();
+  } catch (err) { $("#find-msg").textContent = `${id} পাওয়া যায়নি: ${err.message}`; }
+});
+/* manual entry, written the bn.wiktionary way */
+const POS = [["বিশেষ্য", "noun"], ["বিশেষণ", "adjective"], ["ক্রিয়া", "verb"], ["ক্রিয়াবিশেষণ", "adverb"], ["সর্বনাম", "pronoun"], ["অব্যয়", "particle"], ["বাগধারা", "idiom"], ["প্রবাদ", "proverb"], ["বাক্যাংশ", "phrase"], ["উপসর্গ", "prefix"], ["প্রত্যয়", "suffix"]];
+function addPos() {
+  $("#m-pos").insertAdjacentHTML("beforeend", `<div class="lx-pos"><button type="button" class="x" aria-label="সরান">✕</button>
+    <label>শব্দশ্রেণি<select data-m="pos">${POS.map(p => `<option>${p[0]}</option>`).join("")}</select></label>
+    <label>অর্থ (প্রতি লাইনে একটি)<textarea data-m="defs" rows="3"></textarea></label>
+    <label>অনুবাদ (ইংরেজি)<input data-m="en" placeholder="water"></label>
+    <label>উদাহরণ (প্রতি লাইনে একটি)<textarea data-m="ex" rows="2"></textarea></label></div>`);
+}
+$("#m-addpos").addEventListener("click", addPos);
+$("#m-pos").addEventListener("click", e => { if (e.target.closest(".x")) { e.target.closest(".lx-pos").remove(); update(); } });
+$("#s-manual").addEventListener("input", () => { clearTimeout(window._m); window._m = setTimeout(update, 600); });
+function manualText() {
+  const lines = s => s.split("\n").map(x => x.trim()).filter(Boolean);
+  const pos = $$("#m-pos .lx-pos").map(d => ({ pos: d.querySelector("[data-m=pos]").value, defs: lines(d.querySelector("[data-m=defs]").value), en: d.querySelector("[data-m=en]").value.trim(), ex: lines(d.querySelector("[data-m=ex]").value) })).filter(p => p.defs.length);
+  const ipa = $("#m-ipa").value.trim(), ety = $("#m-ety").value.trim();
+  if (!pos.length && !ipa && !ety) return "";
+  let w = "==বাংলা==\n";
+  if (ipa) w += `===উচ্চারণ===\n* আধ্বব: ${ipa.startsWith("/") || ipa.startsWith("[") ? ipa : `/${ipa}/`}\n\n`;
+  if (ety) w += `===ব্যুৎপত্তি===\n${ety}\n\n`;
+  pos.forEach(p => {
+    w += `===${p.pos}===\n'''${title}'''\n\n` + p.defs.map((d, i) => `# ${d}` + (i === 0 && p.ex.length ? "\n" + p.ex.map(x => `#: ''${x}''`).join("\n") : "")).join("\n") + "\n";
+    if (p.en) w += `\n====অনুবাদ====\n* ইংরেজি: ${p.en}\n`;
+    w += "\n";
+  });
+  return w.trim() + `\n\n[[বিষয়শ্রেণী:বাংলা ভাষা]]`;
+}
+
+async function loadPage() {
+  const j = await wk({ action: "query", titles: title, prop: "revisions", rvprop: "content", rvslots: "main" });
+  const pg = j.query.pages[0], text = pg.missing ? "" : pg.revisions?.[0]?.slots?.main?.content || "";
+  page = { exists: !pg.missing, text, lexemes: [...text.matchAll(LEX_RX)].map(m => m[1]) };
+  mode = page.exists ? (page.lexemes.length ? "append" : "append") : "create";
+  const link = `<a href="${PAGE(title)}" target="_blank" rel="noopener">${esc(title)}</a>`;
+  $("#pg-state").innerHTML = `<div class="msg">${page.exists ? `${link} পাতাটি আছে${page.lexemes.length ? ` (ইতিমধ্যে {{লে|${page.lexemes.join("}}, {{লে|")}}})` : " — হাতে লেখা"}।` : `উইকিঅভিধানে ${link} পাতাটি নেই।`}</div>
+    ${page.exists ? `<details><summary>বর্তমান লেখা</summary><pre class="lx-pre">${esc(page.text.slice(0, 5000))}</pre></details>` : ""}`;
+  $$("#modes input").forEach(r => { r.disabled = page.exists ? r.value === "create" : r.value !== "create"; r.checked = r.value === mode; });
+  $("#s-page").hidden = false; $("#s-prev").hidden = false;
+}
+$("#modes").addEventListener("change", e => { mode = e.target.value; update(); });
+$("#extra").addEventListener("input", () => { clearTimeout(window._t); window._t = setTimeout(update, 600); });
+
+const chosen = () => $$("#lex input:checked").map(i => i.value).filter(id => !(mode === "append" && page?.lexemes.includes(id)));
+function finalText() {
+  const add = chosen().map(id => `{{লে|${id}}}`).join("\n"), extra = $("#extra").value.trim();
+  const body = [add, manualText(), extra].filter(Boolean).join("\n\n");
+  return mode === "append" ? `${page.text.replace(/\s*$/, "")}\n${body}` : body;
+}
+async function update() {
+  if (!page) return;
+  const text = finalText(); $("#final").textContent = text;
+  const any = chosen().length || manualText() || $("#extra").value.trim();
+  $("#save").disabled = !any;
+  $("#save-msg").textContent = any ? "" : "লেক্সিম বাছুন বা নিজে কিছু লিখুন।";
+  try {
+    const j = await wk({ action: "parse", title, text, contentmodel: "wikitext", prop: "text", disablelimitreport: "1" }, true);
+    const css = '<link rel="stylesheet" href="https://bn.wiktionary.org/w/load.php?modules=skins.vector.styles&only=styles&skin=vector">';
+    $("#prev").srcdoc = `<!doctype html><meta charset="utf-8"><base href="https://bn.wiktionary.org/wiki/" target="_blank">${css}<body style="font:15px sans-serif;padding:12px;background:#fff;color:#202122">${j.parse.text}</body>`;
+  } catch (e) { $("#prev").srcdoc = `<p style="font:14px sans-serif">প্রাকদর্শন পাওয়া যায়নি: ${esc(e.message)}</p>`; }
+}
+$("#refresh").addEventListener("click", update);
+
+$("#save").addEventListener("click", async () => {
+  if (!window.LX_NODE) { $("#save-msg").textContent = "সংরক্ষণ শুধু সাইটের সার্ভার থেকে চলে।"; return; }
+  if (!window.LX_USER) { $("#save-msg").textContent = "আগে লগ ইন করুন।"; window.LXAuth?.login(); return; }
+  if (mode === "replace" && !confirm(`“${title}” পাতার বর্তমান লেখা মুছে নতুন লেখা বসবে (পুরোনো লেখা ইতিহাসে থাকবে)। নিশ্চিত?`)) return;
+  $("#save").disabled = true; $("#save-msg").textContent = "সংরক্ষণ হচ্ছে…";
+  try {
+    const token = (await wk({ action: "query", meta: "tokens" })).query.tokens.csrftoken;
+    const ids = chosen().join(", ") || "হাতে লেখা";
+    const summary = { create: `লেক্সিনারি: লেক্সিম ${ids} থেকে নতুন ভুক্তি ({{লে}})`, append: `লেক্সিনারি: লেক্সিম ${ids} যোগ ({{লে}})`, replace: `লেক্সিনারি: পাতা লেক্সিম ${ids} ({{লে}}) দিয়ে প্রতিস্থাপন` }[mode];
+    const r = await wk({ action: "edit", title, text: finalText(), summary, token, ...(mode === "create" ? { createonly: "1" } : { nocreate: "1" }) }, true);
+    if (r.edit?.result !== "Success") throw new Error(JSON.stringify(r.edit || r));
+    $("#save-msg").innerHTML = `✓ সংরক্ষিত — <a href="${PAGE(title)}" target="_blank" rel="noopener">পাতাটি দেখুন ↗</a>`;
+    await loadPage(); update();
+  } catch (e) { $("#save-msg").textContent = "হয়নি: " + e.message; $("#save").disabled = false; }
+});
+const p0 = params(); if (p0.q || p0.id) { $("#q").value = p0.id || p0.q; $("#find").requestSubmit(); }
+</script>
+</body>
+</html>

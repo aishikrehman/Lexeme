@@ -24,7 +24,7 @@
 const cat = (location.pathname.match(/\/collection\/(idiom|proverb)/) || [])[1] || (params().cat === "proverb" ? "proverb" : "idiom");
 const page = +params().page || 1;
 const T = { idiom: ["বাগধারা", "Idioms", "যে শব্দগুচ্ছের অর্থ আক্ষরিক অর্থ থেকে আলাদা।"], proverb: ["প্রবাদ-প্রবচন", "Proverbs", "লোকমুখে প্রচলিত জ্ঞানগর্ভ উক্তি।"] }[cat];
-$("#title").innerHTML = `${T[0]} <span class="en">${T[1]}</span>`; $("#lead").textContent = T[2]; document.title = `${T[0]} · লেক্সিম.বাংলা`;
+$("#title").innerHTML = T[0]; $("#lead").textContent = T[2]; document.title = `${T[0]} · লেক্সিম.বাংলা`;
 $("#add").href = `wizard.html?cat=${cat}`;
 configReady.then(async () => {
   $("#out").innerHTML = skeleton(9);

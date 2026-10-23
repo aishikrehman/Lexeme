@@ -19,10 +19,6 @@ const CFG = {
   // language code is taken from existing Wikidata lexemes of that language; qid/code below are fallbacks.
   languages: [
     { iso3: "ben", qid: "Q9610", code: "bn", en: "Bengali", bn: "বাংলা" },
-    { iso3: "asm", qid: "Q29401", code: "as", en: "Assamese", bn: "অসমীয়া" },
-    { iso3: "kyw", qid: "", code: "", en: "Kurmali", bn: "কুড়মালি" },
-    { iso3: "syl", qid: "Q2044", code: "syl", en: "Sylheti", bn: "সিলেটি" },
-    { iso3: "ctg", qid: "Q33173", code: "", en: "Chittagonian", bn: "চাটগাঁইয়া" },
   ],
   categories: [
     { key: "noun", qid: "Q1084", en: "Noun", bn: "বিশেষ্য", nominal: true },
@@ -1222,7 +1218,7 @@ function renderSenses() {
       <button class="x" data-act="removeSense" data-i="${i}" aria-label="অর্থ ${toBn(i + 1)} সরান">×</button></div>`;
     if (s._collapsed) return `<section class="blk sense-card collapsed tone-${i % 6}" id="sense-${s._key}">${head}</section>`;
     return `<section class="blk sense-card tone-${i % 6}" id="sense-${s._key}">${head}
-    <div class="row">${langs.map(l => field(`সংজ্ঞা <span class="en">gloss</span> (${l})`, `<textarea lang="${l}" rows="2" data-bind="${hp}.gloss.${l}">${esc(s.gloss[l] || "")}</textarea>`)).join("")}</div>
+    <div class="row">${langs.map(l => field(`সংজ্ঞা (${l})`, `<textarea lang="${l}" rows="2" data-bind="${hp}.gloss.${l}">${esc(s.gloss[l] || "")}</textarea>`)).join("")}</div>
     <div class="row">${field(plab(P.item), propList(hp, P.item, "senses", { rr: "senses" }), "এই অর্থ যে উইকি উপাত্ত আইটেমকে বোঝায়।")}</div>
     ${optFields(hp, "senses", [{ prop: P.synonym, help: "একই অর্থের অন্য শব্দের অর্থ।" }, ...(hasItem && !hasTr ? [] : [{ prop: P.translation, help: "অন্য ভাষার লেক্সিম খুঁজে তার অর্থ বাছুন।" }])])}
     ${etyBlockForSense(s, i)}
@@ -1328,7 +1324,7 @@ function setEtySense(ci, ref, on) {
 }
 function etyBlockForSense(s, i) {
   const ref = senseRef(s), ders = idxOf(draft, P.derivedFrom);
-  return `<fieldset><legend>এই অর্থের ব্যুৎপত্তি <span class="en">etymology</span></legend>
+  return `<fieldset><legend>এই অর্থের ব্যুৎপত্তি</legend>
     ${ders.length ? `<div class="checks">${ders.map(ci => { const c = draft.claims[ci]; const scope = etySenses(c);
       return `<label><input type="checkbox" data-hook="etySense" data-ci="${ci}" data-ref="${esc(ref)}"${scope.includes(ref) ? " checked" : ""}> ${present(c.value) ? `<span data-lab="${esc(c.value)}">${esc(c.value)}</span>` : `<span class="muted">মূল শব্দ এখনো বাছা হয়নি (শব্দের তথ্য ট্যাবে)</span>`}${c._origin ? ` (${esc(CFG.origins[c._origin]?.label || "")})` : ""}<small class="muted">${scope.length ? ` · ${toBn(scope.length)}টি অর্থে` : " · এখন পুরো শব্দের"}</small></label>`; }).join("")}</div>` : `<p class="hint">এখনো কোনো ব্যুৎপত্তি নেই।</p>`}
     <button class="add small-add" data-act="newEtyForSense" data-ref="${esc(ref)}">+ এই অর্থের জন্য নতুন ব্যুৎপত্তি</button>
@@ -1369,7 +1365,7 @@ function renderReview() {
   </section>
   ${unc.length ? `<section class="blk">${sectionHead("যেসব বিবৃতির আলাদা ঘর নেই", "এগুলো উইকি উপাত্তে আছে এবং “অন্যান্য বিবৃতি” অংশে দেখা যায়। না বদলালে অপরিবর্তিত থাকবে।")}
     <div class="tbl-wrap"><table><thead><tr><th>প্রপার্টি</th><th>ডেটাটাইপ</th><th>কোথায়</th></tr></thead><tbody>${Object.entries(grouped).map(([p, ws]) => `<tr><td>${plab(p)}</td><td class="muted">${esc(DT[p] || "")}</td><td>${esc([...new Set(ws)].join(", "))}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
-  <section class="blk"><h3>সম্পাদনা-পরিকল্পনা <span class="en">edit plan</span>${tipI((plan.phase1.id ? `প্রথম সম্পাদনায় ${plan.phase1.id}-এর শুধু বদলানো অংশ পাঠানো হবে` : "প্রথম সম্পাদনায় লেক্সিমটি তৈরি হবে") + "।" + (plan.phase2.length ? ` এরপর ${toBn(plan.phase2.length)}টি সম্পাদনায় নতুন রূপ বা অর্থের সঙ্গে যুক্ত বিবৃতি যোগ হবে।` : ""))}</h3>
+  <section class="blk"><h3>সম্পাদনা-পরিকল্পনা${tipI((plan.phase1.id ? `প্রথম সম্পাদনায় ${plan.phase1.id}-এর শুধু বদলানো অংশ পাঠানো হবে` : "প্রথম সম্পাদনায় লেক্সিমটি তৈরি হবে") + "।" + (plan.phase2.length ? ` এরপর ${toBn(plan.phase2.length)}টি সম্পাদনায় নতুন রূপ বা অর্থের সঙ্গে যুক্ত বিবৃতি যোগ হবে।` : ""))}</h3>
     <div class="row" style="gap:8px;margin-bottom:8px"><button class="btn ghost small" data-act="dlPlan">সম্পাদনা-পরিকল্পনা ডাউনলোড (JSON)</button><button class="btn ghost small" data-act="copyP1">wbeditentity ডেটা কপি</button></div>
     <details open><summary>প্রথম সম্পাদনার ডেটা</summary><pre>${esc(JSON.stringify(plan.phase1.data, null, 2))}</pre></details>
     ${plan.phase2.length ? `<details><summary>পরের সম্পাদনাগুলো</summary><pre>${esc(JSON.stringify(plan.phase2, null, 2))}</pre></details>` : ""}
@@ -1480,18 +1476,19 @@ async function lookup(auto = false) {
     Object.assign(draft, { _lookupFor: q, _formHits: formHits, _baseHits: baseHits, _allowDup: false });
     const card = (e, kind) => `<div class="hit ${kind}"><span class="lem" lang="bn">${esc(firstVal(e.lemmas))}</span><a href="https://www.wikidata.org/wiki/Lexeme:${e.id}" target="_blank" rel="noopener">${e.id}</a><span class="muted">${esc(desc[e.id] || "")}, ${toBn((e.forms || []).length)}টি রূপ, ${toBn((e.senses || []).length)}টি অর্থ, ${toBn(Object.values(e.claims || {}).flat().length)}টি বিবৃতি</span>
       <span class="chip">${esc(catBy(e.lexicalCategory)?.bn || e.lexicalCategory)}</span>
-      <span class="acts">${!draft.category && e.language === draft.language && catBy(e.lexicalCategory) ? `<button class="btn ghost small" data-act="takeCat" data-cat="${e.lexicalCategory}">এই শ্রেণি বাছুন</button>` : ""}${kind === "same" ? `<button class="btn ghost small" data-act="skip">বাদ দিন</button>` : ""}<button class="btn small${kind === "same" ? "" : " ghost"}" data-act="editExisting" data-id="${e.id}">এটি সম্পাদনা করুন</button></span></div>`;
+      <span class="acts">${!draft.category && e.language === draft.language && catBy(e.lexicalCategory) ? `<button class="btn ghost small" data-act="takeCat" data-cat="${e.lexicalCategory}">এই শ্রেণি বাছুন</button>` : ""}${kind === "same" ? `<button class="btn ghost small" data-act="skip">বাদ দিন</button>` : ""}${e.language === draft.language ? `<button class="btn small${kind === "same" ? "" : " ghost"}" data-act="editExisting" data-id="${e.id}">এটি সম্পাদনা করুন</button>` : `<span class="chip muted" title="এই উইজার্ডে শুধু এই ভাষার লেক্সিম সম্পাদনা করা যায়">অন্য ভাষা</span>`}</span></div>`;
     let html = "";
     if (formHits.length) html += `<div class="msg err">“${esc(q)}” ইতিমধ্যে একটি লেক্সিমের রূপ, তাই এর আলাদা লেক্সিম লাগবে না। নতুন অর্থ বা বিবৃতি ওই লেক্সিমেই যোগ করুন।</div>
       ${formHits.map(h => `<div class="hit same"><span class="lem" lang="bn">${esc(h.lemma)}</span><a href="https://www.wikidata.org/wiki/Lexeme:${h.lexeme}" target="_blank" rel="noopener">${h.lexeme}</a><span class="muted">রূপ ${esc(h.form)}${h.feats ? `: ${esc(h.feats)}` : ""}, ${esc(catBy(h.cat)?.bn || h.cat)}</span><span class="acts"><button class="btn small" data-act="editExisting" data-id="${h.lexeme}">${esc(h.lemma)} খুলুন</button></span></div>`).join("")}
       <div><button class="btn ghost small" data-act="allowDup">এটি একই বানানের ভিন্ন শব্দ</button></div>`;
     if (baseHits.length) html += `${baseHits.map((h, i) => `<div class="msg warn">“${esc(q)}” দেখতে ${esc(h.lemma)} + ${esc(h.suffix)} (${esc(h.featText)})-এর মতো, আর <a href="https://www.wikidata.org/wiki/Lexeme:${h.id}" target="_blank" rel="noopener">${h.id} ${esc(h.lemma)}</a> লেক্সিমটি আছে। বিভক্তিযুক্ত রূপ ওই লেক্সিমেই থাকা উচিত। <button class="btn small" data-act="addAsForm" data-i="${i}">“${esc(q)}”-কে ${esc(h.lemma)}-এর রূপ হিসেবে যোগ করুন</button></div>`).join("")}`;
     if (same.length) html += `<div class="msg warn">${draft.category ? "একই ভাষা ও শ্রেণিতে উইকি উপাত্তে আগে থেকেই আছে।" : "এই ভাষায় একই বানানের লেক্সিম আছে (শব্দশ্রেণি এখনো বাছা হয়নি, তাই সব শ্রেণি দেখানো হলো)।"}</div>${same.map(e => card(e, "same")).join("")}`;
-    if (other.length) html += `<div class="msg">একই বানান অন্য ভাষা বা শ্রেণিতে আছে। এখানে নতুন লেক্সিম বানানো যায়।</div>${other.map(e => card(e, "")).join("")}`;
+    if (other.length) html += other.map(e => card(e, "")).join("");
     if (!exact.length && !formHits.length) html += `<div class="msg ok">“${esc(q)}” নামে কোনো লেক্সিম এখনো নেই।${all.length ? ` কাছাকাছি: ${all.slice(0, 6).map(e => `<a href="https://www.wikidata.org/wiki/Lexeme:${e.id}" target="_blank" rel="noopener">${esc(firstVal(e.lemmas))}</a>`).join(", ")}।` : ""} নিচের ধাপগুলো পূরণ করে তৈরি করুন।</div>`;
-    else if (exact.length) html += `<div><button class="btn ghost" data-act="addNew">${same.length ? "তবু নতুন লেক্সিম বানাব" : "নতুন লেক্সিম বানান"}</button></div>`;
+    // “New lexeme anyway” sits at the top, next to the summary, where it is seen first.
+    else if (exact.length) html = `<div class="found-bar"><span><b>${toBn(exact.length)}টি</b> লেক্সিম পাওয়া গেছে</span><button class="btn small" data-act="addNew"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>${same.length ? "তবু নতুন লেক্সিম বানাব" : "নতুন লেক্সিম বানান"}</button></div>` + html;
     box.innerHTML = html; schedulePreview();
-  } catch (e) { if (seq === lookupSeq) box.innerHTML = `<div class="msg err">খোঁজা যায়নি: ${esc(e.message)}। ইন্টারনেট সংযোগ দেখে “উইকি উপাত্তে খুঁজুন” চাপুন।</div>`; }
+  } catch (e) { if (seq === lookupSeq) box.innerHTML = `<div class="msg err">খোঁজা যায়নি: ${esc(e.message)}। ইন্টারনেট সংযোগ দেখে “খুঁজুন” চাপুন।</div>`; }
 }
 async function loadExisting(id) {
   $("#found").innerHTML = `<div class="msg">${esc(id)} লোড হচ্ছে…</div>`;
@@ -1828,7 +1825,7 @@ async function resolveLanguages() {
     try {
       const sq = `SELECT ?code (COUNT(*) AS ?n) WHERE { ?l dct:language wd:${l.qid} ; wikibase:lemma ?lem . BIND(LANG(?lem) AS ?code) } GROUP BY ?code ORDER BY DESC(?n) LIMIT 1`;
       const r = await fetch(CFG.sparql + "?format=json&query=" + encodeURIComponent(sq), { headers: { Accept: "application/sparql-results+json" } });
-      const code = (await r.json()).results.bindings[0]?.code?.value; if (code) l.code = code;
+      const code = (await r.json()).results.bindings[0]?.code?.value; if (code && !l.fixedCode) l.code = code;
     } catch (e) {}
     if (!l.code) l.code = `mis-x-${l.qid}`; // no lexemes yet and no Wikimedia code: private-use tag on “mis”
   }));
@@ -1931,11 +1928,11 @@ function loadBulkText(text) {
 $("#bulk-file").addEventListener("change", async e => { const f = e.target.files[0]; if (f) { $("#bulk-text").value = await f.text(); bulkEdited(); setBulkView(grid.view); } });
 $("#bulk-tpl").addEventListener("click", () => download("bengali-lexemes-template.csv", "\uFEFF" + SAMPLE_CSV, "text/csv"));
 /* ---------------- bulk table: editable, sortable, searchable view of the CSV ---------------- */
-const SAMPLE_CSV = "lemma,lang_code,language,category,animacy,gloss_bn,gloss_en,item,derived_from,derivation_mode,components,usage_example,generate_forms,forms,audio,statements,existing_id\n" +
-  "কুকুর,bn,Q9610,noun,animate,চারপেয়ে গৃহপালিত প্রাণী,dog,Q144,,,,কুকুরটা খুব প্রভুভক্ত।,yes,\"কুকুরেরা:plural,nominative\",,,\n" +
-  "জামা,bn,Q9610,noun,inanimate,গায়ে পরার পোশাক,shirt,,,,,,yes,,,,\n" +
-  "আম,bn,Q9610,noun,inanimate,এক রকমের মিষ্টি ফল,mango,,,,,,yes,\"আমগুলো:plural,nominative\",,,\n" +
-  "করা,bn,Q9610,verb,,কোনো কাজ সম্পন্ন করা,to do,,,,,,yes,,,,\n";
+const SAMPLE_CSV = "lemma,category,animacy,gloss_bn,gloss_en,item,derived_from,derivation_mode,components,usage_example,generate_forms,forms,audio,statements,existing_id\n" +
+  "কুকুর,noun,animate,চারপেয়ে গৃহপালিত প্রাণী,dog,Q144,,,,কুকুরটা খুব প্রভুভক্ত।,yes,\"কুকুরেরা:plural,nominative\",,,\n" +
+  "জামা,noun,inanimate,গায়ে পরার পোশাক,shirt,,,,,,yes,,,,\n" +
+  "আম,noun,inanimate,এক রকমের মিষ্টি ফল,mango,,,,,,yes,\"আমগুলো:plural,nominative\",,,\n" +
+  "করা,verb,,কোনো কাজ সম্পন্ন করা,to do,,,,,,yes,,,,\n";
 const COL_BN = { lemma: "শব্দ", lang_code: "কোড", language: "ভাষা", category: "শ্রেণি", animacy: "প্রাণীবাচক", gloss_bn: "সংজ্ঞা (bn)", gloss_en: "সংজ্ঞা (en)", item: "আইটেম",
   derived_from: "উদ্ভূত", derivation_mode: "উদ্ভবের ধরন", components: "অংশ", usage_example: "উদাহরণ", generate_forms: "রূপ তৈরি", forms: "রূপ", audio: "অডিও", statements: "বিবৃতি", existing_id: "লেক্সিম আইডি" };
 const grid = { cols: [], rows: [], sort: -1, dir: 1, q: "", view: "table", json: false };

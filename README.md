@@ -22,7 +22,6 @@ The same reader code in `lib/` then runs in the browser and talks to Wikidata di
 | `collection.html?cat=idiom` / `?cat=proverb` | Full idiom and proverb collections (idioms also include verbal locutions/phrases while Wikidata has no Bengali "idiom" lexemes) |
 | `/wizard` | One lexeme at a time: the original editor with every function (senses, forms, etymology, audio, examples), restyled to match. `?id=L123` update, `?lemma=…&cat=idiom` new |
 | `/bulk` | **একসঙ্গে অনেক** — many lexemes as a spreadsheet: paste from Excel/Google Sheets (TSV) or CSV, open CSV/TSV/JSON files, keyboard editing, block select, copy/cut/paste, fill-down (Ctrl+D), undo/redo, insert/duplicate/delete rows, show/hide/add/resize columns, find & replace, drop-downs for category/animacy/language, live cell checks, status filter, autosave, CSV/TSV/JSON export, “open row in the wizard”; then validate (incl. duplicates on Wikidata) and run the batch |
-| `/legacy` | The original single-file `index.html`, untouched |
 
 Old links (`/word/L123`, `word.html?id=L123`, `etymology.html?id=L123`, `/browse`, `/wizard`, …) redirect to these. Without the Node server (plain files) word links fall back to `word.html?id=L123`.
 
@@ -57,3 +56,9 @@ so use one consumer per place the site runs:
 Grants needed: edit existing pages; create, edit and move pages; upload new files. The wizard's edits and uploads
 go through `/proxy/*`, where the server signs each call; plain reads are sent anonymously. Logins are kept in
 `cache/sessions.json`, so `npm start` (which restarts itself when the code changes) keeps you logged in.
+
+## লিব্রে স্টুডিও storage
+
+Logged-in users' recordings (WAV + details) and word lists are kept under `data/studio/<user>/` (or `STORE_DIR`).
+On Render the normal filesystem is wiped on every deploy: add a **persistent disk** and set `STORE_DIR` to its
+mount path (e.g. `/var/data`), or the stored recordings will be lost.
