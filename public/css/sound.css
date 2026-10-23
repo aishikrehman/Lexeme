@@ -637,7 +637,7 @@ select.sb{padding:0 4px}
   #t-editor::before{content:"✎";font-size:17px}
   #t-editor[aria-pressed=true]{background:var(--ac-soft);color:var(--ac)}
 }
-@media (max-width:380px){ #t-prev,#t-next{display:none} }
+
 .studio .bt-word b.empty{font-size:17px!important;font-weight:500;color:var(--mu)}
 
 /* ===== phones: only what the moment needs ===== */
@@ -869,3 +869,98 @@ select.sb{padding:0 4px}
 .tgl::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
 .ps-sw[aria-checked=true] .tgl{background:var(--ac)}
 .ps-sw[aria-checked=true] .tgl::after{left:15px}
+/* ===== 861–1250px: the menu column stays visible ===== */
+@media (min-width:861px) and (max-width:1250px){
+  .studio .st-left{contain:none!important;align-self:stretch!important;grid-row:2/4!important;overflow-y:auto;max-height:none}
+}
+
+/* ===== phones: the menu is a strip on top (no “menu” tab) ===== */
+@media (max-width:860px){
+  .st-mnav [data-mv="left"]{display:none!important}
+  .st-mnav{grid-template-columns:1fr 1fr!important}
+  .studio .st-left,body[data-mview] .studio .st-left{display:block!important;order:-1;background:none!important;border:0!important;padding:0!important;max-height:none;overflow:visible}
+  .ps-menu{flex-direction:row!important;flex-wrap:nowrap;overflow-x:auto;gap:2px!important;padding:2px 0 4px!important;scrollbar-width:none;align-items:center}
+  .ps-menu::-webkit-scrollbar{display:none}
+  .ps-title,.ps-menu > .ps-sep{display:none}
+  .ps-menu > .ps-it{width:auto;flex:none;grid-template-columns:auto auto;padding:7px 10px;background:var(--pn);border:1px solid var(--sub);border-radius:999px;font-size:13.5px}
+  .ps-menu > .ps-it kbd,.ps-menu > .ps-it .ps-arr{display:none}
+  .ps-menu > .ps-it[data-path="0.0"] .ps-l,.ps-menu > .ps-it[data-path="0.1"] .ps-l{display:none} /* undo, redo: icon only */
+  .ps-menu > .ps-sw{width:auto;flex:none;grid-template-columns:auto auto auto;padding:6px 10px;background:var(--pn);border:1px solid var(--sub);border-radius:999px;font-size:13px}
+  .ps-menu > .ps-pills{flex:none;margin:0;min-width:190px}
+  .ps-sub.sheet{position:fixed;left:8px!important;right:8px;max-width:none;max-height:60vh;z-index:130}
+}
+/* no child may widen the page */
+.studio > *{min-width:0}
+@media (max-width:860px){.studio{grid-template-columns:minmax(0,1fr)!important}.studio .st-left,.ps-menu{max-width:100%;min-width:0}}
+
+@media (max-width:860px){.studio .st-left,body[data-mview] .studio .st-left{order:-3!important}.st-mnav{order:-2!important}}
+
+/* ===== phones: one row of five tabs; the column tabs are not needed ===== */
+@media (max-width:860px){
+  .st-mnav{display:flex!important;grid-template-columns:none!important;overflow-x:auto;scrollbar-width:none;gap:2px!important;flex-wrap:nowrap}
+  .st-mnav::-webkit-scrollbar{display:none}
+  .st-mnav [data-mt]{flex:none;padding:8px 12px!important;white-space:nowrap}
+  .st-mnav [data-mt][aria-current=true]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .studio .ct-tabs,.studio .rt-tabs{display:none!important}
+}
+/* 861–1250px: the same five tabs above the work area */
+@media (min-width:861px) and (max-width:1250px){
+  .st-mnav{display:flex!important;gap:2px!important;overflow-x:auto}
+  .st-mnav [data-mt]{flex:1;white-space:nowrap}
+  .st-mnav [data-mt][aria-current=true]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .studio .ct-tabs,.studio .rt-tabs{display:none!important}
+}
+/* ===== phones, cleaner ===== */
+.st-mnav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.st-mnav .ms{display:none}
+.ps-toggle{display:none}
+@media (min-width:861px) and (max-width:1250px){ .st-mnav [data-mt]{display:inline-flex;align-items:center;justify-content:center;gap:6px} }
+@media (max-width:860px){
+  /* five tabs: icon over a short word, all visible */
+  .st-mnav{display:grid!important;grid-template-columns:repeat(5,1fr)!important;overflow:visible!important;padding:3px!important}
+  .st-mnav [data-mt]{display:flex!important;flex-direction:column;align-items:center;gap:2px;padding:6px 2px!important;font-size:12px!important;position:relative;min-width:0}
+  .st-mnav .ml{display:none}.st-mnav .ms{display:block;white-space:nowrap}
+  .st-mnav #mnav-q{position:absolute;top:2px;right:8px;background:var(--rec);color:#fff;font-size:10px;padding:0 5px;border-radius:999px}
+  .st-mnav #mnav-q:empty{display:none}
+  /* menu: one row — মেনু, ↶ ↷, switches, mode pills; the full menu opens below as a list */
+  .ps-menu{flex-wrap:wrap!important;overflow:visible!important;gap:6px!important}
+  .ps-toggle{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border:1px solid var(--ln);border-radius:999px;background:var(--pn);color:var(--tx);font:600 14px "Tiro Bangla",sans-serif;cursor:pointer}
+  .ps-toggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  .ps-menu.open .ps-toggle{background:var(--ac);border-color:var(--ac);color:#fff}
+  .ps-menu > .ps-it:not([data-path="0.0"]):not([data-path="0.1"]),.ps-menu > .ps-sw{display:none!important}
+  .ps-menu > .ps-it[data-path="0.0"],.ps-menu > .ps-it[data-path="0.1"]{width:34px;height:34px;padding:0;grid-template-columns:1fr;justify-items:center}
+  .ps-menu > .ps-pills{margin-left:auto!important;min-width:0!important;flex:0 1 200px}
+  /* open: a full-width list */
+  .ps-menu.open{background:var(--pn);border:1px solid var(--sub);border-radius:14px;padding:8px!important}
+  .ps-menu.open > .ps-it:not([data-path="0.0"]):not([data-path="0.1"]),.ps-menu.open > .ps-sw{display:grid!important;flex:1 1 100%;width:100%;border:0!important;background:none!important;border-radius:8px!important;padding:10px 8px!important;font-size:15px!important}
+  .ps-menu.open > .ps-it .ps-arr{display:inline!important}
+  .ps-menu.open > .ps-sub.inline{flex:1 1 100%}
+  .ps-sub.inline{margin-left:24px}
+  /* edit toolbar: wraps into rows, nothing cut off */
+  .studio .st-toolbar{flex-wrap:wrap!important;overflow:visible!important;justify-content:flex-start;gap:2px!important;padding:4px!important}
+  .studio .st-toolbar .tg{flex:none;border-right:0!important;padding:0 2px!important;background:var(--pn2)!important;border-radius:8px}
+  .studio .st-toolbar .tg-r{margin-left:0}
+  .studio .ic-b{min-width:34px;height:34px}
+  .studio .ic-b.ic-t span{display:none}
+  .studio .ic-chk{font-size:12px}
+}
+@media (max-width:860px){.ps-menu > .ps-pills{flex:1 1 150px!important;max-width:200px}.ps-menu > .ps-pills .ps-pill{font-size:12px;padding:6px 2px}.ps-toggle{padding:0 12px}}
+
+@media (max-width:860px){.ps-menu.open > .ps-it:not([data-path="0.0"]):not([data-path="0.1"]){grid-template-columns:22px 1fr auto auto!important;justify-items:stretch;text-align:left}.ps-menu.open > .ps-sw{grid-template-columns:22px 1fr auto!important}.ps-menu.open > .ps-it .ps-l{text-align:left}}
+
+/* ===== time on the timeline; the bar keeps only the buttons ===== */
+.studio .st-stage .st-clock{position:absolute;top:32px;right:8px;z-index:5;min-width:0!important;padding:2px 8px!important;background:color-mix(in srgb,var(--pn) 88%,transparent);border:1px solid var(--sub);border-radius:8px;backdrop-filter:blur(2px);pointer-events:none}
+.studio .st-stage .st-clock span{font-size:15px!important;letter-spacing:0}
+.studio .st-stage .st-clock small{display:inline!important;font-size:11px}
+/* the word card shows the running time while recording, on every screen */
+.is-rec .studio .bt-live,.is-rec .bt-live{display:flex!important;visibility:visible!important;height:auto!important;align-items:center;gap:8px;justify-content:center;margin:2px 0 6px;font:600 13px "JetBrains Mono",monospace;color:var(--rec)}
+/* bottom bar on phones: buttons only, evenly spread, never cut */
+@media (max-width:860px){
+  .studio .st-player .st-tcenter{width:100%;justify-content:space-between!important;gap:0!important;overflow:visible}
+  .studio .st-player .st-meter{display:none!important}
+  .studio .st-player .tb{width:36px;height:36px}
+  .studio .st-player .tb-play,.studio .st-player .tb-rec{width:44px!important;height:44px!important}
+}
+@media (max-width:360px){ .studio .st-player #t-home{display:none} }/* input level: small, under the time on the timeline */
+.studio .st-stage .st-meter{position:absolute;top:62px;right:8px;z-index:5;display:flex!important;min-width:0!important;width:140px;gap:6px;padding:3px 8px;background:color-mix(in srgb,var(--pn) 88%,transparent);border:1px solid var(--sub);border-radius:8px;pointer-events:none}
+.studio .st-stage .st-meter small{width:auto;font-size:10.5px}

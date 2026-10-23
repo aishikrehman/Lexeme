@@ -117,7 +117,7 @@ function drawBatch() {
   $("#bt-pos").textContent = WORDS.length ? `${toBn(wordPos + 1)} / ${toBn(WORDS.length)}` : "তালিকা খালি";
   $("#bt-bar").style.width = WORDS.length ? `${(done / WORDS.length) * 100}%` : "0";
   $("#bt-done").textContent = `${toBn(done)}টি রেকর্ড হয়েছে`;
-  $("#bt-word").textContent = w ? w.word : "বাঁ দিকের শব্দ-তালিকায় শব্দ যোগ করুন"; $("#bt-word").classList.toggle("empty", !w);
+  $("#bt-word").textContent = w ? w.word : "আগে শব্দ-তালিকায় শব্দ যোগ করুন"; $("#bt-word").classList.toggle("empty", !w);
   $("#bt-gloss").textContent = w?.gloss || (w?.lexeme ? w.lexeme : "");
   $("#bt-word").classList.toggle("done", !!w?.done);
   $("#bt-upcoming").innerHTML = WORDS.slice(wordPos + 1, wordPos + 6).map(x => `<span${x.done ? " class=done" : ""}>${esc(x.word)}</span>`).join("");
@@ -455,7 +455,7 @@ function meter() {
   if (pdb > peakHold || performance.now() - peakT > 1500) { peakHold = pdb; peakT = performance.now(); }
   $("#t-peak").style.left = pct(peakHold) + "%"; $("#t-db").textContent = `${toBn(Math.max(-60, Math.round(pdb)))} dB`;
   vadTick(rms);
-  if (recording) { const s = (Date.now() - recT0) / 1000; $("#t-clock").textContent = fmt(s); $("#bt-clock").textContent = fmt(s).slice(0, 8); }
+  if (recording) { const s = (Date.now() - recT0) / 1000; $("#t-clock").textContent = fmt(s); $("#bt-clock").textContent = fmt(s).slice(0, 8); } // time in the word card too
   meterRaf = requestAnimationFrame(meter);
 }
 // Word-list mode: stop by itself after the word is said (silence after speech).
@@ -1195,9 +1195,20 @@ $("#t-editor").onclick = () => setEditor(!document.body.classList.contains("no-e
 if (/\/libre\/?$/.test(location.pathname)) { store("lx_snd_editor", false); if (window.LX_NODE) history.replaceState(null, "", "/studio" + location.search); }
 setEditor(load("lx_snd_editor", false));
 // Phones: one column at a time (list, record, upload).
-function setMView(v) { if (v === "left" && matchMedia("(min-width: 861px)").matches) v = "center"; document.body.dataset.mview = v; $$("#st-mnav [data-mv]").forEach(b => b.toggleAttribute("aria-current", b.dataset.mv === v)); store("lx_snd_mview", v); if (v === "center") requestAnimationFrame(() => drawAll()); }
+function setMView(v) { if (v === "left") v = "center"; /* the menu is always shown now */ setTimeout(() => typeof syncMTabs === "function" && syncMTabs()); document.body.dataset.mview = v; $$("#st-mnav [data-mv]").forEach(b => b.toggleAttribute("aria-current", b.dataset.mv === v)); store("lx_snd_mview", v); if (v === "center") requestAnimationFrame(() => drawAll()); }
 // Phones: file menu, undo/redo, the editor switch and the rest fold behind “⋯”.
-$("#st-mnav").addEventListener("click", e => { const b = e.target.closest("[data-mv]"); if (b) setMView(b.dataset.mv); });
+// Phones: one row of five tabs — setup, word list, wizard (centre), parts, upload list (right column).
+function syncMTabs() {
+  const v = document.body.dataset.mview === "right" ? ($("#pn-queue").hidden ? "regions" : "queue") : (load("lx_snd_ctab", "wizard"));
+  $$("#st-mnav [data-mt]").forEach(b => b.setAttribute("aria-current", String(b.dataset.mt === v)));
+  $("#st-mnav [aria-current=true]")?.scrollIntoView({ inline: "nearest", block: "nearest" });
+}
+$("#st-mnav").addEventListener("click", e => {
+  const b = e.target.closest("[data-mt]"); if (!b) return; const t = b.dataset.mt;
+  if (t === "regions" || t === "queue") { setRTab(t === "queue" ? "pn-queue" : "pn-regions"); setMView("right"); }
+  else { setCTab(t); setMView("center"); }
+  syncMTabs();
+});
 setMView(load("lx_snd_mview", "center"));
 document.addEventListener("sl-queue", e => { $("#mnav-q").textContent = e.detail.left ? toBn(e.detail.left) : ""; });
 // Microphone test: 3 seconds, then played back; the level shows in the top bar.
@@ -1214,7 +1225,7 @@ $("#t-autoq").onchange = () => store("lx_snd_autoq", $("#t-autoq").checked);
 function setCTab(id) {
   $$("#ct-tabs [data-ct]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ct === id)));
   $$(".ct-pane").forEach(p => { p.hidden = p.dataset.ct !== id; });
-  store("lx_snd_ctab", id); if (id === "wizard") requestAnimationFrame(() => drawAll());
+  store("lx_snd_ctab", id); if (id === "wizard") requestAnimationFrame(() => drawAll()); if (typeof syncMTabs === "function") syncMTabs();
   if (id === "setup" && speakerWhy()) $("#sp-form").hidden = false; // speaker details still missing: show the form
 }
 $("#ct-tabs").addEventListener("click", e => { const b = e.target.closest("[data-ct]"); if (b) setCTab(b.dataset.ct); });
@@ -1303,8 +1314,8 @@ function closeFrom(level) { psOpen.splice(level).forEach(m => m.el.remove()); $$
 function openSub(btn, items, level) {
   closeFrom(level); btn.classList.add("open"); btn.dataset.lvl = level;
   const el = document.createElement("div"); el.className = "ps-sub"; el.innerHTML = menuHtml(items, level + 1);
-  if (narrow()) { btn.after(el); el.classList.add("inline"); } // phones: nested lists open in place
-  else {
+  if (narrow()) { btn.after(el); el.classList.add("inline"); } // phones: submenus open in place, inside the open menu
+  if (!el.isConnected) {
     document.body.appendChild(el); const r = btn.getBoundingClientRect(), lr = btn.querySelector(".ps-l").getBoundingClientRect();
     el.style.left = `${Math.min(r.right - 6, lr.right + 28)}px`; // right beside the words, not at the far edge
     el.style.top = `${r.top - 5}px`; const h = el.getBoundingClientRect().height; if (r.top - 5 + h > innerHeight - 70) el.style.top = `${Math.max(8, innerHeight - 70 - h)}px`; // level with the row; up only if it would run off the screen
@@ -1319,15 +1330,16 @@ function onItem(btn, fromHover) {
   const { lvl, it } = itemAt(btn); if (!it || btn.disabled) return;
   if (it.items) { if (btn.classList.contains("open") && !fromHover) closeFrom(lvl); else openSub(btn, kids(it), lvl); return; }
   if (fromHover) { closeFrom(lvl); return; } // hovering a plain item closes deeper submenus
-  closeFrom(0); it.run?.(); drawMenu();
+  closeFrom(0); if (narrow()) PS.classList.remove("open"); it.run?.(); drawMenu();
 }
 // the two recording modes sit together at the bottom as pills
 function drawMenu() {
-  PS.innerHTML = `<div class="ps-title">মেনু</div>` + menuHtml(MENU(), 0)
+  PS.innerHTML = `<div class="ps-title">মেনু</div><button type="button" class="ps-toggle" id="ps-toggle" aria-expanded="${PS.classList.contains("open")}"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>মেনু</button>` + menuHtml(MENU(), 0)
     + `<div class="ps-sep"></div>` + SWITCHES().map((s, i) => `<button type="button" class="ps-sw" data-sw="${i}" role="switch" aria-checked="${s.on}" title="${s.tip}"><span class="ps-ic">${micon(s.icon)}</span><span class="ps-l">${s.label}</span><span class="tgl"></span></button>`).join("")
     + `<div class="ps-pills" role="group" aria-label="মোড"><button type="button" class="ps-pill" data-mode="#t-wordmode" aria-pressed="${$("#t-wordmode").checked}">শব্দ-তালিকা</button><button type="button" class="ps-pill" data-mode="#t-auto" aria-pressed="${$("#t-auto").checked}">একটানা</button></div>`;
 }
 PS.addEventListener("click", e => {
+  if (e.target.closest("#ps-toggle")) { e.stopPropagation(); closeFrom(0); PS.classList.toggle("open"); drawMenu(); return; }
   const s = e.target.closest(".ps-sw"); if (s) { SWITCHES()[+s.dataset.sw].run(); setTimeout(drawMenu); return; }
   const b = e.target.closest(".ps-pill"); if (!b) return; toggleEl(b.dataset.mode)(); drawMenu();
 });
@@ -1338,11 +1350,15 @@ addEventListener("resize", () => closeFrom(0));
 ["#t-wordmode", "#t-auto", "#t-autoq"].forEach(s => $(s).addEventListener("change", () => { if (!psOpen.length) drawMenu(); }));
 drawMenu();
 
+/* the time sits on the timeline itself (top right), not in the bottom bar */
+$("#stage").appendChild($(".st-clock"));
+$("#stage").appendChild($(".st-player .st-meter")); // the input level goes with it
+
 /* ================= right column: parts | upload list ================= */
 function setRTab(id) {
   $$("#rt-tabs [data-rt]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.rt === id)));
   ["pn-regions", "pn-queue"].forEach(k => { $("#" + k).hidden = k !== id; });
-  store("lx_snd_rtab", id);
+  store("lx_snd_rtab", id); if (typeof syncMTabs === "function") syncMTabs();
 }
 $("#rt-tabs").addEventListener("click", e => { const b = e.target.closest("[data-rt]"); if (b) setRTab(b.dataset.rt); });
 setRTab(load("lx_snd_rtab", "pn-regions"));

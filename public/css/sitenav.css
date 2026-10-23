@@ -62,8 +62,10 @@
   .sitenav.open .sn-links .nl{height:42px;border-radius:10px;font-size:16px;width:100%}
   .sitenav a.nl[aria-current="page"]::after,.sn-drop.on>.nl::after{display:none}
   .sitenav a.nl[aria-current="page"]{color:var(--primary)}
-  .sn-drop{display:block}.sn-dbtn{display:none!important}
-  .sn-dmenu,.sn-drop.sn-wide .sn-dmenu,.sn-drop.sn-wide.open .sn-dmenu{display:grid;grid-template-columns:1fr 1fr;gap:0 6px;position:static;box-shadow:none;border:0;border-radius:0;padding:6px 0 0;margin-top:6px;min-width:0}
+  /* phones: each dropdown opens in place when its name is tapped */
+  .sn-drop{display:block}.sitenav .sn-dbtn{display:flex!important;width:100%;justify-content:space-between}
+  .sn-dmenu,.sn-drop.sn-wide .sn-dmenu{display:none!important}
+  .sn-drop.open .sn-dmenu,.sn-drop.sn-wide.open .sn-dmenu{display:grid!important;grid-template-columns:1fr 1fr;gap:0 6px;position:static;box-shadow:none;border:0;border-radius:0;padding:2px 0 6px 18px;margin:0;min-width:0}
   .sn-dhead{display:block;grid-column:1/-1;font-size:13px;color:var(--muted);padding:2px 12px}
   .sn-dmenu small{display:none}
   .sn-dmenu a{padding:6px 12px}
@@ -77,3 +79,7 @@
 .lx-menu-who small{display:block;font-weight:400;color:var(--muted);font-size:13px}
 .lx-menu button{display:block;width:100%;text-align:left;border:0;background:none;color:var(--err);padding:8px 10px;border-radius:8px;cursor:pointer;font:inherit;margin-top:4px}
 .lx-menu button:hover{background:var(--err-soft)}
+
+@media (max-width:760px){.sitenav .sn-dhead{display:none!important}}
+
+@media (max-width:760px){.sitenav .sn-drop{display:block!important;width:100%}.sitenav .sn-dbtn{justify-content:flex-start!important;gap:0}.sitenav .sn-dbtn .ic:last-child{margin-left:auto!important}}
