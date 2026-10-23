@@ -21,7 +21,9 @@ const KINDS = { word: ["শব্দ", "pronunciation"], phrase: ["বাক্�
 const LEVEL_BN = { native: "মাতৃভাষা", fluent: "সাবলীল", learner: "শিখছেন" };
 const REG_COLORS = ["#4f8cff", "#2fbf71", "#f5a524", "#c56cf0", "#ff6b81", "#18c5c5", "#a3d13b", "#ff8a3d"];
 
-const store = (k, v) => { try { v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const store = (k, v) => { try { v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} if (PREF_KEYS.includes(k.slice(7))) try { pushPrefs(); } catch (e) {} }; // (before the sync code has loaded: nothing to push yet)
+// speakers and settings that follow a logged-in user to other devices (kept in the server database)
+const PREF_KEYS = ["speakers", "spcur", "pj", "mixplay", "wm", "auto", "autoq", "fx", "kindall", "editor"];
 const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
 const langOf = name => SD_LANGS.find(l => l[2] === name) || SD_LANGS[0];
 const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -73,7 +75,17 @@ fillSpeaker(); drawPick();
 /* project name and extra Commons wikitext (templates, categories) for every upload */
 let PJ = load("lx_snd_pj", { name: "", extra: "" });
 $("#pj-name").value = PJ.name || ""; $("#pj-extra").value = PJ.extra || "";
-$("#pn-proj").addEventListener("input", () => { PJ = { name: $("#pj-name").value.trim(), extra: $("#pj-extra").value.trim() }; store("lx_snd_pj", PJ); });
+// file-name pattern: a preset or the user's own; {শব্দ} and {বক্তা} are always kept
+const FMT_DEF = "Libre Studio-{ভাষা}-{বক্তা}-{শব্দ}";
+{ const f = PJ.fmt || FMT_DEF, opt = [...$("#pj-fmt").options].some(o => o.value === f);
+  $("#pj-fmt").value = opt ? f : "custom"; $("#pj-fmt-c").value = opt ? "" : f; $("#pj-fmt-l").hidden = opt; }
+const fmtNow = () => ($("#pj-fmt").value === "custom" ? $("#pj-fmt-c").value.trim() || FMT_DEF : $("#pj-fmt").value);
+function drawFmtExample() { $("#pj-fmt-ex").textContent = fileName({ word: "আম", kind: "word", id: "x", speaker: { ...SP, name: SP.name || "বক্তা" } }); }
+function saveProj() { PJ = { name: $("#pj-name").value.trim(), extra: $("#pj-extra").value.trim(), fmt: fmtNow() }; store("lx_snd_pj", PJ); $("#pj-fmt-l").hidden = $("#pj-fmt").value !== "custom"; drawFmtExample(); }
+$("#pn-proj").addEventListener("input", saveProj);
+$("#pn-proj").addEventListener("change", saveProj);
+setTimeout(drawFmtExample); // after fileName() below has loaded
+$("#pn-speaker")?.addEventListener("input", () => setTimeout(drawFmtExample));
 function speakerWhy() {
   if (!SP.name) return "ছদ্মনাম দিন";
   if (!/^[\p{L}\p{M}\p{N} _-]{2,40}$/u.test(SP.name)) return "ছদ্মনামে শুধু বর্ণ, সংখ্যা, ফাঁকা, - বা _";
@@ -375,7 +387,7 @@ function drawAll(play) {
   P.regions.forEach((r, k) => { const x0 = Math.max(0, xOf(r.a)), x1 = Math.min(W, xOf(r.b)); if (x1 < 0 || x0 > W) return;
     const col = REG_COLORS[k % REG_COLORS.length]; g.fillStyle = col + (r.skip ? "0d" : "1f"); g.fillRect(x0, 0, x1 - x0, Hh);
     g.fillStyle = r.skip ? COL.ln2 : col; g.fillRect(x0, 0, x1 - x0, 4 * d);
-    g.font = `${11 * d}px "Tiro Bangla", sans-serif`; g.fillStyle = r.skip ? COL.mu : COL.tx;
+    g.font = `${11 * d}px "Noto Serif Bengali", sans-serif`; g.fillStyle = r.skip ? COL.mu : COL.tx;
     if (x1 - x0 > 30 * d) g.fillText(`${toBn(k + 1)}${r.name ? " · " + r.name : ""}${r.skip ? " (বাদ)" : ""}`.slice(0, Math.floor((x1 - x0) / (6 * d))), x0 + 6 * d, 18 * d);
     if (k) { g.fillStyle = COL.ln2; g.fillRect(x0, 0, d, Hh); } });
   if (V.spec) drawSpec(g, W, Hh);
@@ -612,7 +624,7 @@ async function finishRec(word) {
 }
 $("#t-rec").onclick = toggleRec;
 $("#t-mark").onclick = addMark;
-$("#t-wordmode").onchange = () => { store("lx_snd_wm", $("#t-wordmode").checked); drawBatch(); };
+$("#t-wordmode").onchange = () => { store("lx_snd_wm", $("#t-wordmode").checked); drawBatch(); if (typeof applyTabs === "function") applyTabs(); };
 $("#t-wordmode").checked = load("lx_snd_wm", true); // word list is the default mode
 $("#t-auto").checked = load("lx_snd_auto", false);
 $("#t-auto").onchange = () => { store("lx_snd_auto", $("#t-auto").checked); drawBatch(); };
@@ -1078,7 +1090,14 @@ async function api(base, params, post) {
 }
 const token = async base => (await api(base, { action: "query", meta: "tokens" })).query.tokens.csrftoken;
 const safe = s => String(s).replace(/[#<>\[\]|{}\/:\\]/g, "").replace(/\s+/g, " ").trim();
-function fileName(c) { const code = langOf(c.speaker.lang)[0] || "mis"; return `Libre Studio-${code}-${safe(c.speaker.name)}-${safe(c.word).slice(0, 80)}${c.kind !== "word" ? "-" + c.id.slice(-5) : ""}.wav`; }
+function fileName(c) {
+  let f = (PJ.fmt || FMT_DEF).replace(/[\[\]|#<>\/:\\]/g, "");
+  if (!f.includes("{শব্দ}")) f += "-{শব্দ}"; if (!f.includes("{বক্তা}")) f += "-{বক্তা}";
+  const v = { "শব্দ": safe(c.word).slice(0, 80), "বক্তা": safe(c.speaker.name || ""), "ভাষা": langOf(c.speaker.lang)[0] || "mis",
+    "প্রজেক্ট": safe(c.project || PJ.name || ""), "তারিখ": String(c.created || new Date().toISOString()).slice(0, 10) };
+  const name = f.replace(/\{([^}]+)\}/g, (m, k) => v[k] ?? "").replace(/[{}]/g, "").replace(/\s*-(\s*-)+/g, "-").replace(/^[\s-]+|[\s-]+$/g, "").replace(/\(\s*\)/g, "").trim();
+  return `${name}${c.kind !== "word" ? "-" + c.id.slice(-5) : ""}.wav`;
+}
 function wikitext(c) {
   const s = c.speaker, L = langOf(s.lang), lang = L[3] === "other" ? s.other : L[2], langEn = L[3] === "other" ? s.other : L[3];
   const dist = SD_DISTRICTS.find(d => d[0] === s.district), where = [s.place, s.district].filter(Boolean).join(", ");
@@ -1157,33 +1176,50 @@ function openInfo(target, onSave) {
 }
 
 /* ================= server storage (logged-in users) ================= */
-// Recordings and the word list are kept on the server too, so a take made on a phone opens on a PC later.
+// For a logged-in user the server database keeps the speakers, settings, word list and the details of each
+// recording (upload history). Audio stays in this browser only and goes from here straight to Commons.
 const SYNC = () => !!(window.LX_NODE && window.LX_USER);
+let prefsT, prefsReady = false;
+function pushPrefs() {
+  if (!SYNC() || !prefsReady) return; clearTimeout(prefsT);
+  prefsT = setTimeout(() => fetch("/store/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(PREF_KEYS.map(k => [k, load("lx_snd_" + k, undefined)]).filter(([, v]) => v !== undefined))) }).catch(() => {}), 1200);
+}
+// After login: the server copy wins (another device may have changed it); with nothing there yet, this browser's goes up.
+async function syncPrefs() {
+  const r = await (await fetch("/store/prefs")).json();
+  if (!r.data) { prefsReady = true; pushPrefs(); return; }
+  const changed = PREF_KEYS.filter(k => r.data[k] !== undefined && JSON.stringify(r.data[k]) !== JSON.stringify(load("lx_snd_" + k, undefined)));
+  if (changed.length && sessionStorage.getItem("lx_snd_prefs_applied") !== r.updated) {
+    changed.forEach(k => { try { localStorage.setItem("lx_snd_" + k, JSON.stringify(r.data[k])); } catch (e) {} });
+    sessionStorage.setItem("lx_snd_prefs_applied", r.updated); location.reload(); return;
+  }
+  prefsReady = true; if (changed.length) pushPrefs();
+}
 const META_KEYS = ["id", "word", "kind", "text", "lexeme", "dur", "status", "file", "linked", "error", "created", "speaker", "project", "extra", "info"];
-async function syncClip(c, withAudio) {
+async function syncClip(c) {
   if (!SYNC()) return;
   try {
-    if (withAudio || !c.synced) { const b = c.blob; if (b) { const r = await fetch(`/store/clips/${c.id}/audio`, { method: "PUT", headers: { "Content-Type": "audio/wav" }, body: b }); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.status); } }
     await fetch(`/store/clips/${c.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(META_KEYS.map(k => [k, c[k]]))) });
     if (!c.synced) { c.synced = true; await DB.put(c); }
-    cloud("☁ সার্ভারে সংরক্ষিত");
+    cloud("☁ বিবরণ সার্ভারে সংরক্ষিত (অডিও শুধু এই ডিভাইসে)");
   } catch (e) { cloud("☁ সার্ভারে রাখা যায়নি — পরে আবার চেষ্টা হবে"); }
 }
-// Audio of a clip made on another device is fetched when first needed, then kept here.
+// Audio lives only on the device that recorded it.
 async function getBlob(c) {
   if (c.blob) return c.blob;
-  const r = await fetch(`/store/clips/${c.id}.wav`); if (!r.ok) throw new Error("সার্ভার থেকে অডিও আনা যায়নি");
-  c.blob = await r.blob(); await DB.put(c); return c.blob;
+  throw new Error("এর অডিও অন্য ডিভাইসে রেকর্ড হয়েছিল — সেখান থেকেই আপলোড করুন");
 }
 function cloud(t) { $$(".q-cloud").forEach(el => { el.textContent = t; }); }
 async function syncDown() {
-  if (!SYNC()) { cloud(window.LX_NODE ? "লগ ইন করলে রেকর্ড সার্ভারেও জমা থাকবে — অন্য ডিভাইস থেকেও খোলা যাবে" : ""); return; }
+  if (!SYNC()) { cloud(window.LX_NODE ? "লগ ইন করলে বক্তা, সেটিংস আর শব্দ-তালিকা সার্ভারে থাকবে — অন্য ডিভাইসেও পাবেন" : ""); return; }
   try {
+    await syncPrefs();
     const list = await (await fetch("/store/clips")).json(); const have = new Map(Q.map(c => [c.id, c]));
-    for (const m of list) { const c = have.get(m.id); if (!c) { const n = { ...m, synced: true, blob: null }; await DB.put(n); Q.push(n); } else if ((m.status === "done") && c.status !== "done") { Object.assign(c, m); await DB.put(c); } }
+    // from other devices only what is already on Commons (history); unsent takes there have no audio here
+    for (const m of list) { const c = have.get(m.id); if (!c) { if (m.status !== "done") continue; const n = { ...m, synced: true, blob: null }; await DB.put(n); Q.push(n); } else if ((m.status === "done") && c.status !== "done") { Object.assign(c, m); await DB.put(c); } }
     const onServer = new Set(list.map(m => m.id));
-    for (const c of Q) if (!onServer.has(c.id)) syncClip(c, true); // made here before logging in
-    drawQueue(); cloud(`☁ সার্ভারে ${toBn(Q.length)}টি রেকর্ড`);
+    for (const c of Q) if (!onServer.has(c.id)) syncClip(c); // made here before logging in
+    drawQueue(); cloud(`☁ বক্তা, সেটিংস ও শব্দ-তালিকা সার্ভারে · অডিও শুধু এই ডিভাইসে`);
     const sw = await (await fetch("/store/words")).json();
     if (Array.isArray(sw) && sw.length) { const have2 = new Map(WORDS.map(w => [w.word, w])); let added = 0; sw.forEach(w => { const l = have2.get(w.word); if (!l) { WORDS.push(w); added++; } else if (w.done) l.done = true; }); if (added || sw.some(w => w.done)) { store("lx_snd_words", WORDS); drawWords(); } }
     if (WORDS.length) pushWords();
@@ -1313,6 +1349,9 @@ const TAB = { c: load("lx_snd_ctab", speakerWhy() ? "setup" : WORDS.length ? "wi
 TAB.one = load("lx_snd_one", TAB.c);
 const WIDE = matchMedia("(min-width: 1251px)");
 function applyTabs() {
+  // word list switched off: its tab goes away (and whoever was on it lands in the wizard)
+  const wl = $("#t-wordmode").checked; $("#st-tabs [data-tab=words]").hidden = !wl;
+  if (!wl) { if (TAB.c === "words") TAB.c = "wizard"; if (TAB.one === "words") TAB.one = "wizard"; }
   const w = WIDE.matches, on = t => (w ? t === TAB.c || t === TAB.r : t === TAB.one);
   $$(".pane").forEach(p => { p.hidden = !on(p.dataset.pane); });
   $$("#st-tabs [data-tab]").forEach(b => b.setAttribute("aria-selected", String(on(b.dataset.tab))));
@@ -1320,7 +1359,6 @@ function applyTabs() {
   document.body.classList.toggle("on-wizard", on("wizard")); // the player bar belongs to the wizard only
   if (on("wizard")) {
     // words waiting in the list: open the wizard straight on them (word card, ◀ ▶, upcoming)
-    if (WORDS.length && !$("#t-wordmode").checked) { $("#t-wordmode").checked = true; store("lx_snd_wm", true); setTimeout(() => { if (!psOpen.length) drawMenu(); }); }
     drawBatch(); requestAnimationFrame(() => drawAll());
   }
 }
@@ -1348,6 +1386,7 @@ const openPanel = id => () => { setCTab("setup"); setMView("center"); requestAni
 // line icons for the top-level menu
 const MI = {
   file: '<path d="M3 7h6l2 2h10v10H3z"/>', edit: '<path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/>', rec: '<circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="9"/>',
+  words: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
   timeline: '<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2M21 12h0"/>', autoup: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',
   mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>', user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
@@ -1403,6 +1442,7 @@ const MENU = () => [
 const SWITCHES = () => [
   { icon: "timeline", label: "টাইমলাইন", tip: "টাইমলাইন ও সম্পাদনার যন্ত্র দেখান", on: !document.body.classList.contains("no-editor"), run: clickEl("#t-editor") },
   { icon: "autoup", label: "সরাসরি আপলোড", tip: "রেকর্ড হলেই আপলোড তালিকায় পাঠান", on: $("#t-autoq").checked, run: toggleEl("#t-autoq") },
+  { icon: "words", label: "শব্দ-তালিকা", tip: "তালিকা ধরে একটা একটা শব্দ রেকর্ড; বন্ধ থাকলে শব্দ-তালিকার ট্যাব থাকে না", on: $("#t-wordmode").checked, run: toggleEl("#t-wordmode") },
 ];
 const PS = $("#ps-menu");
 const kids = it => (typeof it.items === "function" ? it.items() : it.items);
@@ -1444,9 +1484,11 @@ function drawMenu() {
 }
 // the two recording modes sit at the top of the record wizard as pills
 function drawModes() {
-  $("#wz-modes").innerHTML = `<button type="button" class="ps-pill" data-mode="#t-wordmode" aria-pressed="${$("#t-wordmode").checked}">শব্দ-তালিকা</button><button type="button" class="ps-pill" data-mode="#t-auto" aria-pressed="${$("#t-auto").checked}">একটানা</button>`;
+  // একটানা belongs to word-list recording, so it shows only with the word list on
+  $("#wz-modes").hidden = !$("#t-wordmode").checked;
+  $("#wz-modes").innerHTML = `<button type="button" class="ps-sw" data-mode="#t-auto" role="switch" aria-checked="${$("#t-auto").checked}" title="শব্দ বলে থামলেই পরের শব্দ নিজে থেকে শুরু"><span class="ps-l">একটানা</span><span class="tgl"></span></button>`;
 }
-$("#wz-modes").addEventListener("click", e => { const b = e.target.closest(".ps-pill"); if (b) { toggleEl(b.dataset.mode)(); drawMenu(); } });
+$("#wz-modes").addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (b) { toggleEl(b.dataset.mode)(); drawMenu(); } });
 $("#wz-clear").onclick = () => $("#e-clear").click();
 PS.addEventListener("click", e => {
   if (e.target.closest("#ps-toggle")) { e.stopPropagation(); closeFrom(0); PS.classList.toggle("open"); drawMenu(); return; }

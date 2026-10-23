@@ -59,6 +59,8 @@ go through `/proxy/*`, where the server signs each call; plain reads are sent an
 
 ## লিব্রে স্টুডিও storage
 
-Logged-in users' recordings (WAV + details) and word lists are kept under `data/studio/<user>/` (or `STORE_DIR`).
-On Render the normal filesystem is wiped on every deploy: add a **persistent disk** and set `STORE_DIR` to its
-mount path (e.g. `/var/data`), or the stored recordings will be lost.
+Logged-in users' speakers, settings, word lists and upload history (details only — audio never leaves the
+browser) are kept in one SQLite file, `data/lexeme.db` (or `STORE_DIR/lexeme.db`), via Node's built-in `node:sqlite`
+(Node 22.13 or newer; no packages).
+Set `STORE_DIR` to a folder outside the code so updates never touch it. Hosting on Namecheap: see
+[docs/NAMECHEAP.md](docs/NAMECHEAP.md).

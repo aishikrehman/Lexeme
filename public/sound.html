@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>লিব্রে স্টুডিও · লেক্সিম.বাংলা</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/site.css"><link rel="stylesheet" href="css/sitenav.css"><link rel="stylesheet" href="css/sound.css">
 <!--NODE-->
 </head>
@@ -100,6 +99,14 @@
       <h3>প্রজেক্ট ও কমন্স</h3>
       <div class="sp-form">
         <label>প্রজেক্টের নাম<input id="pj-name" placeholder="যেমন: সিলেটের লোকগীতি ২০২৬"></label>
+        <label>অডিও ফাইলের নাম<select id="pj-fmt">
+          <option value="Libre Studio-{ভাষা}-{বক্তা}-{শব্দ}">Libre Studio-ভাষা-বক্তা-শব্দ</option>
+          <option value="{ভাষা}-{শব্দ}-{বক্তা}">ভাষা-শব্দ-বক্তা</option>
+          <option value="{শব্দ} ({বক্তা})">শব্দ (বক্তা)</option>
+          <option value="{প্রজেক্ট}-{ভাষা}-{শব্দ}-{বক্তা}">প্রজেক্ট-ভাষা-শব্দ-বক্তা</option>
+          <option value="custom">নিজের মতো…</option></select></label>
+        <label id="pj-fmt-l" hidden>নিজের ধরন<input id="pj-fmt-c" placeholder="{ভাষা}-{শব্দ}-{বক্তা}-{তারিখ}"></label>
+        <p class="hint">চিহ্ন: {শব্দ} {বক্তা} {ভাষা} {প্রজেক্ট} {তারিখ}। শব্দ আর বক্তার নাম সবসময় থাকবে; আপলোডকারীর ব্যবহারকারী নাম নামে যায় না। উদাহরণ: <b id="pj-fmt-ex" class="mono"></b></p>
         <label>কমন্সে বাড়তি টেমপ্লেট / বিষয়শ্রেণি<textarea id="pj-extra" rows="3" placeholder="{{Supported by Wikimedia Bangladesh}}&#10;[[Category:Folk music of Bangladesh]]"></textarea></label>
       </div>
     </section>

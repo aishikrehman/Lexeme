@@ -17,7 +17,7 @@ const PORT = +process.env.PORT || +process.argv[2] || +(OAUTH1.publicUrl && new 
 const PUB = path.join(__dirname, "public");
 const LIB = path.join(__dirname, "lib");
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".json": "application/json; charset=utf-8",
-  ".svg": "image/svg+xml", ".wav": "audio/wav", ".png": "image/png", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json" };
+  ".svg": "image/svg+xml", ".wav": "audio/wav", ".png": "image/png", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json", ".ttf": "font/ttf", ".woff2": "font/woff2" };
 
 // Pages have clean URLs only (no .html): /, /search, /browse, /wizard, /word/L123, /etymology/L123, /collection/idiom.
 const CLEAN = [
@@ -72,7 +72,7 @@ const API_RX = [
 
 // Proxy targets for the wizard. With an OAuth 1.0a session each call is signed here with the user's token;
 // otherwise a browser OAuth 2 token (if any) is forwarded as it came.
-const PROXY = { "/proxy/wd": "https://www.wikidata.org/w/api.php", "/proxy/commons": "https://commons.wikimedia.org/w/api.php", "/proxy/sparql": "https://query.wikidata.org/sparql", "/proxy/wikt": "https://bn.wiktionary.org/w/api.php" };
+const PROXY = { "/proxy/wd": "https://www.wikidata.org/w/api.php", "/proxy/commons": "https://commons.wikimedia.org/w/api.php", "/proxy/sparql": "https://query.wikidata.org/sparql", "/proxy/wikt": "https://bn.wiktionary.org/w/api.php", "/proxy/books": "https://www.googleapis.com/books/v1/volumes" }; // books: through here, so visitors' IPs never reach Google
 
 function send(res, status, body, type = "application/json; charset=utf-8", extra = {}) {
   res.writeHead(status, { "Content-Type": type, "X-Content-Type-Options": "nosniff", ...extra });
@@ -103,9 +103,9 @@ async function proxy(req, res, target, search) {
   // CORS flags only make sense from a browser; server-to-server they would make MediaWiki reject or anonymise the call.
   const q = new URLSearchParams(search); q.delete("origin"); q.delete("crossorigin");
   const full = target + (q.toString() ? "?" + q : "");
-  const signed = target !== PROXY["/proxy/sparql"] && OAUTH1.proxyAuth(req, req.method, full, headers["Content-Type"], body);
+  const signed = target !== PROXY["/proxy/sparql"] && target !== PROXY["/proxy/books"] && OAUTH1.proxyAuth(req, req.method, full, headers["Content-Type"], body);
   if (signed) Object.assign(headers, signed);
-  else if (req.headers.authorization && !/server-session/.test(req.headers.authorization)) headers.Authorization = req.headers.authorization;
+  else if (target !== PROXY["/proxy/books"] && req.headers.authorization && !/server-session/.test(req.headers.authorization)) headers.Authorization = req.headers.authorization;
   let r = await fetch(full, { method: req.method, headers, body });
   let buf = Buffer.from(await r.arrayBuffer());
   // Reading never needs the login: if a read was refused for permissions, repeat it anonymously.
@@ -177,11 +177,11 @@ const server = http.createServer(async (req, res) => {
           if (req.method === "GET") return ok(await STORE.getWords(user));
           if (req.method === "PUT") return ok({ n: await STORE.putWords(user, JSON.parse((await readBody(req)).toString("utf8") || "[]")) });
         }
-        let m = p.match(/^\/store\/clips\/([a-z0-9]+)\.wav$/i);
-        if (m && req.method === "GET") { const f = STORE.audioPath(user, m[1]); return f ? sendFile(res, f, null, req) : send(res, 404, "{}"); }
-        m = p.match(/^\/store\/clips\/([a-z0-9]+)\/audio$/i);
-        if (m && req.method === "PUT") { await STORE.putAudio(user, m[1], await readBody(req)); return ok({ ok: true }); }
-        m = p.match(/^\/store\/clips\/([a-z0-9]+)$/i);
+        if (p === "/store/prefs") {
+          if (req.method === "GET") return ok(STORE.getPrefs(user));
+          if (req.method === "PUT") return ok(STORE.putPrefs(user, JSON.parse((await readBody(req)).toString("utf8") || "{}")));
+        }
+        const m = p.match(/^\/store\/clips\/([a-z0-9]+)$/i); // details only; audio is never stored here
         if (m && req.method === "PUT") return ok(await STORE.putMeta(user, m[1], JSON.parse((await readBody(req)).toString("utf8") || "{}")));
         if (m && req.method === "DELETE") { await STORE.remove(user, m[1]); return ok({ ok: true }); }
       } catch (e) { return send(res, 400, JSON.stringify({ error: e.message })); }

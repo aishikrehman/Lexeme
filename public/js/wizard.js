@@ -1529,7 +1529,7 @@ async function exWikimedia(src, word) {
   return hits.flatMap(r => sentencesWith(decodeHtml(r.snippet), word).map(text => ({ text, source: src.label, title: r.title, url: `https://${src.host}/wiki/${encodeURIComponent(r.title.replace(/ /g, "_"))}` })));
 }
 async function exBooks(word) {
-  const run = async q => (await (await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&langRestrict=bn&maxResults=30`)).json()).items || [];
+  const run = async q => (await (await fetch(`${window.LX_PROXY ? "/proxy/books" : "https://www.googleapis.com/books/v1/volumes"}?q=${encodeURIComponent(q)}&langRestrict=bn&maxResults=30`)).json()).items || [];
   let items = await run(`"${word}"`); if (!items.length) items = await run(word);
   return items.flatMap(it => sentencesWith(decodeHtml(it.searchInfo?.textSnippet || it.volumeInfo?.description || ""), word).map(text => ({ text, source: "গুগল বুকস", title: it.volumeInfo?.title || "", url: it.volumeInfo?.infoLink || "", year: (it.volumeInfo?.publishedDate || "").slice(0, 4) })));
 }

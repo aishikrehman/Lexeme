@@ -46,7 +46,7 @@
 .h-quiz{border-top:4px solid var(--primary)}
 .h-q-def{font-size:19px;margin:0 0 6px}
 .h-q-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.h-q-opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 12px;font:600 16px "Tiro Bangla",serif;cursor:pointer;text-align:center}
+.h-q-opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 12px;font:600 16px "Noto Serif Bengali",serif;cursor:pointer;text-align:center}
 .h-q-opt:hover:not(:disabled){border-color:var(--primary);background:var(--chip)}
 .h-q-opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
 .h-q-opt.wrong{border-color:var(--err);background:var(--err-soft);color:var(--err)}

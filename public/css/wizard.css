@@ -15,7 +15,7 @@
   --ok:#6CC596;--ok-soft:#173225;--warn:#E9B062;--warn-soft:#3A2A14;--err:#F28B82;--err-soft:#3D1B19;--chip:#24314A;color-scheme:dark}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Tiro Bangla","Noto Sans Bengali",serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Noto Serif Bengali","Noto Sans Bengali",serif}
 a{color:var(--primary)}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -23,7 +23,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 /* top bar */
 .top{display:flex;align-items:center;gap:16px;padding:14px 0}
 .brand{font-weight:600;font-size:17px}
-.brand span{font-family:"Tiro Bangla",serif;font-size:20px;margin-right:6px}
+.brand span{font-family:"Noto Serif Bengali",serif;font-size:20px;margin-right:6px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);margin-left:auto}
 .seg button{border:0;background:none;padding:5px 14px;border-radius:999px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
@@ -36,7 +36,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .lemma-wrap{border-top:5px solid var(--ink);transition:border-color .2s}
 .lemma-wrap:focus-within{border-color:var(--accent)}
 #lemma{display:block;width:100%;border:0;background:transparent;padding:.02em 0 .12em;margin-top:-.16em;
-  font:700 clamp(40px,7vw,68px)/1.3 "Tiro Bangla",serif;color:var(--ink);caret-color:var(--accent)}
+  font:700 clamp(40px,7vw,68px)/1.3 "Noto Serif Bengali",serif;color:var(--ink);caret-color:var(--accent)}
 #lemma:focus{outline:none}
 #lemma::placeholder{color:var(--line)}
 .hero-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:6px}
@@ -49,7 +49,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .found:empty{display:none}
 .hit{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--primary);border-radius:8px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .hit.same{border-left-color:var(--accent)}
-.hit .lem{font-family:"Tiro Bangla",serif;font-size:20px}
+.hit .lem{font-family:"Noto Serif Bengali",serif;font-size:20px}
 .hit .acts{margin-left:auto;display:flex;gap:8px}
 .muted{color:var(--muted)}
 /* tabs + layout */
@@ -73,7 +73,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .in,select,textarea{width:100%;border:1px solid var(--line);background:var(--sunken);border-radius:7px;padding:7px 10px;min-height:36px}
 textarea{resize:vertical;min-height:60px}
 .in:focus,select:focus,textarea:focus{border-color:var(--primary);outline:none;background:var(--surface)}
-[lang="bn"],.bn-in{font-family:"Tiro Bangla",serif;font-size:16px}
+[lang="bn"],.bn-in{font-family:"Noto Serif Bengali",serif;font-size:16px}
 .rowcard{position:relative;border:1px solid var(--line);border-radius:8px;padding:12px 40px 2px 14px;margin-bottom:10px;background:var(--sunken);display:flex;flex-wrap:wrap;gap:0 12px}
 .rowcard>.f{flex:1 1 180px}
 .ord{position:absolute;left:-11px;top:12px;width:22px;height:22px;border-radius:50%;background:var(--primary);color:var(--on-primary);font-size:12px;display:grid;place-items:center}
@@ -99,11 +99,11 @@ textarea{resize:vertical;min-height:60px}
 table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-weight:600;color:var(--muted);font-size:13px}
-td.bn,.bn-big{font-family:"Tiro Bangla",serif;font-size:16px}
+td.bn,.bn-big{font-family:"Noto Serif Bengali",serif;font-size:16px}
 tr.active td{background:var(--accent-soft)}
 /* aside */
 aside .card{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
-.pv-lemma{font:700 40px/1.3 "Tiro Bangla",serif;border-top:4px solid var(--ink);margin:0;padding-top:0}
+.pv-lemma{font:700 40px/1.3 "Noto Serif Bengali",serif;border-top:4px solid var(--ink);margin:0;padding-top:0}
 .pv-meta{color:var(--muted);margin:2px 0 12px}
 .pv h4{font-size:13px;color:var(--muted);font-weight:600;margin:14px 0 4px}
 .pv ul{margin:0;padding-left:18px}
@@ -163,12 +163,12 @@ mark{background:var(--accent-soft);color:inherit;border-bottom:2px solid var(--a
 .example{background:var(--sunken);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:4px 0 10px}
 .ex-q{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}
 .ex-q .q{font-weight:600;color:var(--primary)}
-.ex-s{font-size:19px;margin:4px 0 6px;font-family:"Tiro Bangla",serif}
+.ex-s{font-size:19px;margin:4px 0 6px;font-family:"Noto Serif Bengali",serif}
 .guide{margin-top:14px}
 /* v3 additions */
 .tip{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;margin-left:4px;border-radius:50%;background:var(--chip);color:var(--primary);font-size:12px;cursor:help;vertical-align:middle}
 .tip:focus-visible{outline:2px solid var(--accent)}
-.tipfloat{display:none;position:fixed;z-index:100;max-width:300px;background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 10px;font-size:13.5px;line-height:1.55;box-shadow:0 8px 24px rgba(15,25,40,.25);pointer-events:none;font-family:"Tiro Bangla",serif}
+.tipfloat{display:none;position:fixed;z-index:100;max-width:300px;background:var(--ink);color:var(--bg);border-radius:8px;padding:8px 10px;font-size:13.5px;line-height:1.55;box-shadow:0 8px 24px rgba(15,25,40,.25);pointer-events:none;font-family:"Noto Serif Bengali",serif}
 .sq{display:inline-block;margin-left:6px;font-size:12.5px;color:var(--primary);background:var(--accent-soft);border-radius:999px;padding:0 7px}
 table.tpl td{vertical-align:middle}
 table.tpl td.case{min-width:170px}
@@ -206,8 +206,8 @@ body{font-size:15.5px}
 .fl{font-size:13.5px}
 /* v5 */
 .brand{display:flex;flex-direction:column;line-height:1.15}
-.brand .bname{font-family:"Tiro Bangla",serif;font-size:21px;font-weight:700}
-.brand .bsub{font-size:12px;color:var(--muted);font-weight:400;font-family:"Tiro Bangla",serif;margin:0}
+.brand .bname{font-family:"Noto Serif Bengali",serif;font-size:21px;font-weight:700}
+.brand .bsub{font-size:12px;color:var(--muted);font-weight:400;font-family:"Noto Serif Bengali",serif;margin:0}
 .in[readonly]{background:transparent;border-style:dashed;color:var(--muted);cursor:default}
 select.need{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .checks{display:flex;flex-direction:column;gap:4px;margin:2px 0 6px}
@@ -259,9 +259,9 @@ select.need{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F151D;--surface:#161E29;--sunken:#121922}}
 :root[data-theme="dark"]{--bg:#0F151D;--surface:#161E29;--sunken:#121922}
 :root[data-theme="dark"],:root[data-theme="light"]{transition:background-color .2s}
-body{font-family:"Tiro Bangla","Noto Sans Bengali",serif;font-size:16px}
+body{font-family:"Noto Serif Bengali","Noto Sans Bengali",serif;font-size:16px}
 .pv-lemma{border-top:0;padding-top:0}
-#lemma{font-family:"Tiro Bangla",serif;font-weight:400}
+#lemma{font-family:"Noto Serif Bengali",serif;font-weight:400}
 .ic{width:1.15em;height:1.15em;flex:none;vertical-align:-.2em}
 /* header */
 .top{gap:12px}

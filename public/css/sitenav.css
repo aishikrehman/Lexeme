@@ -1,10 +1,10 @@
 /* Site-wide header, identical on every page (reader pages and the wizard).
    Everything is set explicitly here so page stylesheets (site.css / wizard.css) cannot make it differ. */
-.sitenav{background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 color-mix(in srgb,var(--line) 50%,transparent),0 4px 14px -10px rgba(0,0,0,.18);position:relative;z-index:50;font:16px/1.5 "Tiro Bangla","Noto Sans Bengali",serif;color:var(--ink)}
+.sitenav{background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 color-mix(in srgb,var(--line) 50%,transparent),0 4px 14px -10px rgba(0,0,0,.18);position:relative;z-index:50;font:16px/1.5 "Noto Serif Bengali","Noto Sans Bengali",serif;color:var(--ink)}
 .sitenav .sn-in{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;box-sizing:border-box}
-.sitenav .logo{display:inline-flex;align-items:center;gap:9px;height:36px;font:700 19px/1 "Tiro Bangla",serif;color:var(--ink);text-decoration:none;margin-right:12px}
+.sitenav .logo{display:inline-flex;align-items:center;gap:9px;height:36px;font:700 19px/1 "Noto Serif Bengali",serif;color:var(--ink);text-decoration:none;margin-right:12px}
 .sitenav .logo b{color:var(--accent)}
-.sitenav .logo-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--primary);color:var(--on-primary);font:700 20px/1 "Tiro Bangla",serif;padding-top:2px;box-sizing:border-box}
+.sitenav .logo-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--primary);color:var(--on-primary);font:700 20px/1 "Noto Serif Bengali",serif;padding-top:2px;box-sizing:border-box}
 .sitenav .nl{display:inline-flex;align-items:center;height:34px;box-sizing:border-box;color:var(--muted);text-decoration:none;padding:0 12px;border-radius:8px;white-space:nowrap;font-size:16px;line-height:1;position:relative;border:0;background:none;cursor:pointer;font-family:inherit}
 .sitenav .nl:hover{background:var(--chip);color:var(--ink)}
 .sitenav a.nl[aria-current="page"],.sn-drop.on>.nl{color:var(--primary);font-weight:600}
@@ -34,10 +34,10 @@
 .sn-dmenu small{display:block;color:var(--muted);font-size:13px}
 .nav-acct{display:flex;align-items:center;gap:8px;margin-left:auto}
 /* অনুসন্ধান: the most visible control on the right, next to login */
-.sitenav .nl-btn{display:inline-flex;align-items:center;gap:7px;height:34px;box-sizing:border-box;padding:0 16px;border-radius:999px;border:1.5px solid var(--primary);background:var(--chip);color:var(--primary);font:600 15px/1 "Tiro Bangla",serif;text-decoration:none;white-space:nowrap}
+.sitenav .nl-btn{display:inline-flex;align-items:center;gap:7px;height:34px;box-sizing:border-box;padding:0 16px;border-radius:999px;border:1.5px solid var(--primary);background:var(--chip);color:var(--primary);font:600 15px/1 "Noto Serif Bengali",serif;text-decoration:none;white-space:nowrap}
 .sitenav .nl-btn:hover,.sitenav .nl-btn[aria-current="page"]{background:var(--primary);color:var(--on-primary)}
 .sitenav .nl-btn .ic{width:17px;height:17px}
-.sitenav .login-btn,.sitenav .acct{display:inline-flex;align-items:center;gap:6px;height:34px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:0 14px;cursor:pointer;white-space:nowrap;font:15px "Tiro Bangla",serif;margin:0}
+.sitenav .login-btn,.sitenav .acct{display:inline-flex;align-items:center;gap:6px;height:34px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:0 14px;cursor:pointer;white-space:nowrap;font:15px "Noto Serif Bengali",serif;margin:0}
 .sitenav .login-btn .ic,.sitenav .acct .ic{width:16px;height:16px}
 .sitenav .login-btn.on,.sitenav .acct.on{border-color:var(--ok);color:var(--ok)}
 /* light / dark / auto button: same size and look on every page */
@@ -72,8 +72,8 @@
   .sitenav .logo-mark{width:30px;height:30px;font-size:18px}
   .lx-menu,.lx-note{right:12px;left:12px;max-width:none}
 }
-.lx-note{position:absolute;right:20px;top:calc(100% + 6px);max-width:360px;background:var(--surface);border:1px solid var(--warn);color:var(--ink);border-radius:10px;padding:8px 12px;font:14px/1.5 "Tiro Bangla",serif;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:60}
-.lx-menu{position:absolute;right:62px;top:calc(100% + 4px);min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:6px;z-index:60;font:15px/1.5 "Tiro Bangla",serif}
+.lx-note{position:absolute;right:20px;top:calc(100% + 6px);max-width:360px;background:var(--surface);border:1px solid var(--warn);color:var(--ink);border-radius:10px;padding:8px 12px;font:14px/1.5 "Noto Serif Bengali",serif;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:60}
+.lx-menu{position:absolute;right:62px;top:calc(100% + 4px);min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:6px;z-index:60;font:15px/1.5 "Noto Serif Bengali",serif}
 .lx-menu[hidden]{display:none}
 .lx-menu-who{padding:8px 10px 10px;border-bottom:1px solid var(--line);font-weight:600;color:var(--ink)}
 .lx-menu-who small{display:block;font-weight:400;color:var(--muted);font-size:13px}

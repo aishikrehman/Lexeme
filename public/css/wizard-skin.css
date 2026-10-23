@@ -1,15 +1,15 @@
 /* Lexeme Wizard → exactly the reader pages' look (site.css). Layout and behaviour stay as they are;
    only sizes, spacing and styles are aligned so the wizard is one more page of the same site. */
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Tiro Bangla","Noto Sans Bengali",serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Serif Bengali","Noto Sans Bengali",serif}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
 @media (max-width:600px){.wrap{padding:0 16px}}
 
 /* page title: same as the other pages' h1 + muted lead (e.g. শব্দক্রম) */
 .top{padding:26px 0 4px;margin:0;border:0;gap:14px;align-items:flex-end}
 .brand{line-height:1.3}
-.brand .bname{font:700 32px/1.3 "Tiro Bangla",serif;color:var(--ink)}
+.brand .bname{font:700 32px/1.3 "Noto Serif Bengali",serif;color:var(--ink)}
 .brand .bname::before{content:none}
-.brand .bsub{font:16px/1.6 "Tiro Bangla",serif;color:var(--muted);margin-top:4px}
+.brand .bsub{font:16px/1.6 "Noto Serif Bengali",serif;color:var(--muted);margin-top:4px}
 
 /* word input: same size and rule as the word page title */
 .lemma-wrap{border-top:3px solid var(--ink)}
@@ -31,7 +31,7 @@ aside .card{border-radius:12px;top:70px}
 
 /* step tabs = the word page's tabs */
 .tabs{margin-top:16px}
-.tabs button{font:16px "Tiro Bangla",serif;padding:6px 14px;border-bottom-width:3px}
+.tabs button{font:16px "Noto Serif Bengali",serif;padding:6px 14px;border-bottom-width:3px}
 .tabs button[aria-selected="true"]{border-bottom-color:var(--accent)}
 
 /* footer = the reader pages' footer */
@@ -100,12 +100,12 @@ body.is-bulk .savebar{display:none}
 /* ---------- title + word box: one tidy card ---------- */
 body:not(.is-bulk) .top{padding:14px 0 6px;border:0}
 body:not(.is-bulk) .brand .bname{font-size:20px;display:inline-flex;align-items:center;gap:8px}
-body:not(.is-bulk) .brand .bname::after{content:"নতুন বা হালনাগাদ";font:500 12px/1 "Tiro Bangla",serif;color:var(--primary);background:var(--chip);border-radius:999px;padding:5px 9px}
+body:not(.is-bulk) .brand .bname::after{content:"নতুন বা হালনাগাদ";font:500 12px/1 "Noto Serif Bengali",serif;color:var(--primary);background:var(--chip);border-radius:999px;padding:5px 9px}
 #single .hero{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 8px;margin-top:4px}
 #single .lemma-wrap{border:0;position:relative;padding:0;margin:0}
 .lemma-lbl{margin-left:2px!important}
 .lemma-lbl{display:block;font-size:13px;color:var(--muted);margin:0 0 4px 2px}
-#single #lemma{box-sizing:border-box;width:100%;border:1.5px solid var(--line);border-radius:12px;background:var(--sunken);padding:8px 14px;margin:0;font:700 clamp(24px,3.6vw,34px)/1.3 "Tiro Bangla",serif;color:var(--ink);transition:border-color .15s,box-shadow .15s,background .15s}
+#single #lemma{box-sizing:border-box;width:100%;border:1.5px solid var(--line);border-radius:12px;background:var(--sunken);padding:8px 14px;margin:0;font:700 clamp(24px,3.6vw,34px)/1.3 "Noto Serif Bengali",serif;color:var(--ink);transition:border-color .15s,box-shadow .15s,background .15s}
 #single #lemma::placeholder{color:var(--muted);opacity:.55;font-weight:500}
 #single #lemma:hover{border-color:color-mix(in srgb,var(--primary) 35%,var(--line))}
 #single #lemma:focus{outline:none;border-color:var(--primary);background:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 16%,transparent)}
@@ -146,7 +146,7 @@ body:not(.is-bulk) .brand .bname::after{content:"নতুন বা হাল�
 .lemma-row .lemma-cat{margin:0}
 .lemma-row .lemma-cat select{height:44px;font-size:16px}
 .src-pick{display:inline-flex;background:var(--chip);border-radius:999px;padding:3px;gap:2px}
-.src-pick button{border:0;background:none;color:var(--muted);border-radius:999px;padding:4px 12px;font:14.5px "Tiro Bangla",serif;cursor:pointer}
+.src-pick button{border:0;background:none;color:var(--muted);border-radius:999px;padding:4px 12px;font:14.5px "Noto Serif Bengali",serif;cursor:pointer}
 .src-pick button[aria-pressed="true"]{background:var(--surface);color:var(--primary);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .src-pick button[aria-pressed="true"]::before{content:"✓ "}
 body.no-wikt #wikt-ref{display:none}

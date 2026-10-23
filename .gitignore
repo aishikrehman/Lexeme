@@ -2,4 +2,5 @@ node_modules/
 cache/
 # Wikimedia OAuth consumer secret — never commit
 oauth.local.json
+# server database (speakers, settings, word lists)
 data/
