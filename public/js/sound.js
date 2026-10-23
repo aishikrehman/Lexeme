@@ -121,7 +121,7 @@ function drawBatch() {
   $("#bt-gloss").textContent = w?.gloss || (w?.lexeme ? w.lexeme : "");
   $("#bt-word").classList.toggle("done", !!w?.done);
   $("#bt-upcoming").innerHTML = WORDS.slice(wordPos + 1, wordPos + 6).map(x => `<span${x.done ? " class=done" : ""}>${esc(x.word)}</span>`).join("");
-  $("#bt-go").textContent = recording ? "■ থামান" : $("#t-auto").checked ? "● একটানা রেকর্ড শুরু" : "● এই শব্দ রেকর্ড"; $("#bt-go").classList.toggle("on", recording);
+  $("#bt-go").textContent = recording || chainT ? "■ থামান" : $("#t-auto").checked ? "● একটানা রেকর্ড শুরু" : "● এই শব্দ রেকর্ড"; $("#bt-go").classList.toggle("on", recording);
   $("#bt-hint").textContent = $("#t-auto").checked ? "শব্দটি বলে থামুন — রেকর্ড শেষে নিজে থেকে পরের শব্দ শুরু হবে। থামাতে R বা ■।" : "শব্দটি বলে থামুন — রেকর্ড শেষ হবে। ▶ শুনুন বা ↺ আবার নিন, তারপর ▶ পরের শব্দে যান।";
   $("#bt-go").disabled = !w;
 }
@@ -134,16 +134,106 @@ async function findLexeme(word) {
   if (!word || langOf(SP.lang)[1] !== "Q9610") return "";
   try { const j = await getJSON(`/api/search?${qs({ exact: word, field: "lemma", limit: 1 })}`); return j.list?.[0]?.lemma === word ? j.list[0].id : ""; } catch (e) { return ""; }
 }
-async function addWordLines(text) {
-  const have = new Set(WORDS.map(w => w.word));
-  const list = text.split(/\n+/).map(l => l.split("|")).map(([w, g]) => ({ word: (w || "").trim(), gloss: (g || "").trim() })).filter(w => w.word && !have.has(w.word));
-  for (const w of list) w.lexeme = await findLexeme(w.word);
-  WORDS.push(...list); saveWords(); return list.length;
+async function addWords(items) {
+  const have = new Set(WORDS.map(w => w.word)), list = [];
+  for (const it of items) { const word = String(it.word || "").trim(); if (!word || have.has(word)) continue; have.add(word); list.push({ word, gloss: String(it.gloss || "").trim() }); }
+  // show the words at once (list and wizard); look up their lexemes afterwards, a few at a time
+  WORDS.push(...list); saveWords();
+  $("#w-msg").textContent = items.length > 1 ? `${toBn(list.length)}টি শব্দ যোগ হলো` + (items.length > list.length ? ` (${toBn(items.length - list.length)}টি আগেই ছিল বা খালি)।` : "।") : "";
+  (async () => {
+    for (let i = 0; i < list.length; i += 6) {
+      await Promise.all(list.slice(i, i + 6).map(async w => { try { w.lexeme = await findLexeme(w.word); } catch {} }));
+      saveWords();
+    }
+  })();
+  return list.length;
 }
-$("#w-add").addEventListener("click", async () => { await addWordLines($("#w-text").value); $("#w-text").value = ""; $("#w-many").hidden = true; });
-// one word at a time: type, Enter
-$("#w-addf").addEventListener("submit", async e => { e.preventDefault(); const v = $("#w-one").value.trim(); if (!v) return; const n = await addWordLines(v); $("#w-one").value = ""; if (!n) msg("এই শব্দ তালিকায় আগেই আছে"); });
-$("#w-many-t").onclick = () => { const m = $("#w-many"); m.hidden = !m.hidden; if (!m.hidden) $("#w-text").focus(); };
+const addWordLines = text => addWords(text.split(/\r?\n+/).map(l => l.split("|")).map(([word, gloss]) => ({ word, gloss })));
+// one box: Enter adds (Shift+Enter for a new line); a pasted list adds every line
+const wText = $("#w-text"), wGrow = () => { wText.style.height = "auto"; wText.style.height = wText.scrollHeight + 2 + "px"; };
+wText.addEventListener("input", wGrow);
+wText.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#w-addf").requestSubmit(); } });
+$("#w-addf").addEventListener("submit", async e => {
+  e.preventDefault(); const v = wText.value.trim(); if (!v) return;
+  const n = await addWordLines(v); wText.value = ""; wGrow(); if (!n) msg("এই শব্দ তালিকায় আগেই আছে");
+});
+
+// ---- from a file: CSV / TSV / JSON / TXT ----
+const W_KEYS = { word: ["word", "lemma", "শব্দ", "term", "title", "headword"], gloss: ["gloss", "meaning", "অর্থ", "definition", "sense"] };
+function splitRow(line, d) { // a CSV row with "quoted, fields"
+  const out = []; let cur = "", q = false;
+  for (let i = 0; i < line.length; i++) { const c = line[i];
+    if (q) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"' && !cur) q = true; else if (c === d) { out.push(cur); cur = ""; } else cur += c; }
+  out.push(cur); return out.map(s => s.trim());
+}
+function parseWordFile(name, text) {
+  text = text.replace(/^﻿/, "");
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  const pick = (o, k) => { for (const key of Object.keys(o)) if (W_KEYS[k].includes(key.toLowerCase())) return o[key]; };
+  if (ext === "json" || /^\s*[\[{]/.test(text)) {
+    let j = JSON.parse(text); if (!Array.isArray(j)) j = j.words || j.items || Object.values(j).find(Array.isArray) || [];
+    return j.map(x => typeof x === "string" ? { word: x } : Array.isArray(x) ? { word: x[0], gloss: x[1] } : { word: pick(x, "word") ?? Object.values(x)[0], gloss: pick(x, "gloss") });
+  }
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const d = ext === "tsv" || (ext !== "csv" && lines[0]?.includes("\t")) ? "\t" : ext === "csv" ? "," : null;
+  if (!d) return lines.map(l => l.split("|")).map(([word, gloss]) => ({ word, gloss }));
+  const rows = lines.map(l => splitRow(l, d)), head = rows[0].map(h => h.toLowerCase());
+  let wi = head.findIndex(h => W_KEYS.word.includes(h)), gi = head.findIndex(h => W_KEYS.gloss.includes(h));
+  if (wi >= 0) rows.shift(); else { wi = 0; gi = 1; }
+  return rows.map(r => ({ word: r[wi], gloss: gi >= 0 ? r[gi] : "" }));
+}
+$("#w-file-b").onclick = () => $("#w-file").click();
+$("#w-file").addEventListener("change", async e => {
+  let total = 0;
+  for (const f of e.target.files) {
+    try { total += await addWords(parseWordFile(f.name, await f.text())); }
+    catch (err) { $("#w-msg").textContent = `${f.name} পড়া যায়নি: ${err.message}`; }
+  }
+  e.target.value = ""; if (total) $("#w-msg").textContent = `${toBn(total)}টি শব্দ যোগ হলো।`;
+});
+
+// ---- from a wiki page or category (any Wikimedia wiki; default bn.wiktionary) ----
+function wikiTarget(s) {
+  s = s.trim(); let host = "bn.wiktionary.org", title = s;
+  try { const u = new URL(s); if (/\.(wikipedia|wiktionary|wikimedia|wikisource|wikidata|wikibooks|wikiquote|wikivoyage)\.org$|^lingualibre\.org$/.test(u.hostname)) {
+    host = u.hostname; title = u.searchParams.get("title") || decodeURIComponent(u.pathname.replace(/^\/wiki\//, "")); } } catch {}
+  return { host, title: title.replace(/_/g, " ") };
+}
+function wordsFromWikitext(wt) {
+  const link = s => { const m = s.match(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/); return m && !/:/.test(m[1]) ? m[1].trim() : null; };
+  const strip = s => s.replace(/\{\{[^}]*\}\}|<[^>]+>|'''?|\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1").trim();
+  const items = wt.split("\n").filter(l => /^[#*]/.test(l)).map(l => l.replace(/^[#*:;]+\s*/, ""))
+    .map(l => { const w = link(l) || strip(l.split(/\s[-–—:]\s|\s*[,،(]/)[0]); const g = l.match(/\s[-–—:]\s(.+)$/); return { word: w, gloss: g ? strip(g[1]) : "" }; });
+  if (items.length >= 5) return items;
+  // no real list (e.g. a table): every plain link and {{l|xx|word}}; if most are Bengali, keep only those
+  let all = [...wt.matchAll(/\[\[([^\]|#:]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]|\{\{(?:l|m|link|mention)\|[\w-]+\|([^}|]+)/g)].map(m => (m[1] || m[2]).trim());
+  const bn = all.filter(w => /[ঀ-৿]/.test(w));
+  if (bn.length > all.length / 3) all = bn;
+  return items.concat(all.map(word => ({ word })));
+}
+$("#w-page-b").onclick = () => { const f = $("#w-page"); f.hidden = !f.hidden; if (!f.hidden) $("#w-page-in").focus(); };
+$("#w-page").addEventListener("submit", async e => {
+  e.preventDefault(); const v = $("#w-page-in").value; if (!v.trim()) return;
+  const { host, title } = wikiTarget(v), api = `https://${host}/w/api.php?format=json&formatversion=2&origin=*&`;
+  $("#w-msg").textContent = "আনা হচ্ছে…";
+  try {
+    let items;
+    if (/^(category|বিষ.{1,3}শ্রেণ[ীি]):/i.test(title)) {
+      items = []; let cont = "";
+      do { const j = await (await fetch(api + "action=query&list=categorymembers&cmnamespace=0&cmlimit=500&cmtitle=" + encodeURIComponent(title) + cont)).json();
+        items.push(...(j.query?.categorymembers || []).map(m => ({ word: m.title })));
+        cont = j.continue?.cmcontinue ? "&cmcontinue=" + encodeURIComponent(j.continue.cmcontinue) : "";
+      } while (cont && items.length < 5000);
+    } else {
+      const j = await (await fetch(api + "action=parse&prop=wikitext&redirects=1&page=" + encodeURIComponent(title))).json();
+      if (j.error) throw new Error(j.error.info);
+      items = wordsFromWikitext(j.parse.wikitext);
+    }
+    if (!items.length) { $("#w-msg").textContent = "ওই পাতায় কোনো তালিকা পাওয়া গেল না।"; return; }
+    await addWords(items); $("#w-page").hidden = true; $("#w-page-in").value = "";
+  } catch (err) { $("#w-msg").textContent = "আনা যায়নি: " + err.message; }
+});
 $("#w-clear").addEventListener("click", () => { if (WORDS.length && confirm("তালিকার সব শব্দ সরাবেন?")) { WORDS = []; wordPos = 0; saveWords(); } });
 $("#w-wd").addEventListener("click", async () => {
   const qid = langOf(SP.lang)[1];
@@ -272,7 +362,11 @@ new MutationObserver(() => { readCols(); drawAll(); }).observe(document.document
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { readCols(); drawAll(); });
 function drawAll(play) {
   if (!COL.tx) readCols();
-  const [W, Hh] = fit(cW); clampView();
+  const shown = !document.body.classList.contains("has-audio") && N() > 0;
+  document.body.classList.toggle("has-audio", N() > 0); // may unhide the stage, so before measuring
+  const [W, Hh] = fit(cW);
+  if (shown && viewW() > 0) { V.spp = Math.max(0.5, N() / viewW()); V.start = 0; } // the stage just appeared: show all of it
+  clampView();
   const g = cW.getContext("2d"); g.clearRect(0, 0, W, Hh);
   $("#drop").hidden = N() > 0;
   $("#t-total").textContent = "/ " + fmt(maxLen() / P.rate);
@@ -409,7 +503,7 @@ let clipPlayer = null;
 function playBlob(blob) { stop(); clipPlayer = new Audio(URL.createObjectURL(blob)); clipPlayer.onended = () => URL.revokeObjectURL(clipPlayer.src); clipPlayer.play(); }
 function stop() { if (clipPlayer) { clipPlayer.pause(); clipPlayer = null; } cancelAnimationFrame(raf); if (src) { src.onended = null; try { src.stop(); } catch (e) {} } src = null; previewing = false; $("#t-play").classList.remove("on"); $("#fx-preview").classList.remove("on"); drawAll(); }
 $("#t-play").onclick = () => (src ? stop() : playFromCursor());
-$("#t-stop").onclick = () => stop();
+$("#t-stop").onclick = () => { if (recording || chainT) userStop(); stop(); };
 $("#t-home").onclick = () => { stop(); P.cursor = 0; V.start = 0; drawAll(); };
 // previous / next part of the active track
 function jumpRegion(dir) {
@@ -474,18 +568,24 @@ async function startRec() {
   stop(); chunks = []; rec = new MediaRecorder(stream); rec.ondataavailable = e => chunks.push(e.data);
   const word = wordMode ? WORDS[wordPos] : null;
   rec.onstop = () => finishRec(word);
-  rec.start(); recording = true; recT0 = Date.now(); recMarks = []; $("#t-rec").classList.add("on"); document.body.classList.add("is-rec");
+  recByHand = false; rec.start(); recording = true; recT0 = Date.now(); recMarks = []; $("#t-rec").classList.add("on"); document.body.classList.add("is-rec");
   $("#t-mark").hidden = false; $("#t-mark").textContent = "⏐ দাগ";
   vad = wordMode && $("#t-auto").checked ? { t0: performance.now(), spoke: false, quiet: 0 } : null;
   msg(word ? `বলুন: “${word.word}”` : "রেকর্ড হচ্ছে… থামাতে R বা ● চাপুন"); drawBatch();
 }
+// একটানা goes on to the next word by itself only after the speaker falls silent; a stop by hand (R, ●/■) ends the run.
+let chainT = 0;
+const nextTake = ms => { clearTimeout(chainT); chainT = setTimeout(() => { chainT = 0; startRec(); }, ms); };
+function userStop() { const was = !!chainT || recording; clearTimeout(chainT); chainT = 0; if (vad) vad.byHand = true; recByHand = true; stopRec(); drawBatch(); if (was) msg("■ থামানো হলো — আবার শুরু করতে ● চাপুন"); }
+let recByHand = false;
+const toggleRec = () => (recording || chainT ? userStop() : startRec());
 function stopRec() { if (!recording) return; recording = false; $("#t-mark").hidden = true; $("#t-rec").classList.remove("on"); document.body.classList.remove("is-rec"); if (rec?.state !== "inactive") rec.stop(); drawBatch(); }
 async function finishRec(word) {
   let a; try { a = await decode(new Blob(chunks, { type: rec.mimeType })); } catch (e) { msg("রেকর্ড পড়া যায়নি: " + e.message); return; }
   let pcm = a.pcm;
   if (!N()) P.rate = a.rate; else pcm = await resample(pcm, a.rate, P.rate);
   if (word) { // trim the silence around a single word
-    const pk = peakOf(pcm); if (pk < 0.02) { msg("কিছু শোনা যায়নি — আবার বলুন।"); if ($("#t-auto").checked) setTimeout(startRec, 400); return; }
+    const pk = peakOf(pcm); if (pk < 0.02) { msg("কিছু শোনা যায়নি — আবার বলুন।"); if ($("#t-auto").checked && !recByHand) nextTake(400); return; }
     const thr = pk * 0.08, pad = Math.round(P.rate * 0.2); let s = 0, e = pcm.length - 1; while (s < e && Math.abs(pcm[s]) < thr) s++; while (e > s && Math.abs(pcm[e]) < thr) e--;
     pcm = pcm.slice(Math.max(0, s - pad), Math.min(pcm.length, e + pad));
   }
@@ -508,16 +608,16 @@ async function finishRec(word) {
   zoomFit();
   if (word && $("#t-autoq").checked) { const r = [...P.regions].reverse().find(x => x.name === word.word); if (r) exportRegion(r).then(() => { drawQueue(); saveProject(); }); }
   // একটানা: on to the next word and record it; otherwise stay (listen, retake) until ▶ is pressed.
-  if (word) { word.done = true; if ($("#t-auto").checked && wordPos < WORDS.length - 1) { wordPos++; saveWords(); setTimeout(startRec, 450); } else { saveWords(); msg(wordPos >= WORDS.length - 1 ? "✓ তালিকা শেষ!" : `✓ “${word.word}” রেকর্ড হলো — শুনে নিন, তারপর ▶ পরের শব্দ`); } }
+  if (word) { word.done = true; if ($("#t-auto").checked && !recByHand && wordPos < WORDS.length - 1) { wordPos++; saveWords(); nextTake(450); } else if (recByHand && $("#t-auto").checked && wordPos < WORDS.length - 1) { wordPos++; saveWords(); msg(`✓ “${word.word}” রেকর্ড হলো — থামানো আছে; চালু করতে ●`); } else { saveWords(); msg(wordPos >= WORDS.length - 1 ? "✓ তালিকা শেষ!" : `✓ “${word.word}” রেকর্ড হলো — শুনে নিন, তারপর ▶ পরের শব্দ`); } }
 }
-$("#t-rec").onclick = () => (recording ? stopRec() : startRec());
+$("#t-rec").onclick = toggleRec;
 $("#t-mark").onclick = addMark;
 $("#t-wordmode").onchange = () => { store("lx_snd_wm", $("#t-wordmode").checked); drawBatch(); };
 $("#t-wordmode").checked = load("lx_snd_wm", true); // word list is the default mode
 $("#t-auto").checked = load("lx_snd_auto", false);
 $("#t-auto").onchange = () => { store("lx_snd_auto", $("#t-auto").checked); drawBatch(); };
 $("#bt-play").onclick = () => { const w = WORDS[wordPos], r = w && [...P.regions].reverse().find(x => x.name === w.word); if (r) playBuffer(P.pcm, r.a, r.b); else msg("এই শব্দের রেকর্ড নেই"); };
-$("#bt-go").onclick = () => (recording ? stopRec() : startRec());
+$("#bt-go").onclick = toggleRec;
 $("#bt-prev").onclick = () => { if (recording) return; wordPos = Math.max(0, wordPos - 1); saveWords(); };
 $("#bt-next").onclick = () => { if (recording) stopRecCancel(); wordPos = Math.min(WORDS.length - 1, wordPos + 1); saveWords(); };
 // Retake: the earlier take of this word leaves the timeline, then record again.
@@ -871,7 +971,7 @@ const kindOpts = sel => Object.entries(KINDS).map(([k, v]) => `<option value="${
 $("#r-kindall").innerHTML = `<option value="">সব অংশের ধরন…</option>` + kindOpts("");
 // Compact cards in the right column: name and play on top; time, kind and the small tools below.
 function drawRegions() {
-  $("#r-count").textContent = toBn(P.regions.length);
+  $("#r-count").textContent = toBn(P.regions.length); $("#rt-r").textContent = P.regions.length ? toBn(P.regions.length) : "";
   $("#r-body").innerHTML = P.regions.map((r, k) => `<div class="rg${r.skip ? " skip" : ""}" data-id="${r.id}">
     <div class="rg-top"><span class="dot" style="background:${REG_COLORS[k % REG_COLORS.length]}"></span><span class="rg-n">${toBn(k + 1)}</span>
       <input data-f="name" value="${esc(r.name)}" placeholder="শব্দ বা শিরোনাম">
@@ -952,6 +1052,7 @@ function drawQueue() {
   $$(".q-list").forEach(el => { el.innerHTML = html; }); // full studio and the simple mode
   const left = Q.filter(c => c.status !== "done").length;
   $$(".q-up").forEach(b => { b.disabled = !left; }); $$(".q-msg").forEach(m => { m.textContent = left ? `${toBn(left)}টি আপলোড বাকি` : Q.length ? "সব উঠেছে।" : ""; });
+  $("#rt-q").textContent = left ? toBn(left) : ""; // upload tab: how many are waiting
   document.dispatchEvent(new CustomEvent("sl-queue", { detail: { total: Q.length, left } }));
 }
 const qOf = el => Q.find(c => c.id === el.closest(".q-item")?.dataset.id);
@@ -1194,23 +1295,6 @@ function setEditor(on) {
 $("#t-editor").onclick = () => setEditor(!document.body.classList.contains("no-editor") ? false : true);
 if (/\/libre\/?$/.test(location.pathname)) { store("lx_snd_editor", false); if (window.LX_NODE) history.replaceState(null, "", "/studio" + location.search); }
 setEditor(load("lx_snd_editor", false));
-// Phones: one column at a time (list, record, upload).
-function setMView(v) { if (v === "left") v = "center"; /* the menu is always shown now */ setTimeout(() => typeof syncMTabs === "function" && syncMTabs()); document.body.dataset.mview = v; $$("#st-mnav [data-mv]").forEach(b => b.toggleAttribute("aria-current", b.dataset.mv === v)); store("lx_snd_mview", v); if (v === "center") requestAnimationFrame(() => drawAll()); }
-// Phones: file menu, undo/redo, the editor switch and the rest fold behind “⋯”.
-// Phones: one row of five tabs — setup, word list, wizard (centre), parts, upload list (right column).
-function syncMTabs() {
-  const v = document.body.dataset.mview === "right" ? ($("#pn-queue").hidden ? "regions" : "queue") : (load("lx_snd_ctab", "wizard"));
-  $$("#st-mnav [data-mt]").forEach(b => b.setAttribute("aria-current", String(b.dataset.mt === v)));
-  $("#st-mnav [aria-current=true]")?.scrollIntoView({ inline: "nearest", block: "nearest" });
-}
-$("#st-mnav").addEventListener("click", e => {
-  const b = e.target.closest("[data-mt]"); if (!b) return; const t = b.dataset.mt;
-  if (t === "regions" || t === "queue") { setRTab(t === "queue" ? "pn-queue" : "pn-regions"); setMView("right"); }
-  else { setCTab(t); setMView("center"); }
-  syncMTabs();
-});
-setMView(load("lx_snd_mview", "center"));
-document.addEventListener("sl-queue", e => { $("#mnav-q").textContent = e.detail.left ? toBn(e.detail.left) : ""; });
 // Microphone test: 3 seconds, then played back; the level shows in the top bar.
 $("#t-mictest").onclick = async () => {
   const b = $("#t-mictest"); try { await openMic(); } catch (e) { msg("মাইক্রোফোন চালু করা যায়নি: " + e.message); return; }
@@ -1221,16 +1305,36 @@ $("#t-mictest").onclick = async () => {
 $("#t-autoq").checked = load("lx_snd_autoq", true);
 $("#t-autoq").onchange = () => store("lx_snd_autoq", $("#t-autoq").checked);
 
-/* ================= centre: word list | record wizard ================= */
-function setCTab(id) {
-  $$("#ct-tabs [data-ct]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.ct === id)));
-  $$(".ct-pane").forEach(p => { p.hidden = p.dataset.ct !== id; });
-  store("lx_snd_ctab", id); if (id === "wizard") requestAnimationFrame(() => drawAll()); if (typeof syncMTabs === "function") syncMTabs();
+/* ================= tabs: one bar for five panes ================= */
+// Wide screens show one centre pane (setup, words, wizard) and one right pane (regions, queue) side by side;
+// narrower screens show a single pane. The same buttons and the same state serve both.
+const C_TABS = ["setup", "words", "wizard"], R_TABS = ["regions", "queue"];
+const TAB = { c: load("lx_snd_ctab", speakerWhy() ? "setup" : WORDS.length ? "wizard" : "words"), r: load("lx_snd_rtab3", "regions") };
+TAB.one = load("lx_snd_one", TAB.c);
+const WIDE = matchMedia("(min-width: 1251px)");
+function applyTabs() {
+  const w = WIDE.matches, on = t => (w ? t === TAB.c || t === TAB.r : t === TAB.one);
+  $$(".pane").forEach(p => { p.hidden = !on(p.dataset.pane); });
+  $$("#st-tabs [data-tab]").forEach(b => b.setAttribute("aria-selected", String(on(b.dataset.tab))));
+  document.body.dataset.col = w ? "" : R_TABS.includes(TAB.one) ? "right" : "center";
+  document.body.classList.toggle("on-wizard", on("wizard")); // the player bar belongs to the wizard only
+  if (on("wizard")) {
+    // words waiting in the list: open the wizard straight on them (word card, ◀ ▶, upcoming)
+    if (WORDS.length && !$("#t-wordmode").checked) { $("#t-wordmode").checked = true; store("lx_snd_wm", true); setTimeout(() => { if (!psOpen.length) drawMenu(); }); }
+    drawBatch(); requestAnimationFrame(() => drawAll());
+  }
+}
+function setTab(id) {
+  if (C_TABS.includes(id)) TAB.c = id; else if (R_TABS.includes(id)) TAB.r = id; else return;
+  TAB.one = id; store("lx_snd_ctab", TAB.c); store("lx_snd_rtab3", TAB.r); store("lx_snd_one", TAB.one);
+  applyTabs();
   if (id === "setup" && speakerWhy()) $("#sp-form").hidden = false; // speaker details still missing: show the form
 }
-$("#ct-tabs").addEventListener("click", e => { const b = e.target.closest("[data-ct]"); if (b) setCTab(b.dataset.ct); });
-$("#w-go").onclick = () => setCTab("wizard");
-setCTab(load("lx_snd_ctab", speakerWhy() ? "setup" : WORDS.length ? "wizard" : "words"));
+const setCTab = setTab, setRTab = id => setTab(id === "pn-queue" ? "queue" : "regions"), setMView = () => {}; // older call sites
+$("#st-tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
+WIDE.addEventListener?.("change", applyTabs);
+applyTabs();
+$("#w-go").onclick = () => setTab("wizard");
 // double-click a word: record it now
 $("#w-list").addEventListener("dblclick", e => { const li = e.target.closest("li[data-i]"); if (li) { wordPos = +li.dataset.i; saveWords(); setCTab("wizard"); } });
 
@@ -1332,16 +1436,21 @@ function onItem(btn, fromHover) {
   if (fromHover) { closeFrom(lvl); return; } // hovering a plain item closes deeper submenus
   closeFrom(0); if (narrow()) PS.classList.remove("open"); it.run?.(); drawMenu();
 }
-// the two recording modes sit together at the bottom as pills
 function drawMenu() {
   PS.innerHTML = `<div class="ps-title">মেনু</div><button type="button" class="ps-toggle" id="ps-toggle" aria-expanded="${PS.classList.contains("open")}"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>মেনু</button>` + menuHtml(MENU(), 0)
     + `<div class="ps-sep"></div>` + SWITCHES().map((s, i) => `<button type="button" class="ps-sw" data-sw="${i}" role="switch" aria-checked="${s.on}" title="${s.tip}"><span class="ps-ic">${micon(s.icon)}</span><span class="ps-l">${s.label}</span><span class="tgl"></span></button>`).join("")
-    + `<div class="ps-pills" role="group" aria-label="মোড"><button type="button" class="ps-pill" data-mode="#t-wordmode" aria-pressed="${$("#t-wordmode").checked}">শব্দ-তালিকা</button><button type="button" class="ps-pill" data-mode="#t-auto" aria-pressed="${$("#t-auto").checked}">একটানা</button></div>`;
+    ;
+  drawModes();
 }
+// the two recording modes sit at the top of the record wizard as pills
+function drawModes() {
+  $("#wz-modes").innerHTML = `<button type="button" class="ps-pill" data-mode="#t-wordmode" aria-pressed="${$("#t-wordmode").checked}">শব্দ-তালিকা</button><button type="button" class="ps-pill" data-mode="#t-auto" aria-pressed="${$("#t-auto").checked}">একটানা</button>`;
+}
+$("#wz-modes").addEventListener("click", e => { const b = e.target.closest(".ps-pill"); if (b) { toggleEl(b.dataset.mode)(); drawMenu(); } });
+$("#wz-clear").onclick = () => $("#e-clear").click();
 PS.addEventListener("click", e => {
   if (e.target.closest("#ps-toggle")) { e.stopPropagation(); closeFrom(0); PS.classList.toggle("open"); drawMenu(); return; }
   const s = e.target.closest(".ps-sw"); if (s) { SWITCHES()[+s.dataset.sw].run(); setTimeout(drawMenu); return; }
-  const b = e.target.closest(".ps-pill"); if (!b) return; toggleEl(b.dataset.mode)(); drawMenu();
 });
 document.addEventListener("click", e => { const b = e.target.closest(".ps-it"); if (b) { e.stopPropagation(); onItem(b, false); return; } if (!e.target.closest(".ps-sub")) closeFrom(0); });
 
@@ -1354,16 +1463,6 @@ drawMenu();
 $("#stage").appendChild($(".st-clock"));
 $("#stage").appendChild($(".st-player .st-meter")); // the input level goes with it
 
-/* ================= right column: parts | upload list ================= */
-function setRTab(id) {
-  $$("#rt-tabs [data-rt]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.rt === id)));
-  ["pn-regions", "pn-queue"].forEach(k => { $("#" + k).hidden = k !== id; });
-  store("lx_snd_rtab", id); if (typeof syncMTabs === "function") syncMTabs();
-}
-$("#rt-tabs").addEventListener("click", e => { const b = e.target.closest("[data-rt]"); if (b) setRTab(b.dataset.rt); });
-setRTab(load("lx_snd_rtab", "pn-regions"));
-document.addEventListener("sl-queue", e => { $("#rt-q").textContent = toBn(e.detail.total); });
-new MutationObserver(() => { $("#rt-r").textContent = $("#r-count").textContent; }).observe($("#r-count"), { childList: true, characterData: true, subtree: true });
 
 /* ================= layout: file menu, tabs, drawers ================= */
 [["#tg-fx", "#pane-fx"], ["#tg-mix", "#pane-mix"]].forEach(([b, p]) => $(b).addEventListener("click", () => {
@@ -1379,7 +1478,7 @@ document.addEventListener("keydown", e => {
   const k = e.key.toLowerCase(), mod = e.ctrlKey || e.metaKey;
   const go = fn => { e.preventDefault(); fn(); };
   if (k === " ") go(() => (src ? stop() : playFromCursor()));
-  else if (k === "r" && !mod) go(() => (recording ? stopRec() : startRec()));
+  else if (k === "r" && !mod) go(toggleRec);
   else if ((k === "m" || k === "enter") && recording) go(addMark);
   else if (k === "s" && !mod) go(() => $("#e-split").click());
   else if ((k === "a" || k === "[") && !mod) go(markStart);
@@ -1403,45 +1502,8 @@ document.addEventListener("keydown", e => {
 });
 addEventListener("online", () => msg("ইন্টারনেট ফিরেছে — আপলোড করা যাবে।")); addEventListener("offline", () => msg("ইন্টারনেট নেই — কাজ চালিয়ে যান, সব এই ব্রাউজারে জমা থাকছে।"));
 
-/* ================= dockable panels (like Photoshop) ================= */
-// Every side panel can be collapsed (click its title) and dragged by its grip to another place or the other side.
-// The layout is remembered.
-(function docks() {
-  // left column and right column (parts, upload list); panels move within their own column
-  const docks = { left: $(".st-left") }; // the right column has tabs instead
-  const panels = () => $$(".st-left > .pn");
-  const save = () => store("lx_snd_layout2", { left: $$(".st-left > .pn").map(p => p.id), collapsed: panels().filter(p => p.classList.contains("collapsed")).map(p => p.id) });
-  // First visit: mode and word list open, the rest folded (a click opens them).
-  const L = load("lx_snd_layout2", null) || { collapsed: ["pn-speaker", "pn-proj"] };
-  if (L) {
-    ["left"].forEach(d => (L[d] || []).forEach(id => { const el = document.getElementById(id); if (el && el.parentNode === docks[d]) docks[d].appendChild(el); }));
-    (L.collapsed || []).forEach(id => { const el = document.getElementById(id); if (el?.parentNode === docks.left) el.classList.add("collapsed"); });
-  }
-  panels().forEach(p => {
-    const h = p.querySelector("h3"); if (!h || h.querySelector(".dk")) return;
-    h.insertAdjacentHTML("afterbegin", `<span class="dk dk-grip" draggable="true" title="টেনে সরান">⠿</span>`);
-    h.insertAdjacentHTML("beforeend", `<button type="button" class="dk dk-fold" title="ভাঁজ / খুলুন" aria-expanded="${!p.classList.contains("collapsed")}">▾</button>`);
-    const fold = () => { p.classList.toggle("collapsed"); h.querySelector(".dk-fold").setAttribute("aria-expanded", String(!p.classList.contains("collapsed"))); save(); };
-    h.querySelector(".dk-fold").onclick = e => { e.stopPropagation(); fold(); };
-    h.addEventListener("dblclick", e => { if (!e.target.closest("input,select,button")) fold(); });
-    const grip = h.querySelector(".dk-grip");
-    grip.addEventListener("dragstart", e => { e.dataTransfer.setData("text/plain", p.id); e.dataTransfer.effectAllowed = "move"; setTimeout(() => p.classList.add("dragging"), 0); document.body.classList.add("docking"); });
-    grip.addEventListener("dragend", () => { p.classList.remove("dragging"); document.body.classList.remove("docking"); $$(".dk-mark").forEach(m => m.remove()); save(); });
-  });
-  const mark = document.createElement("div"); mark.className = "dk-mark";
-  Object.values(docks).forEach(dock => {
-    dock.addEventListener("dragover", e => {
-      if (!document.body.classList.contains("docking")) return; e.preventDefault();
-      const after = [...dock.querySelectorAll(":scope > .pn:not(.dragging)")].find(el => e.clientY < el.getBoundingClientRect().top + el.offsetHeight / 2);
-      after ? dock.insertBefore(mark, after) : dock.appendChild(mark);
-    });
-    dock.addEventListener("drop", e => {
-      e.preventDefault(); const p = document.getElementById(e.dataTransfer.getData("text/plain")); if (!p || p.parentNode !== dock) { mark.remove(); return; } // stays in its own column
-      mark.parentNode === dock ? dock.insertBefore(p, mark) : dock.appendChild(p); mark.remove(); save(); drawAll();
-    });
-  });
-  $("#t-layout").onclick = () => { store("lx_snd_layout2"); location.reload(); };
-})();
+/* “প্যানেল আগের জায়গায় ফেরান”: forget the remembered tabs and switches of the layout */
+$("#t-layout").onclick = () => { ["lx_snd_ctab", "lx_snd_rtab3", "lx_snd_one"].forEach(k => store(k)); location.reload(); };
 
 // For tests and power users.
 $$(".q-up").forEach(b => { b.onclick = uploadAll; });

@@ -12,8 +12,7 @@
 <body class="sd-body">
 <main class="studio" id="studio">
 
-  <!-- ===== Top bar ===== -->
-  <!-- ===== Player: fixed at the bottom ===== -->
+  <!-- Player: fixed at the bottom on every screen -->
   <footer class="st-transport st-player">
     <div class="st-tgroup st-tcenter">
       <button type="button" class="tb" id="t-home" title="শুরু থেকে (Home)"><svg viewBox="0 0 24 24"><path d="M6 5v14M19 5l-9 7 9 7z"/></svg></button>
@@ -29,13 +28,10 @@
     </div>
   </footer>
 
-  <!-- phones: one column at a time -->
-  <nav class="st-mnav" id="st-mnav"><button type="button" data-mt="setup"><svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="ml">সেটআপ</span><span class="ms">সেটআপ</span></button><button type="button" data-mt="words"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span class="ml">শব্দ-তালিকা</span><span class="ms">তালিকা</span></button><button type="button" data-mt="wizard"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="ml">রেকর্ড উইজার্ড</span><span class="ms">রেকর্ড</span></button><button type="button" data-mt="regions"><svg viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg><span class="ml">অংশসমূহ</span><span class="ms">অংশ</span></button><button type="button" data-mt="queue"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 21h16"/></svg><span class="ml">আপলোড তালিকা</span><span class="ms">আপলোড</span><span class="cnt" id="mnav-q"></span></button></nav>
-
-  <!-- ===== Left column ===== -->
+  <!-- Menu (left; a folding strip on phones) -->
   <aside class="st-left">
     <nav class="ps-menu" id="ps-menu" aria-label="মেনু"></nav>
-    <section class="pn" id="pn-mode" hidden>
+    <div class="st-controls" id="pn-mode" hidden> <!-- the real switches and buttons; the menu drives them -->
       <h3>সেটিংস</h3>
       <div class="set-grp"><span class="set-l">ফাইল</span>
         <div class="set-row">
@@ -59,19 +55,17 @@
       <div class="set-grp"><span class="set-l">মাইক</span>
         <div class="set-row"><select id="t-input" title="মাইক্রোফোন"><option value="">ডিফল্ট মাইক</option></select><button type="button" class="chip-b" id="t-mictest" title="৩ সেকেন্ড রেকর্ড করে শুনিয়ে দেয়">🎙 পরীক্ষা</button></div></div>
       <div class="set-foot"><button type="button" class="link-b" id="t-layout" title="প্যানেলগুলো আগের জায়গায় ফেরান">⊞ লেআউট ফেরান</button><button type="button" class="link-b" id="t-help" title="কিবোর্ড শর্টকাট">⌨ শর্টকাট</button></div>
-    </section>
-
-
-
-
-
-
+    </div>
   </aside>
 
-  <!-- ===== Middle column: the editor ===== -->
+  <!-- One tab bar for five panes. Wide screens: the first three over the middle, the last two over the right column. Smaller screens: one row, one pane at a time. -->
+  <nav class="st-tabs" id="st-tabs" role="tablist">
+    <div class="tabs-c"><button type="button" role="tab" data-tab="setup"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span class="t-long">সেটআপ</span><span class="t-short">সেটআপ</span><span class="t-warn" id="ct-sw" hidden>!</span></button><button type="button" role="tab" data-tab="words"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span class="t-long">শব্দ-তালিকা</span><span class="t-short">তালিকা</span><span class="t-n" id="ct-wc"></span></button><button type="button" role="tab" data-tab="wizard"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="t-long">রেকর্ড উইজার্ড</span><span class="t-short">রেকর্ড</span></button></div>
+    <div class="tabs-r"><button type="button" role="tab" data-tab="regions"><svg viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg><span class="t-long">অংশসমূহ</span><span class="t-short">অংশ</span><span class="t-n" id="rt-r"></span></button><button type="button" role="tab" data-tab="queue"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 21h16"/></svg><span class="t-long">আপলোড তালিকা</span><span class="t-short">আপলোড</span><span class="t-n" id="rt-q"></span></button></div>
+  </nav>
+
   <section class="st-center">
-    <nav class="ct-tabs" id="ct-tabs" role="tablist"><button type="button" role="tab" data-ct="setup">সেটআপ <span class="ct-warn" id="ct-sw" hidden>!</span></button><button type="button" role="tab" data-ct="words">শব্দ-তালিকা <span class="cnt" id="ct-wc"></span></button><button type="button" role="tab" data-ct="wizard" aria-selected="true">রেকর্ড উইজার্ড</button></nav>
-    <div class="ct-pane ct-setup" data-ct="setup" hidden>
+    <div class="pane pane-setup" data-pane="setup" hidden>
     <section class="pn spk" id="pn-speaker">
       <div class="spk-head"><h3>বক্তা</h3><span class="spk-status" id="sp-status"></span></div>
       <div class="spk-bar"><div class="spk-chips" id="spk-chips"></div><button type="button" class="chip-b" id="sp-new">＋ নতুন বক্তা</button></div>
@@ -110,17 +104,18 @@
       </div>
     </section>
     </div>
-    <div class="ct-pane" data-ct="words" hidden>
+    <div class="pane" data-pane="words" hidden>
     <section class="pn" id="pn-words">
       <h3>শব্দ-তালিকা <span class="cnt" id="w-count">০</span><span class="h-acts"><button type="button" class="h-a" id="w-wd" title="উইকি উপাত্তের যেসব লেক্সিমে উচ্চারণ নেই">উইকিডাটা থেকে</button><button type="button" class="h-a red" id="w-clear" title="তালিকা খালি করুন">খালি</button><button type="button" class="sbtn pri w-go" id="w-go">রেকর্ড উইজার্ডে যান ›</button></span></h3>
       <div class="w-prog"><i id="w-bar"></i></div>
-      <form class="w-add" id="w-addf"><input id="w-one" lang="bn" autocomplete="off" placeholder="নতুন শব্দ লিখে Enter"><button type="button" class="ib" id="w-many-t" title="অনেকগুলো একসঙ্গে (প্রতি লাইনে একটি)">≡</button></form>
-      <div class="w-many" id="w-many" hidden><textarea id="w-text" rows="4" lang="bn" placeholder="প্রতি লাইনে একটি শব্দ&#10;অর্থসহ: শব্দ | অর্থ"></textarea><button type="button" class="sbtn pri wide" id="w-add">সব যোগ করুন</button></div>
+      <form class="w-add" id="w-addf"><textarea id="w-text" rows="1" lang="bn" autocomplete="off" placeholder="শব্দ লিখে Enter — অনেকগুলো পেস্ট করা যায় (প্রতি লাইনে একটি; অর্থসহ: শব্দ | অর্থ)"></textarea><button type="submit" class="ib" title="যোগ করুন">+</button></form>
+      <div class="w-src"><button type="button" class="chip-b" id="w-file-b" title="CSV, TSV, JSON বা TXT">ফাইল থেকে</button><input type="file" id="w-file" accept=".csv,.tsv,.json,.txt,text/plain,text/csv,application/json" hidden><button type="button" class="chip-b" id="w-page-b" title="উইকির কোনো পাতা বা বিষয়শ্রেণি থেকে">উইকি পাতা থেকে</button></div>
+      <form class="w-page" id="w-page" hidden><input id="w-page-in" placeholder="পাতার লিংক বা নাম, যেমন: উইকিঅভিধান:… বা বিষয়শ্রেণী:…"><button type="submit" class="sbtn pri">আনুন</button></form>
       <p class="hint" id="w-msg"></p>
       <ol class="w-list" id="w-list"></ol>
     </section>
     </div>
-    <div class="ct-pane" data-ct="wizard">
+    <div class="pane" data-pane="wizard">
     <div class="st-toolbar" role="toolbar" aria-label="সম্পাদনা">
       <div class="tg">
         <button type="button" class="ic-b" id="e-cut" data-sel title="কাটুন (Ctrl+X)"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg></button>
@@ -210,6 +205,7 @@
     </section>
 
     <!-- word-list recording -->
+    <div class="wz-bar"><div class="ps-pills" id="wz-modes" role="group" aria-label="রেকর্ডের ধরন"></div><button type="button" class="link-b red wz-clear" id="wz-clear" title="টাইমলাইনের সব অডিও মুছুন (শব্দ-তালিকা থাকবে)">✕ সব অডিও মুছুন</button></div>
     <section class="st-batch" id="batch" hidden>
       <div class="bt-prog"><span id="bt-pos">০ / ০</span><div class="bar"><i id="bt-bar"></i></div><span id="bt-done"></span></div>
       <div class="bt-live"><span id="bt-clock">00:00</span><div class="bt-mt"><i id="bt-meter"></i></div></div>
@@ -235,9 +231,8 @@
     </div>
   </section>
 
-  <!-- ===== Right column: parts, then the upload list ===== -->
   <aside class="st-right-col">
-    <nav class="rt-tabs" id="rt-tabs" role="tablist"><button type="button" role="tab" data-rt="pn-regions" aria-selected="true">অংশসমূহ <span class="cnt" id="rt-r"></span></button><button type="button" role="tab" data-rt="pn-queue" aria-selected="false">আপলোড তালিকা <span class="cnt" id="rt-q"></span></button></nav>
+    <div class="pane" data-pane="regions">
     <section class="pn pn-regions" id="pn-regions">
       <h3>অংশসমূহ <span class="cnt" id="r-count">০</span><span class="h-acts"><button type="button" class="h-a" id="r-unsplit" title="সব ভাগ তুলে এক অংশ">ভাগ তুলুন</button><button type="button" class="h-a red" id="r-clear" title="সব অডিও ও অংশ মুছুন">সব মুছুন</button></span></h3>
       <div class="r-tools"><input id="r-title" placeholder="সাধারণ শিরোনাম (ঐচ্ছিক)"><select id="r-kindall" title="সব অংশের ধরন"></select></div>
@@ -245,12 +240,15 @@
       <div class="r-list" id="r-body"></div>
       <button type="button" class="sbtn pri wide" id="r-export">আপলোড তালিকায় পাঠান ›</button>
     </section>
+    </div>
+    <div class="pane" data-pane="queue" hidden>
     <section class="pn pn-grow" id="pn-queue">
       <h3>আপলোড তালিকা <span class="cnt" id="q-count">০</span><span class="h-acts"><button type="button" class="h-a" id="q-clear-done" title="কমন্সে উঠে যাওয়াগুলো তালিকা থেকে সরান">উঠেছেগুলো সরান</button><button type="button" class="h-a red" id="q-clear-all" title="পুরো তালিকা খালি করুন">সব সরান</button></span></h3>
       <div class="q-list" id="q-list"></div>
       <p class="hint q-msg" id="q-msg"></p><p class="hint q-cloud"></p>
       <button type="button" class="sbtn pri wide q-up" id="q-up">কমন্সে আপলোড করুন</button>
     </section>
+    </div>
   </aside>
 </main>
 

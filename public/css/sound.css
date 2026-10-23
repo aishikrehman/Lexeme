@@ -1,829 +1,163 @@
-/* স্টুডিও লিব্রে — an audio studio in the Wikimedia (Codex) look: white panels, grey rules, progressive blue.
-   Follows the site's light/dark choice. */
-.studio{
-  --bg:#f6f7f9;--pn:#ffffff;--pn2:#f8f9fa;--sub:#eef0f3;--ln:#e1e4e8;--ln2:#a2a9b1;--tx:#202122;--mu:#54595d;--ac:#3366cc;--ac-h:#447ff5;--ac-soft:#eaf3ff;
-  --rec:#d73333;--ok:#14866d;--warn:#ac6600;--wave:#3366cc;--wave2:#6b98e8;--stage:#ffffff;--clock:#14866d;--clockbg:#f8f9fa;
-}
-:root[data-theme="dark"] .studio{--bg:#101418;--pn:#1b2025;--pn2:#202122;--sub:#27292d;--ln:#3a3f45;--ln2:#54595d;--tx:#eaecf0;--mu:#a2a9b1;--ac:#6d8af0;--ac-h:#88a3e8;--ac-soft:#233566;--rec:#fd7865;--ok:#3cba8f;--warn:#e8a33a;--wave:#88a3e8;--wave2:#a9bdf2;--stage:#101418;--clock:#3cba8f;--clockbg:#101418}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .studio{--bg:#101418;--pn:#1b2025;--pn2:#202122;--sub:#27292d;--ln:#3a3f45;--ln2:#54595d;--tx:#eaecf0;--mu:#a2a9b1;--ac:#6d8af0;--ac-h:#88a3e8;--ac-soft:#233566;--rec:#fd7865;--ok:#3cba8f;--warn:#e8a33a;--wave:#88a3e8;--wave2:#a9bdf2;--stage:#101418;--clock:#3cba8f;--clockbg:#101418}}
+/* লিব্রে স্টুডিও — one stylesheet, each part written once.
+   Screen sizes: wide (≥1251px: menu | centre | right), medium (861–1250px: menu | one pane), phone (≤860px: one column).
+   Wikimedia (Codex) colours; follows the site's light/dark choice. */
 
-/* header and studio share the same width on this page */
-.sd-body:not(.easy-mode) .sitenav .sn-in{max-width:1680px} /* লিব্রে keeps the normal header */
+/* ---------- tokens ---------- */
+.studio{
+  --bg:#f6f7f9;--pn:#fff;--pn2:#f8f9fa;--sub:#eef0f3;--ln:#e1e4e8;--ln2:#a2a9b1;--tx:#202122;--mu:#54595d;
+  --ac:#3366cc;--ac-h:#447ff5;--ac-soft:#eaf3ff;--rec:#d73333;--ok:#14866d;--ok-soft:#e6f4ef;--warn:#ac6600;
+  --wave:#3366cc;--wave2:#6b98e8;--r:12px;--gap:10px;--menu-w:190px;--right-w:320px;
+}
+:root[data-theme="dark"] .studio{--bg:#101418;--pn:#1b2025;--pn2:#202122;--sub:#27292d;--ln:#3a3f45;--ln2:#54595d;--tx:#eaecf0;--mu:#a2a9b1;--ac:#6d8af0;--ac-h:#88a3e8;--ac-soft:#233566;--rec:#fd7865;--ok:#3cba8f;--ok-soft:#1d3a31;--warn:#e8a33a;--wave:#88a3e8;--wave2:#a9bdf2}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .studio{--bg:#101418;--pn:#1b2025;--pn2:#202122;--sub:#27292d;--ln:#3a3f45;--ln2:#54595d;--tx:#eaecf0;--mu:#a2a9b1;--ac:#6d8af0;--ac-h:#88a3e8;--ac-soft:#233566;--rec:#fd7865;--ok:#3cba8f;--ok-soft:#1d3a31;--warn:#e8a33a;--wave:#88a3e8;--wave2:#a9bdf2}}
+
+/* ---------- page frame ---------- */
+.sd-body{box-sizing:border-box;padding-bottom:58px}
+.sd-body > footer.footer{display:none}
 .studio{color:var(--tx);background:var(--bg);font:14.5px/1.5 "Tiro Bangla","Noto Sans Bengali",sans-serif;
-  display:grid;grid-template-columns:260px minmax(0,1fr) 300px;grid-template-rows:auto 1fr;gap:12px;padding:12px 20px 24px;
-  max-width:1680px;margin:0 auto;box-sizing:border-box}
+  display:grid;gap:var(--gap);padding:12px 14px 16px;max-width:1680px;margin:0 auto;box-sizing:border-box;
+  grid-template-columns:var(--menu-w) minmax(0,1fr) var(--right-w);grid-template-rows:auto minmax(0,1fr);
+  grid-template-areas:"menu tabs tabs" "menu center right"}
 .studio *{box-sizing:border-box}
+.studio > *{min-width:0}
 .studio [hidden]{display:none!important}
 .studio svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .studio a{color:var(--ac)}
-.studio input,.studio select,.studio textarea{background:var(--pn);border:1px solid var(--ln2);color:var(--tx);border-radius:8px;padding:5px 8px;font:inherit;font-size:14px;outline:none;min-width:0}
-.studio input:focus,.studio select:focus,.studio textarea:focus{border-color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac)}
+.st-left{grid-area:menu}
+.st-tabs{grid-area:tabs}
+.st-center{grid-area:center;display:flex;flex-direction:column;gap:var(--gap)}
+.st-right-col{grid-area:right;display:flex;flex-direction:column;gap:var(--gap)}
+.pane{display:flex;flex-direction:column;gap:var(--gap);min-height:0;flex:1}
+/* wide and medium screens: the studio fills the window; each column scrolls inside */
+@media (min-width:861px){
+  .sd-body{height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+  .sd-body .studio{flex:1;min-height:0;width:100%;overflow:hidden}
+  .studio .st-left,.studio .st-center,.studio .st-right-col{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+}
+
+/* ---------- basic controls ---------- */
+.studio input,.studio select,.studio textarea{background:var(--pn);border:1px solid var(--ln);color:var(--tx);border-radius:8px;padding:5px 8px;font:inherit;font-size:14px;outline:none;min-width:0}
+.studio input:focus,.studio select:focus,.studio textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-soft)}
 .studio input[type=checkbox]{accent-color:var(--ac);width:auto}
 .studio input[type=range]{padding:0;border:0;background:none;accent-color:var(--ac);height:18px;box-shadow:none}
 .studio .hint{color:var(--mu);font-size:12.5px;margin:6px 0 0;line-height:1.45}
 .studio .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;white-space:nowrap}
 .studio .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.studio .row>.sbtn{flex:1}
-
-/* buttons: Codex style */
-.sbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ln2);background:var(--pn2);color:var(--tx);font:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.studio .row > .sbtn{flex:1}
+.s-fill{flex:1}
+.cnt{background:var(--sub);color:var(--mu);border-radius:999px;padding:0 8px;font-size:12px;font-weight:400}
+.sbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ln);background:var(--pn2);color:var(--tx);font:500 14px "Tiro Bangla",sans-serif;cursor:pointer;white-space:nowrap}
 .sbtn:hover{background:var(--pn);border-color:var(--mu)}
-.sbtn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.sbtn.pri{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
 .sbtn.pri:hover{background:var(--ac-h);border-color:var(--ac-h)}
-.sbtn.ghost{background:none;border-color:transparent}
 .sbtn.wide{width:100%;margin-top:8px}
-.sbtn:disabled,.sb:disabled,.ib:disabled{opacity:.45;cursor:default}
-.sbtn.on{background:var(--warn);border-color:var(--warn);color:#fff}
-.ib{width:26px;height:26px;border-radius:8px;border:1px solid var(--ln);background:var(--pn2);color:var(--tx);cursor:pointer;font-size:11px;padding:0;display:inline-grid;place-items:center}
+.sbtn.on{background:var(--rec);border-color:var(--rec);color:#fff}
+.sbtn:disabled,.ib:disabled,.ic-b:disabled,.tb:disabled{opacity:.4;cursor:default}
+.ib{width:26px;height:26px;border-radius:6px;border:1px solid var(--ln);background:var(--pn2);color:var(--tx);cursor:pointer;font-size:11px;padding:0;display:inline-grid;place-items:center}
 .ib:hover{border-color:var(--ac);color:var(--ac)}
-
-/* panels: like wiki boxes, section titles with a rule */
-.pn{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:10px 12px}
-.pn h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--ln);font:600 15.5px "Tiro Bangla",serif;color:var(--tx)}
-.pn h3 svg{color:var(--ac)}
-.pn .cnt{background:var(--sub);color:var(--mu);border-radius:999px;padding:0 8px;font-size:12px;font-weight:400}
-.pn-act{margin-left:auto;font-size:12.5px!important;height:26px;padding:0 8px!important;background:var(--pn2)!important;border:1px solid var(--ln2)!important;color:var(--tx);border-radius:8px;cursor:pointer;font-weight:400}
-.pn-grow{flex:1;min-height:0;display:flex;flex-direction:column}
-
-/* ===== transport ===== */
-.st-transport{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:8px 14px}
-.st-brand{display:flex;flex-direction:column;line-height:1.15;padding-right:14px;border-right:1px solid var(--ln)}
-.st-brand b{font:700 19px "Tiro Bangla",serif;color:var(--tx)}
-.st-brand small{color:var(--mu);font-size:12px}
-.st-tgroup{display:flex;align-items:center;gap:5px}
-.tb{width:36px;height:36px;border-radius:8px;border:1px solid var(--ln2);background:var(--pn2);color:var(--tx);display:grid;place-items:center;cursor:pointer;padding:0;font:600 15px sans-serif}
-.tb:hover{background:var(--pn);border-color:var(--mu)}
-.tb svg{width:17px;height:17px;fill:currentColor;stroke:none}
-#t-loop svg{fill:none;stroke:currentColor;stroke-width:2}
-.tb-play{width:44px;height:44px;border-radius:50%;background:var(--ac);border-color:var(--ac);color:#fff}
-.tb-play:hover{background:var(--ac-h);border-color:var(--ac-h)}
-.tb-play .i-pause,.tb-play.on .i-play{display:none}.tb-play.on .i-pause{display:block}
-.tb-rec{width:44px;height:44px;border-radius:50%;color:var(--rec)}
-.tb-rec.on{background:var(--rec);color:#fff;border-color:var(--rec);animation:recpulse 1.2s infinite}
-@keyframes recpulse{0%{box-shadow:0 0 0 0 rgba(215,51,51,.5)}70%{box-shadow:0 0 0 12px rgba(215,51,51,0)}100%{box-shadow:0 0 0 0 rgba(215,51,51,0)}}
-.tb[aria-pressed=true]{background:var(--ac-soft);border-color:var(--ac);color:var(--ac)}
-.st-clock{font-family:"JetBrains Mono",monospace;background:var(--clockbg);border:1px solid var(--ln);border-radius:8px;padding:3px 12px;display:flex;align-items:baseline;gap:6px;min-width:200px}
-.st-clock span{font-size:23px;font-weight:700;color:var(--clock);letter-spacing:1px}
-.st-clock small{color:var(--mu);font-size:12px}
-.is-rec .st-clock span{color:var(--rec)}
-.st-meter{display:flex;align-items:center;gap:8px;min-width:170px}
-.st-meter .mt{position:relative;flex:1;height:10px;border-radius:8px;background:var(--sub);border:1px solid var(--ln);overflow:hidden}
-.st-meter .mt i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,#14866d 0,#14866d 65%,#ac6600 85%,#d73333 100%);background-size:170px 100%;transition:width 60ms}
-.st-meter .mt b{position:absolute;top:0;bottom:0;width:2px;background:var(--tx);left:0}
-.st-meter small{font-family:"JetBrains Mono",monospace;color:var(--mu);font-size:11.5px;width:52px}
-.sw{display:inline-flex;align-items:center;gap:6px;background:var(--pn2);border:1px solid var(--ln);border-radius:8px;padding:4px 10px;font-size:13.5px;cursor:pointer;user-select:none}
-.sw:has(input:checked){border-color:var(--ac);background:var(--ac-soft)}
-.st-right{margin-left:auto}
-.st-right select{max-width:190px;height:34px}
-
-/* ===== left ===== */
-.st-left,.st-right-col{display:flex;flex-direction:column;gap:12px;min-height:0}
-.st-left{grid-column:1}
+.ib.has{color:var(--ac);border-color:var(--ac)}
+.chip-b{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 12px;border:1px solid var(--ln);border-radius:999px;background:var(--pn);color:var(--tx);font:13.5px "Tiro Bangla",sans-serif;cursor:pointer;white-space:nowrap}
+.chip-b:hover{border-color:var(--ac);color:var(--ac)}
+.link-b{border:0;background:none;color:var(--mu);font:12.5px "Tiro Bangla",sans-serif;cursor:pointer;padding:2px 0}
+.link-b:hover{color:var(--ac)}
+.link-b.red,.h-a.red:hover{color:var(--rec)}
+.h-acts{margin-left:auto;display:inline-flex;gap:2px;align-items:center}
+.h-a{border:0;background:none;color:var(--mu);font:12px "Tiro Bangla",sans-serif;padding:2px 6px;border-radius:6px;cursor:pointer}
+.h-a:hover{background:var(--sub);color:var(--ac)}
+.pn{background:var(--pn);border:1px solid var(--sub);border-radius:var(--r);padding:12px 14px}
+.pn h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font:600 14px "Tiro Bangla",sans-serif;color:var(--mu)}
+.sp-form{display:flex;flex-direction:column;gap:8px}
+.sp-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mu)}
+.sp-form input,.sp-form textarea{width:100%}
+.sp-form .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
 .sp-pick{display:flex;gap:4px;margin-bottom:8px}.sp-pick select{flex:1}
 .sp-summary{display:flex;flex-direction:column;gap:2px;font-size:13.5px}
 .sp-summary b{font-size:16px}
 .sp-summary span{color:var(--mu)}
 .sp-summary em{font-style:normal;color:var(--warn);font-size:12.5px;margin-top:4px}
 .sp-summary em.ok{color:var(--ok)}
-.sp-form{display:flex;flex-direction:column;gap:7px;margin-top:8px}
-.sp-form label{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--mu)}
-.sp-form label.chk{flex-direction:row;align-items:flex-start;gap:7px;color:var(--tx);line-height:1.45}
-.sp-form .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
-.sp-form input:not([type=checkbox]),.sp-form select,.sp-form textarea{width:100%}
-#pn-words textarea{width:100%;resize:vertical}
-.w-list{list-style:none;margin:8px 0 0;padding:0;overflow:auto;flex:1;min-height:120px;max-height:52vh;border-top:1px solid var(--sub)}
-.w-list li{display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid var(--sub);cursor:pointer;font-size:14.5px}
-.w-list li:hover{background:var(--pn2)}
-.w-list li .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.w-list li small{color:var(--mu);font-size:11.5px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.w-list li a{font-size:11px}
-.w-list li.cur{background:var(--ac-soft);box-shadow:inset 3px 0 0 var(--ac)}
-.word-mode .w-list li.cur{box-shadow:inset 3px 0 0 var(--rec)}
-.w-list li.done .t::before{content:"✓ ";color:var(--ok)}
-.w-list li.empty{cursor:default;color:var(--mu);font-size:12.5px;white-space:normal;border:0}
-.w-list .x{border:0;background:none;color:var(--mu);cursor:pointer;padding:0 2px;font-size:12px}
+.pn-grow{flex:1;min-height:0;display:flex;flex-direction:column}
 
-/* ===== centre ===== */
-.st-center{grid-column:2;display:flex;flex-direction:column;gap:10px;min-width:0}
-.st-toolbar{display:flex;flex-wrap:wrap;gap:6px;background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:5px}
-.tg{display:flex;gap:1px;border:1px solid var(--ln);border-radius:8px;background:var(--ln)}
-.tg-r{margin-left:auto}
-.sb{height:28px;padding:0 9px;border:0;border-radius:0;background:var(--pn2);color:var(--tx);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
-.sb:hover:not(:disabled){background:var(--pn);color:var(--ac)}
-.sb.tog[aria-pressed=true]{background:var(--ac-soft);color:var(--ac);font-weight:600}
-select.sb{padding:0 4px}
-.st-stage{position:relative;background:var(--stage);border:1px solid var(--ln);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
-.st-stage.over{outline:2px dashed var(--ac);outline-offset:-6px}
-.c-ruler{display:block;width:100%;height:26px;background:var(--pn2);border-bottom:1px solid var(--ln)}
-.st-wavewrap{position:relative;height:clamp(220px,38vh,420px)}
-.c-wave{display:block;width:100%;height:100%;cursor:text;touch-action:none}
-.c-over{display:block;width:100%;height:38px;background:var(--pn2);border-top:1px solid var(--ln);cursor:pointer;touch-action:none}
-.st-drop{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--mu);font-size:15px;line-height:2}
-.st-drop b{color:var(--tx)}
-.st-drop .sbtn{margin-top:6px}
-.st-status{display:flex;gap:16px;flex-wrap:wrap;font-family:"JetBrains Mono","Tiro Bangla",monospace;font-size:12.5px;color:var(--mu);padding:0 2px}
-.st-msg{margin-left:auto;color:var(--ac);font-family:"Tiro Bangla",sans-serif;font-size:13.5px}
-
-/* regions: a wikitable */
-.pn-regions h3{flex-wrap:wrap}
-.h-tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;font:400 14px "Tiro Bangla",serif}
-.h-tools input{width:200px}
-.r-table-wrap{overflow:auto;max-height:40vh}
-.r-table{width:100%;border-collapse:collapse;font-size:13.5px;border:1px solid var(--ln2)}
-.r-table th{position:sticky;top:0;background:var(--sub);text-align:left;color:var(--tx);font-weight:600;font-size:12.5px;padding:5px 6px;border:1px solid var(--ln2)}
-.r-table td{padding:4px 6px;border:1px solid var(--ln2);vertical-align:middle;background:var(--pn2)}
-.r-table td input:not([type=checkbox]),.r-table td select{width:100%}
-.r-table td:nth-child(5){min-width:170px}.r-table td:nth-child(7){min-width:130px}
-.r-table td.acts{white-space:nowrap}
-.r-table .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
-.r-table .nm{display:flex;gap:6px;align-items:center}
-.r-table .lx{font-size:11.5px;white-space:nowrap}
-.r-table tr.skip td{opacity:.5}
-.r-table tr.hl td{background:var(--ac-soft)}
-.r-table td.empty{color:var(--mu);text-align:center;padding:18px}
-
-/* ===== right ===== */
-.st-right-col{grid-column:3}
-.fx{display:flex;flex-direction:column;gap:6px}
-.fx-mod{background:var(--pn2);border:1px solid var(--ln);border-radius:8px;padding:7px 9px;transition:border-color .15s}
-.fx-mod:not(.on){opacity:.8}
-.fx-mod.on{border-color:var(--ac);background:var(--pn)}
-.fx-h{display:flex;align-items:center;gap:7px;font-weight:600;font-size:13.5px;cursor:pointer}
-#pn-mix .fx-h{cursor:default;margin-bottom:4px}
-#pn-mix .fx-mod{opacity:1;border-color:var(--ln)}
-.kn{display:grid;grid-template-columns:70px 1fr 56px;align-items:center;gap:6px;font-size:12.5px;color:var(--mu);margin-top:4px}
-.kn b{font-family:"JetBrains Mono",monospace;font-weight:500;font-size:11.5px;color:var(--tx);text-align:right}
-#fx-prof{color:var(--ok);font-size:12px;align-self:center}
-#pn-mix .chk{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--mu);margin-top:4px}
-.q-list{display:flex;flex-direction:column;gap:5px;overflow:auto;flex:1;min-height:80px;max-height:40vh}
-.q-item{display:flex;align-items:center;gap:7px;background:var(--pn2);border:1px solid var(--ln);border-left:3px solid var(--ln2);border-radius:8px;padding:5px 7px}
-.q-item.st-done{border-left-color:var(--ok)}.q-item.st-error{border-left-color:var(--rec)}.q-item.st-uploading{border-left-color:var(--warn)}
-.q-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.q-main input{width:100%;padding:3px 6px}
-.q-main small{color:var(--mu);font-size:11.5px}
-.q-main em{color:var(--rec);font-style:normal}
-
-/* batch recording through the word list */
-.st-batch{background:var(--pn);border:1px solid var(--ac);border-radius:8px;padding:12px 16px;box-shadow:inset 4px 0 0 var(--ac)}
-.is-rec .st-batch{border-color:var(--rec);box-shadow:inset 4px 0 0 var(--rec)}
-.bt-prog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mu)}
-.bt-prog .bar{flex:1;height:6px;background:var(--sub);border-radius:3px;overflow:hidden}
-.bt-prog i{display:block;height:100%;background:var(--ok);transition:width .2s}
-.bt-main{display:flex;align-items:center;gap:14px;margin:8px 0}
-.bt-main .sbtn{height:48px;width:48px;padding:0;font-size:16px}
-.bt-word{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center}
-.bt-word small{color:var(--mu);font-size:12.5px}
-.bt-word b{font:700 clamp(34px,5vw,58px)/1.2 "Tiro Bangla",serif;color:var(--tx);word-break:break-word}
-.bt-word b.done::after{content:" ✓";color:var(--ok);font-size:.5em;vertical-align:middle}
-.bt-word span{color:var(--mu);font-size:14px;min-height:1.4em}
-.bt-next{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:24px}
-.bt-next span{background:var(--sub);border-radius:8px;padding:1px 9px;font-size:14px;color:var(--mu)}
-.bt-next span.done{text-decoration:line-through}
-.bt-acts{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:8px}
-.bt-acts .hint{flex-basis:100%;text-align:center}
-#bt-go.on{background:var(--rec);border-color:var(--rec)}
-.word-mode #pn-words{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)}
-
-/* dockable panels */
-.dk{border:0;background:none;color:var(--mu);cursor:pointer;padding:0 2px;font-size:13px;line-height:1}
-.dk-grip{cursor:grab;font-size:15px;letter-spacing:-2px;user-select:none}
-.dk-grip:active{cursor:grabbing}
-.dk-fold{margin-left:auto;transition:transform .15s}
-.pn h3 :is(.pn-act,.h-tools) ~ .dk-fold{margin-left:6px}
-.pn.collapsed .dk-fold{transform:rotate(-90deg)}
-.pn.collapsed > :not(h3){display:none!important}
-.pn.collapsed{flex:none!important}
-.pn.collapsed h3{margin:0;padding:0;border:0}
-.pn.dragging{opacity:.4}
-.docking .st-left,.docking .st-right-col{outline:2px dashed var(--ln2);outline-offset:4px;min-height:120px}
-.dk-mark{height:4px;background:var(--ac);border-radius:8px}
-
-/* help */
-.st-help[hidden]{display:none}
-.st-help{position:fixed;inset:0;background:rgba(32,33,34,.5);display:grid;place-items:center;z-index:100}
-.st-help-in{background:var(--surface,#fff);color:var(--ink,#202122);border:1px solid #a2a9b1;border-radius:8px;padding:18px 22px;max-width:440px;width:calc(100% - 32px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
-.st-help-in h3{margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #c8ccd1}
-.st-help dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 14px;font-size:14px}
-.st-help dt{font-family:"JetBrains Mono",monospace;background:#f8f9fa;color:#202122;border:1px solid #c8ccd1;border-radius:8px;padding:0 6px;font-size:12px;align-self:center;justify-self:start}
-.st-help dd{margin:0}
-
-/* ===== responsive ===== */
-@media (max-width:1250px){
-  .studio{grid-template-columns:240px minmax(0,1fr)}
-  .st-right-col{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:start}
-}
-@media (max-width:860px){
-  .studio{grid-template-columns:1fr;padding:8px 12px 20px;gap:10px}
-  .st-left,.st-center,.st-right-col{grid-column:1}
-  .st-center{order:-1}
-  .st-transport{gap:8px;padding:8px}
-  .st-brand{display:none}
-  .st-clock{min-width:0}.st-clock span{font-size:19px}
-  .st-meter{min-width:120px;flex:1}
-  .st-right{margin-left:0}
-  .st-wavewrap{height:200px}
-  .w-list{max-height:30vh}
-  .h-tools input{width:100%}
-  .r-table th:nth-child(3),.r-table td:nth-child(3){display:none}
-}
-
-/* calmer, rounder look: fewer boxes inside boxes */
-.pn,.st-transport,.st-toolbar,.st-stage,.st-batch{border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.pn h3{border-bottom-color:var(--sub)}
-.pn.collapsed{padding:9px 12px}
-.sbtn,.tb,.sw,.studio input,.studio select,.studio textarea{border-color:var(--ln)}
-.sbtn{border-radius:8px;font-weight:500}
-.tg{background:none;border:0;gap:2px}
-.sb{border-radius:6px;background:none}
-.sb:hover:not(:disabled){background:var(--sub)}
-.st-toolbar{gap:4px 14px;padding:6px 8px}
-.fx-mod,#pn-mix .fx-mod{background:none;border:0;border-bottom:1px solid var(--sub);border-radius:0;padding:8px 2px;opacity:1}
-.fx-mod:last-child{border-bottom:0}
-.fx-mod.on{background:none}
-.fx-mod:not(.on) .kn{opacity:.6}
-.r-table{border:0}
-.r-table th{background:none;border:0;border-bottom:1px solid var(--ln);color:var(--mu);font-weight:500}
-.r-table td{border:0;border-bottom:1px solid var(--sub);background:none}
-.q-item{border-color:var(--sub)}
-.st-clock{border-radius:8px}
-.pn.collapsed h3 .pn-act,.pn.collapsed h3 .h-tools{display:none}
-.pn h3{white-space:nowrap}
-/* marking while listening */
-.tg-mark{background:var(--ac-soft)!important;border-radius:8px;padding:2px}
-.sb.mk{font-weight:600;color:var(--ac)}
-.sb.mk.on{background:var(--ok);color:#fff}
-.sb kbd{font:600 10.5px "JetBrains Mono",monospace;border:1px solid currentColor;border-radius:4px;padding:0 3px;margin-left:3px;opacity:.7}
-.sb.mkc{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-/* ===== simple mode ===== */
-.ez{--pn:#fff;--sub:#eef0f3;--ln:#e1e4e8;--tx:#202122;--mu:#54595d;--ac:#3366cc;--ac-soft:#eaf3ff;--rec:#d73333;--ok:#14866d;
-  max-width:560px;margin:0 auto;padding:12px 14px 40px;color:var(--tx);font:15.5px/1.5 "Tiro Bangla","Noto Sans Bengali",sans-serif}
-:root[data-theme="dark"] .ez{--pn:#1b2025;--sub:#27292d;--ln:#3a3f45;--tx:#eaecf0;--mu:#a2a9b1;--ac:#6d8af0;--ac-soft:#233566;--rec:#fd7865;--ok:#3cba8f}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ez{--pn:#1b2025;--sub:#27292d;--ln:#3a3f45;--tx:#eaecf0;--mu:#a2a9b1;--ac:#6d8af0;--ac-soft:#233566;--rec:#fd7865;--ok:#3cba8f}}
-.ez[hidden],.ez [hidden]{display:none!important}
-.ez *{box-sizing:border-box}
-.ez svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.ez input:not([type=checkbox]):not([type=range]):not([type=radio]),.ez select,.ez textarea{width:100%;border:1px solid var(--ln);border-radius:10px;background:var(--pn);color:var(--tx);padding:10px 12px;font:inherit;font-size:16px}
-.ez label{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--mu);margin-bottom:10px}
-.ez-chk{flex-direction:row!important;align-items:flex-start;gap:8px!important;color:var(--tx)!important}
-.ez-chk input{margin-top:5px;width:18px;height:18px}
-.ez-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-.ez-brand b{display:block;font-size:20px}
-.ez-link{border:0;background:none;color:var(--ac);padding:0;font:inherit;font-size:13.5px;cursor:pointer}
-.ez-who{border:1px solid var(--ln);background:var(--pn);color:var(--tx);border-radius:999px;padding:6px 14px;font:inherit;text-align:right;cursor:pointer;display:flex;flex-direction:column;line-height:1.2}
-.ez-who small{color:var(--mu);font-size:12px}
-.ez-card{background:var(--pn);border:1px solid var(--ln);border-radius:16px;padding:16px;margin-bottom:12px}
-.ez-card h2{margin:0 0 4px;font-size:20px}
-.ez-sub{color:var(--mu);font-size:14px;margin:0 0 12px}
-.ez-err{color:var(--rec);min-height:1em;margin:4px 0}
-.ez-btn{min-height:46px;border-radius:12px;border:1px solid var(--ln);background:var(--pn);color:var(--tx);font:600 16px "Tiro Bangla",sans-serif;padding:0 16px;cursor:pointer;width:100%}
-.ez-btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}
-.ez-btn:disabled{opacity:.45}
-.ez-row{display:flex;gap:8px}
-.ez-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--sub);border-radius:14px;padding:4px;margin-bottom:12px}
-.ez-tabs button{display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:none;border-radius:10px;padding:10px 4px;font:600 15px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;position:relative}
-.ez-tabs button[aria-selected=true]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-.ez-badge{background:var(--rec);color:#fff;border-radius:999px;font-size:11.5px;padding:0 7px;min-width:20px}
-.ez-word{text-align:center;position:relative;padding:14px 16px 18px}
-.ez-prog{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mu);margin-bottom:10px}
-.ez-prog .bar{flex:1;height:5px;background:var(--sub);border-radius:3px;overflow:hidden}
-.ez-prog i{display:block;height:100%;background:var(--ok);width:0;transition:width .2s}
-#ez-say{display:block;color:var(--mu);font-size:13px}
-#ez-word{display:block;font:700 clamp(40px,13vw,64px)/1.2 "Tiro Bangla",serif;margin:6px 0;word-break:break-word}
-#ez-word.done::after{content:" ✓";color:var(--ok);font-size:.45em;vertical-align:middle}
-#ez-gloss{display:block;color:var(--mu);min-height:1.4em}
-.ez-free{text-align:center;font-size:20px!important;margin:10px 0}
-.ez-nav{display:flex;justify-content:space-between;margin-top:8px}
-.ez-round{width:44px;height:44px;border-radius:50%;border:1px solid var(--ln);background:var(--pn);color:var(--tx);font-size:22px;cursor:pointer}
-.ez-round:disabled{opacity:.3}
-.ez-recbox{display:flex;flex-direction:column;align-items:center;gap:10px;margin:14px 0 16px}
-.ez-level{width:200px;height:6px;background:var(--sub);border-radius:3px;overflow:hidden}
-.ez-level i{display:block;height:100%;width:0;background:var(--ok);transition:width 60ms}
-.ez-mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--rec);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 18px rgba(215,51,51,.35)}
-.ez-mic svg{width:42px;height:42px}
-.ez-mic.on{animation:recpulse 1.2s infinite}
-.ez-state{color:var(--mu);text-align:center;font-size:14.5px;margin:0;min-height:1.4em}
-.ez-review{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px;width:100%}
-.ez-kind{flex-direction:row!important;align-items:center;gap:8px!important;margin:0!important}
-.ez-kind select{width:auto!important;padding:6px 10px!important}
-.ez-words summary{cursor:pointer;font-weight:600}
-.ez-words textarea{margin:10px 0}
-.ez-pick{display:flex!important;flex-direction:column;align-items:center;gap:4px!important;border:2px dashed var(--ln);border-radius:14px;padding:22px;cursor:pointer;text-align:center;color:var(--tx)!important}
-.ez-pick svg{width:30px;height:30px;color:var(--ac)}
-.ez-pick small{color:var(--mu)}
-#ez-fileform{margin-top:14px}
-#ez-fileform audio{width:100%;margin-bottom:10px}
-.ez-trim{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.ez-trim label{font-size:13px}
-.ez-trim b{font-weight:500;font-size:12.5px}
-.ez-qlist{max-height:none!important;margin-bottom:10px}
-.ez .q-item{display:flex;align-items:center;gap:8px;border:1px solid var(--ln);border-left:3px solid var(--ln);border-radius:10px;padding:8px;margin-bottom:6px}
-.ez .q-item.st-done{border-left-color:var(--ok)}
-.ez .q-item .ib{width:34px;height:34px;border-radius:50%;border:1px solid var(--ln);background:var(--pn);color:var(--tx)}
-.ez .q-main{flex:1;min-width:0;display:flex;flex-direction:column}
-.ez .q-main small{color:var(--mu);font-size:12px}
-.ez .q-main input{padding:6px 8px!important}
-.ez-switch{width:auto!important;padding:0 10px!important;font:600 13px "Tiro Bangla",sans-serif!important}
-.easy-mode .studio{display:none}/* Commons dialog */
-.st-help .cm-in{max-width:620px}
-.cm-in .row{display:flex;gap:6px;margin-bottom:10px}
-.cm-in input{border:1px solid #c8ccd1;border-radius:8px;padding:7px 10px;font:inherit}
-.cm-in .sbtn{min-height:34px;border-radius:8px;padding:0 14px;border:1px solid #a2a9b1;background:#f8f9fa;cursor:pointer;font:600 14px "Tiro Bangla",sans-serif}
-.cm-in .sbtn.pri{background:#3366cc;border-color:#3366cc;color:#fff}
-.cm-list{max-height:55vh;overflow:auto;margin-bottom:12px}
-.cm-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eaecf0}
-.cm-item audio{width:150px;height:32px}
-.cm-item b{display:block;font-size:13.5px;word-break:break-all}
-.cm-item small{color:#54595d;font-size:12px}
-.easy-mode .q-open{display:none}
-.q-cloud{color:var(--ok)!important}
-@media (max-width:560px){.cm-item{grid-template-columns:1fr auto}.cm-item audio{grid-column:1/-1;width:100%}}/* word details dialog (both modes) */
-.info-dlg .info-in{max-width:520px;max-height:90vh;overflow:auto}
-.info-in label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:#54595d;margin-bottom:8px}
-.info-in input,.info-in select,.info-in textarea{border:1px solid #c8ccd1;border-radius:8px;padding:8px 10px;font:15px "Tiro Bangla",sans-serif;color:#202122;background:#fff;width:100%;box-sizing:border-box}
-.info-in .info-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
-.info-in .sbtn{min-height:38px;border-radius:8px;padding:0 16px;border:1px solid #a2a9b1;background:#f8f9fa;cursor:pointer;font:600 14.5px "Tiro Bangla",sans-serif;color:#202122}
-.info-in .sbtn.pri{background:#3366cc;border-color:#3366cc;color:#fff}
-.ib.has{color:var(--ac);border-color:var(--ac)}
-.ib sup{font-size:9px;margin-left:1px}
-/* simple mode extras */
-.ez-review .ez-infobtn{grid-column:1/-1;font-weight:500;font-size:14.5px;min-height:40px;border-style:dashed}
-#ez-fileform .ez-infobtn{margin-bottom:10px;font-weight:500;font-size:14.5px;border-style:dashed}
-.ez-quick{display:flex;gap:8px;margin-bottom:12px}
-.ez-quick input{flex:1}
-.ez-quick .ez-btn{width:auto}
-.ez-recent h3{margin:0 0 8px;font-size:15px}
-.ez-recent h3 span{color:var(--mu);font-weight:400;font-size:13px}
-.ez-ri{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--sub)}
-.ez-ri:last-child{border-bottom:0}
-.ez-ri>div{flex:1;min-width:0;display:flex;flex-direction:column}
-.ez-ri small{color:var(--mu);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ez-round.sm{width:34px;height:34px;font-size:13px}
-.ez-round.has{color:var(--ac);border-color:var(--ac)}/* ===== লিব্রে wizard (Lingua Libre style) ===== */
-.ez{max-width:720px}
-.ez-steps{list-style:none;display:flex;margin:0 0 16px;padding:0;counter-reset:s;position:relative}
-.ez-steps li{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;position:relative;color:var(--mu);font-size:13px;text-align:center}
-.ez-steps li::before{content:"";position:absolute;top:16px;left:-50%;right:50%;height:3px;background:var(--ln);z-index:0}
-.ez-steps li:first-child::before{display:none}
-.ez-steps li span{position:relative;z-index:1;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--pn);border:2px solid var(--ln);font-weight:700;color:var(--mu)}
-.ez-steps li b{font-weight:500}
-.ez-steps li.done span{background:var(--ok);border-color:var(--ok);color:#fff}
-.ez-steps li.done::before,.ez-steps li.cur::before{background:var(--ok)}
-.ez-steps li.cur span{background:var(--ac);border-color:var(--ac);color:#fff;box-shadow:0 0 0 4px var(--ac-soft)}
-.ez-steps li.cur b{color:var(--tx);font-weight:700}
-.ez-steps li.lock{opacity:.5;cursor:not-allowed}
-.ez-step h2{margin:0 0 4px;font-size:21px}
-.ez-step h3{margin:0 0 8px;font-size:16px}
-.ez-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.ez-navbar{display:flex;justify-content:space-between;gap:10px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg,#f6f7f9) 30%);padding:14px 0 6px}
-.ez-navbar .ez-btn{width:auto;flex:1;max-width:240px}
-.ez-navbar #ez-fwd{margin-left:auto}
-/* speakers */
-.ez-spk{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
-.ez-spkcard{display:flex!important;flex-direction:row!important;align-items:center;gap:10px!important;border:1.5px solid var(--ln);border-radius:12px;padding:10px 12px;cursor:pointer;margin:0!important;color:var(--tx)!important}
-.ez-spkcard.on{border-color:var(--ac);background:var(--ac-soft)}
-.ez-spkcard input{width:18px;height:18px;flex:none;margin:0;accent-color:var(--ac)}
-.ez-spkcard span{flex:1;display:flex;flex-direction:column}
-.ez-spkcard b{font-size:16px}
-.ez-spkcard small{color:var(--mu);font-size:13px}
-/* mic test */
-.ez-bigmeter{height:18px;border-radius:9px;background:var(--sub);overflow:hidden;margin:6px 0 8px}
-.ez-bigmeter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#14866d,#14866d 70%,#ac6600 90%,#d73333);transition:width 60ms}
-.ez-bigmeter i.hot{background:#d73333}
-/* word list chips */
-.ez-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;max-height:40vh;overflow:auto}
-.ez-chip{display:inline-flex;align-items:center;gap:6px;background:var(--sub);border-radius:999px;padding:4px 6px 4px 12px;font-size:15px}
-.ez-chip small{color:var(--mu);font-size:12px}
-.ez-chip.done{background:#e6f4ef}.ez-chip.done::before{content:"✓";color:var(--ok)}
-.ez-chip.skip{opacity:.6}
-.ez-chip button{border:0;background:none;color:var(--mu);cursor:pointer;font-size:12px}
-/* record studio */
-.ez-studio{padding:12px 12px 16px}
-.ez-strip{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:thin;border-bottom:1px solid var(--sub);margin-bottom:12px}
-.ez-pill{flex:none;border:1px solid var(--ln);background:var(--pn);color:var(--tx);border-radius:999px;padding:5px 12px;font:15px "Tiro Bangla",sans-serif;cursor:pointer;white-space:nowrap}
-.ez-pill.done{background:#e6f4ef;border-color:#b5e0d1;color:var(--ok)}
-.ez-pill.skip{color:var(--mu);text-decoration:line-through}
-.ez-pill.cur{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700}
-.ez-studio .ez-word{border:0;margin:0;padding:6px 0 4px}
-.ez-studio .ez-level{margin:6px auto 12px}
-.ez-ctrl{display:flex;align-items:center;justify-content:center;gap:28px}
-.ez-ctrl .ez-round{width:52px;height:52px;font-size:20px}
-.ez-wordacts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 8px}
-.ez-wordacts .ez-btn{min-height:42px;font-size:14.5px}
-.ez-auto{justify-content:center;margin:6px 0 0!important;font-size:14px}
-.ez-auto select{width:auto!important;padding:5px 10px!important}
-/* publish */
-.ez-pub{display:flex;flex-direction:column;margin:8px 0 12px}
-.ez-pubrow{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--sub)}
-.ez-pubrow input{width:20px;height:20px;accent-color:var(--ac)}
-.ez-pubrow>div{flex:1;min-width:0;display:flex;flex-direction:column}
-.ez-pubrow small{color:var(--mu);font-size:12.5px}
-.ez-pubrow em{color:var(--rec);font-style:normal}
-.ez-pubrow.st-done{opacity:.7}
-.ez-ok{width:20px;text-align:center;color:var(--ok);font-weight:700}
-.ez-filecard summary{cursor:pointer;font-weight:600;color:var(--ac)}
-.ez-filecard[open] summary{margin-bottom:10px}
-@media (max-width:480px){.ez-steps li b{font-size:11.5px}.ez-two{grid-template-columns:1fr}.ez-wordacts{grid-template-columns:1fr 1fr}.ez-wordacts #ez-info{grid-column:1/-1}}/* “⏐ দাগ” while recording */
-.tb-mark{width:auto!important;padding:0 12px!important;background:#ac6600!important;border-color:#ac6600!important;color:#fff!important;font:700 14px "Tiro Bangla",sans-serif!important}
-.ez-mark{display:block;width:100%;min-height:64px;margin:14px 0 4px;border:0;border-radius:14px;background:#ac6600;color:#fff;font:700 19px "Tiro Bangla",sans-serif;cursor:pointer;box-shadow:0 4px 12px rgba(172,102,0,.3);touch-action:manipulation}
-.ez-mark[hidden]{display:none}
-.blink{animation:markblink .35s}
+/* ---------- player bar (bottom, every screen) ---------- */
+.st-player{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;justify-content:center;align-items:center;background:var(--pn);border-top:1px solid var(--ln);padding:6px 12px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 14px rgba(0,0,0,.06)}
+.sd-body:not(.on-wizard) .st-player{display:none}
+.sd-body:not(.on-wizard){padding-bottom:0}
+.st-tcenter{display:flex;align-items:center;gap:4px}
+.tb{width:36px;height:36px;border-radius:8px;border:0;background:none;color:var(--tx);display:grid;place-items:center;cursor:pointer;padding:0}
+.tb:hover{background:var(--sub)}
+.tb svg{width:17px;height:17px;fill:currentColor;stroke:none}
+#t-loop svg{fill:none;stroke:currentColor;stroke-width:2}
+.tb[aria-pressed=true]{background:var(--ac-soft);color:var(--ac)}
+.tb-play{width:44px;height:44px;border-radius:50%;background:var(--ac);color:#fff}
+.tb-play:hover{background:var(--ac-h)}
+.tb-play svg{width:20px;height:20px}
+.tb-play .i-pause,.tb-play.on .i-play{display:none}.tb-play.on .i-pause{display:block}
+.tb-rec{width:44px;height:44px;border-radius:50%;border:1px solid var(--ln);color:var(--rec)}
+.tb-rec.on{background:var(--rec);color:#fff;border-color:var(--rec);animation:recpulse 1.2s infinite}
+@keyframes recpulse{0%{box-shadow:0 0 0 0 rgba(215,51,51,.5)}70%{box-shadow:0 0 0 12px rgba(215,51,51,0)}100%{box-shadow:0 0 0 0 rgba(215,51,51,0)}}
+.tb-mark{width:auto;padding:0 12px;background:var(--warn);color:#fff;font:700 14px "Tiro Bangla",sans-serif}
+.tb-mark.blink{animation:markblink .35s}
 @keyframes markblink{0%{transform:scale(1.06);filter:brightness(1.3)}100%{transform:none;filter:none}}
-/* ===== two-column studio ===== */
-.studio{grid-template-columns:270px minmax(0,1fr)!important}
-.st-transport{justify-content:space-between;gap:10px 16px;padding:6px 10px}
-.st-tcenter{flex:1;justify-content:center;flex-wrap:wrap}
-.tb-txt{width:auto!important;padding:0 12px!important;font:600 14px "Tiro Bangla",sans-serif!important}
-.st-menu{position:relative}
-.st-menu-pop{display:none;position:absolute;left:0;top:calc(100% + 6px);min-width:260px;background:var(--pn);border:1px solid var(--ln);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.14);padding:6px;z-index:60}
-.st-menu.open .st-menu-pop{display:block}
-.st-menu-pop button{display:block;width:100%;text-align:left;border:0;background:none;color:var(--tx);padding:9px 12px;border-radius:6px;font:14.5px "Tiro Bangla",sans-serif;cursor:pointer}
-.st-menu-pop button:hover{background:var(--ac-soft);color:var(--ac)}
-.mode-row{display:flex;gap:8px;flex-wrap:wrap}
-.mode-row .sw{flex:1;justify-content:center;padding:8px 10px;font-size:14.5px}
-/* tabs in the main column */
-.st-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln)}
-.st-tabs button{border:0;background:none;padding:9px 18px;font:600 15px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;display:inline-flex;align-items:center;gap:6px}
-.st-tabs button[aria-selected=true]{color:var(--ac);border-bottom-color:var(--ac)}
-.st-tabpane{display:flex;flex-direction:column;gap:10px}
-.st-tabpane[hidden]{display:none!important}
-/* toolbar groups with small labels */
-.st-toolbar{padding:4px 8px 6px;gap:2px 6px;align-items:stretch}
-.st-toolbar .tg{flex-direction:row;flex-wrap:wrap;position:relative;padding:14px 6px 0;border-right:1px solid var(--sub);border-radius:0}
-.st-toolbar .tg:last-child{border-right:0}
-.st-toolbar .tg::before{content:attr(data-label);position:absolute;top:1px;left:8px;font-size:10.5px;color:var(--mu);white-space:nowrap}
-.st-toolbar .tg-mark{background:none!important}
-.st-toolbar .tg-mark::before{color:var(--ac)}
-/* drawers for effects and mix */
-.st-drawer{background:var(--pn);border:1px solid var(--ac);border-radius:12px;padding:10px 12px}
-.st-drawer[hidden]{display:none}
-.dr-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-.dr-head b{font-size:15px}
-.dr-head select{height:30px}
-.dr-head .s-fill{flex:1}
-.st-drawer .fx{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 16px}
-.st-drawer .fx-mod{border-bottom:0!important}
-.s-fill{flex:1}
-/* tracks */
-.st-tracks{display:flex;flex-direction:column;gap:3px}
-.trk{display:grid;grid-template-columns:28px minmax(80px,1fr) 64px 30px 30px 90px 30px;align-items:center;gap:6px;background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:3px 6px}
-.trk.on{border-color:var(--ac);box-shadow:inset 3px 0 0 var(--ac)}
-.trk.muted{opacity:.55}
-.trk-pick{border:0;background:none;color:var(--ac);font-size:15px;cursor:pointer}
-.trk-name{border:0!important;background:none!important;padding:2px 4px!important;font-weight:600}
-.trk-len{font-size:12px;color:var(--mu);text-align:right}
-.trk-b{width:28px;height:26px;border:1px solid var(--ln);border-radius:6px;background:var(--pn2);color:var(--mu);font:700 12px sans-serif;cursor:pointer}
-.trk-b.act{background:var(--ac);border-color:var(--ac);color:#fff}
-.trk-add{align-self:flex-start;border:1px dashed var(--ln2);background:none;color:var(--ac);border-radius:8px;padding:4px 12px;font:14px "Tiro Bangla",sans-serif;cursor:pointer}
-/* choice dialog, Commons bar */
-.ch-in{max-width:420px}
-.ch-opts{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
-.ch-in .sbtn{min-height:42px;border-radius:8px;border:1px solid #a2a9b1;background:#f8f9fa;color:#202122;font:600 15px "Tiro Bangla",sans-serif;cursor:pointer;width:100%}
-.ch-in .sbtn:hover{border-color:#3366cc;color:#3366cc}
-.ch-in .sbtn.ghost{border-color:transparent;background:none;font-weight:400}
-.cm-item{grid-template-columns:auto auto 1fr!important}
-.cm-item.got{background:#e6f4ef}.cm-item.bad{background:#fee7e6}
-.cm-bar{display:flex;align-items:center;gap:10px;margin:0 0 10px}
-.cm-bar label{display:flex;gap:6px;align-items:center;font-size:14px}
-@media (max-width:1100px){.studio{grid-template-columns:230px minmax(0,1fr)!important}}
-@media (max-width:860px){.studio{grid-template-columns:1fr!important}.trk{grid-template-columns:24px 1fr 30px 30px 70px 30px}.trk-len{display:none}}
-@media (max-width:860px){.st-transport{order:-2}.st-center{order:-1}}
+/* time and input level sit on the timeline (moved there by the script) */
+.st-clock,.st-meter{position:absolute;right:8px;z-index:5;background:color-mix(in srgb,var(--pn) 88%,transparent);border:1px solid var(--sub);border-radius:8px;pointer-events:none}
+.st-clock{top:32px;display:flex;align-items:baseline;gap:5px;padding:2px 8px;font-family:"JetBrains Mono",monospace}
+.st-clock span{font-size:15px;font-weight:700;color:var(--ok)}
+.st-clock small{font-size:11px;color:var(--mu)}
+.is-rec .st-clock span{color:var(--rec)}
+.st-meter{top:62px;display:flex;align-items:center;gap:6px;width:140px;padding:3px 8px}
+.st-meter .mt{position:relative;flex:1;height:8px;border-radius:4px;background:var(--sub);overflow:hidden}
+.st-meter .mt i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,#14866d 0,#14866d 65%,#ac6600 85%,#d73333 100%);background-size:120px 100%;transition:width 60ms}
+.st-meter .mt b{position:absolute;top:0;bottom:0;width:2px;background:var(--tx);left:0}
+.st-meter small{font:10.5px "JetBrains Mono",monospace;color:var(--mu)}
 
-/* ===== minimal pass: three columns, icon toolbar, quiet panels ===== */
-.studio{grid-template-columns:250px minmax(0,1fr) 320px!important;gap:10px!important;padding:10px 14px 20px!important}
-.st-right-col{grid-column:3;display:flex;flex-direction:column;gap:10px;min-height:0}
-.pn{border-color:var(--sub);box-shadow:none;padding:10px 12px}
-.pn h3{font:600 13.5px "Tiro Bangla",sans-serif;color:var(--mu);border:0;padding:0;margin:0 0 8px;letter-spacing:.2px}
-.pn h3 .cnt{margin-left:2px}
-.st-transport{border-color:var(--sub);box-shadow:none}
-.tb{border-color:transparent;background:none}
-.tb:hover{background:var(--sub);border-color:transparent}
-.tb-rec{border:1px solid var(--ln)}
-/* icon toolbar */
-.st-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:0;padding:4px 6px!important;border-color:var(--sub);box-shadow:none}
-.st-toolbar .tg{display:flex;align-items:center;gap:1px;padding:0 6px!important;border:0!important;border-right:1px solid var(--sub)!important;background:none!important;border-radius:0}
-.st-toolbar .tg::before{content:none!important}
-.st-toolbar .tg:last-child{border-right:0!important}
-.st-toolbar .tg-r{margin-left:auto}
-.ic-b{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:32px;height:32px;padding:0 6px;border:0;border-radius:7px;background:none;color:var(--tx);cursor:pointer;font:13px "Tiro Bangla",sans-serif}
-.ic-b svg{width:18px;height:18px}
-.ic-b:hover:not(:disabled){background:var(--sub);color:var(--ac)}
-.ic-b:disabled{opacity:.3;cursor:default}
-.ic-b.tog[aria-pressed=true]{background:var(--ac-soft);color:var(--ac)}
-.ic-b.mk{color:var(--ac)}
-.ic-b.mk b{font-size:15px}
-.ic-b.mk.on{background:var(--ok);color:#fff}
-.ic-sel{height:28px;border:1px solid var(--sub)!important;border-radius:7px;background:none!important;font-size:12.5px!important;padding:0 4px!important;color:var(--tx)}
-.ic-chk{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--mu);padding:0 6px;cursor:pointer;white-space:nowrap}
-.tg-mark{background:none!important}
-/* drawers */
-.st-drawer{border-color:var(--sub);box-shadow:0 4px 14px rgba(0,0,0,.05)}
-/* tracks (only with 2+) */
-.st-tracks[hidden]{display:none!important}
-.trk-mix{font-size:12.5px;color:var(--mu);display:flex;align-items:center;gap:6px;padding:0 4px 2px}
-.trk{border-color:var(--sub)}
-/* parts: compact cards */
-.r-tools{display:flex;gap:6px;margin-bottom:8px}
-.r-tools input{flex:1;min-width:0}
-.r-tools select{width:120px}
-.r-list{display:flex;flex-direction:column;gap:4px;overflow:auto;max-height:46vh;margin-bottom:8px}
-.rg{border:1px solid var(--sub);border-radius:8px;padding:5px 7px;display:flex;flex-direction:column;gap:4px}
-.rg.skip{opacity:.45}
-.rg.hl{border-color:var(--ac);background:var(--ac-soft)}
-.rg-top{display:flex;align-items:center;gap:6px}
-.rg-top input{flex:1;min-width:0;border:0!important;background:none!important;padding:3px 2px!important;font-size:15px!important;font-weight:600}
-.rg-top input:focus{background:var(--pn2)!important;box-shadow:inset 0 -2px 0 var(--ac)!important}
-.rg-n{font-size:12px;color:var(--mu);min-width:16px}
-.rg-sub{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mu);flex-wrap:wrap}
-.rg-sub select{height:24px;padding:0 4px!important;font-size:12px!important;border-color:var(--sub)!important}
-.rg-sub .ib{width:24px;height:24px;border-color:transparent;background:none}
-.rg-sub .ib:hover,.rg-top .ib:hover{background:var(--sub)}
-.rg-skip{display:inline-flex;align-items:center;gap:3px;cursor:pointer}
-.rg-text{font-size:13px!important;padding:3px 6px!important}
-.rg .dot{width:8px;height:8px;border-radius:50%;flex:none}
-#pn-queue .q-list{max-height:none}
-.q-item{border:0;border-bottom:1px solid var(--sub);border-left:3px solid var(--ln);border-radius:0;background:none;padding:6px 4px}
-@media (max-width:1250px){.studio{grid-template-columns:230px minmax(0,1fr)!important}.st-right-col{grid-column:2;display:grid;grid-template-columns:1fr 1fr;align-items:start}}
-@media (max-width:860px){.studio{grid-template-columns:1fr!important}.st-right-col{grid-column:1;grid-template-columns:1fr}.st-toolbar .tg-r{margin-left:0}}
-.mode-row .sw{white-space:nowrap;padding:6px 8px!important;font-size:13.5px!important}
-.bt-word b.empty{font-size:18px;font-weight:500;color:var(--mu)}
-
-#e-undo svg,#e-redo svg{fill:none!important;stroke:currentColor!important;stroke-width:2}
-.r-map{margin:0 0 8px!important;min-height:30px;font-weight:500;font-size:13.5px}
-
-.trk-head{display:flex;align-items:center;justify-content:space-between}
-.trk-clear{border:0;background:none;color:var(--rec);font:12.5px "Tiro Bangla",sans-serif;cursor:pointer;padding:2px 6px;border-radius:6px}
-.trk-clear:hover{background:var(--sub)}
-.st-menu-pop .danger{color:var(--rec)!important;border-top:1px solid var(--sub)!important;border-radius:0 0 6px 6px!important}
-
-/* ===== whole studio inside the screen height; columns scroll inside ===== */
-@media (min-width:861px){
-  .sd-body:not(.easy-mode){height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
-  .sd-body:not(.easy-mode) > footer,.sd-body:not(.easy-mode) .site-footer{display:none}
-  .sd-body:not(.easy-mode) .studio{flex:1;min-height:0;width:100%;grid-template-rows:auto minmax(0,1fr)!important;overflow:hidden}
-  .studio .st-left,.studio .st-center,.studio .st-right-col{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
-  .studio .st-center{padding-right:2px}
-  .studio .st-right-col #pn-queue{min-height:180px}
-  .studio .r-list,.studio #pn-queue .q-list{max-height:none}
-  .studio .w-list{max-height:none}
-}
-/* lower waveform */
-.st-wavewrap{height:clamp(140px,24vh,240px)!important}
-/* play button: filled blue circle with a white icon */
-.studio .tb-play{background:var(--ac)!important;border-color:var(--ac)!important;color:#fff!important}
-.studio .tb-play:hover{background:var(--ac-h)!important}
-.studio .tb-play svg{width:20px;height:20px;fill:#fff!important}
-.studio .tb-rec svg{fill:var(--rec)!important}
-.studio .tb-rec.on svg{fill:#fff!important}
-/* ===== full studio: no site header; logo + account in the top bar; login gate ===== */
-
-.st-logo{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--tx);padding-right:10px;margin-right:4px;border-right:1px solid var(--sub)}
-.st-logo .logo-mark,.st-gate .logo-mark{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--ac);color:#fff;font:700 18px "Tiro Bangla",serif;padding-top:2px;box-sizing:border-box}
-.st-logo-t{font:700 15px "Tiro Bangla",serif;white-space:nowrap}
-.st-acct{margin-left:4px}
-.st-menu-r{left:auto!important;right:0}
-.st-menu-pop a{display:block;padding:9px 12px;border-radius:6px;color:var(--tx);text-decoration:none;font:14.5px "Tiro Bangla",sans-serif}
-.st-menu-pop a:hover{background:var(--ac-soft);color:var(--ac)}
-#t-user{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.st-gate{position:fixed;inset:0;z-index:90;background:var(--bg,#f6f7f9);display:grid;place-items:center;padding:20px}
-.st-gate[hidden]{display:none}
-.st-gate-in{max-width:420px;text-align:center;background:var(--pn,#fff);border:1px solid var(--sub,#eef0f3);border-radius:16px;padding:28px 26px;color:var(--tx,#202122)}
-.st-gate .logo-mark.big{width:54px;height:54px;font-size:30px;border-radius:14px;margin:0 auto 10px}
-.st-gate h2{margin:0 0 8px;font-size:22px}
-.st-gate p{color:var(--mu,#54595d);font-size:14.5px;line-height:1.6}
-.st-gate .sbtn{min-height:44px;padding:0 22px;font-size:15.5px;margin:6px 0 4px}
-.gate-alt{font-size:13.5px}
-.gated .studio > :not(.st-gate){visibility:hidden}
-@media (max-width:860px){.st-logo-t{display:none}}
-.sd-body > footer.footer{display:none!important} /* no site footer in the studio or Libre */
-
-.st-right-col .pn.collapsed{flex:none!important;min-height:0!important}
-
-/* ===== one studio: simple view (no editor) ===== */
-.no-editor .st-toolbar,.no-editor .st-drawer,.no-editor .st-tracks{display:none!important}
-.no-editor.word-mode .st-stage,.no-editor.word-mode .st-status #s-sel,.no-editor.word-mode .st-status #s-info{display:none!important}
-.no-editor .st-batch{padding:22px 20px}
-.no-editor .bt-word b{font-size:clamp(44px,6vw,72px)}
-.mode-chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--tx);margin:8px 0 4px}
-#t-mictest{margin-top:6px;font-weight:500}
-.st-mnav{display:none}
-/* phones: tabs for the three columns; most tools still work */
-@media (max-width:860px){
-  .st-mnav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--sub);border-radius:12px;padding:4px;position:sticky;top:0;z-index:20;order:-1}
-  .st-mnav button{border:0;background:none;border-radius:9px;padding:9px 4px;font:600 14px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer}
-  .st-mnav button[aria-current]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-  .st-transport{order:-2}
-  body[data-mview="center"] .st-left,body[data-mview="center"] .st-right-col,
-  body[data-mview="left"] .st-center,body[data-mview="left"] .st-right-col,
-  body[data-mview="right"] .st-left,body[data-mview="right"] .st-center{display:none!important}
-  .st-transport .st-meter,.st-transport #t-input,#t-layout{display:none}
-  .st-toolbar{overflow-x:auto;flex-wrap:nowrap!important}
-  .st-toolbar .tg{flex:none}
-  .bt-acts .sbtn{flex:1 1 40%}
-}
-/* ===== top bar on phones: tools on one row, playback on a second ===== */
-@media (max-width:860px){
-  .studio .st-transport{display:grid!important;grid-template-columns:1fr auto;align-items:center;gap:6px 4px;padding:6px 8px!important}
-  .st-transport > .st-tgroup:first-child{grid-column:1;flex-wrap:nowrap;gap:2px}
-  .st-transport .st-right{grid-column:2;justify-self:end;margin:0;flex-wrap:nowrap;gap:2px}
-  .st-transport .st-tcenter{grid-column:1/-1;grid-row:2;display:flex;flex-wrap:nowrap;justify-content:space-between;gap:2px;border-top:1px solid var(--sub);padding-top:6px;overflow-x:auto}
-  .studio .tb{width:34px;height:34px}
-  .studio .tb-txt{height:34px;padding:0 9px!important;font-size:13.5px!important}
-  .studio .tb-play,.studio .tb-rec{width:40px!important;height:40px!important;flex:none}
-  .st-transport .st-clock{min-width:0;padding:2px 8px;flex:none}
-  .st-transport .st-clock span{font-size:16px;letter-spacing:0}
-  .st-transport .st-clock small{display:none}
-  .studio .tb-mark{height:34px;padding:0 8px!important;font-size:13px!important}
-  #t-editor{font-size:0!important;width:34px;padding:0!important}
-  #t-editor::before{content:"✎";font-size:17px}
-  #t-editor[aria-pressed=true]{background:var(--ac-soft);color:var(--ac)}
-}
-
-.studio .bt-word b.empty{font-size:17px!important;font-weight:500;color:var(--mu)}
-
-/* ===== phones: only what the moment needs ===== */
-.tb-more,.bt-live{display:none}
-@media (max-width:860px){
-  /* top bar: just “⋯”; it opens the tools */
-  .studio .st-transport{display:flex!important;flex-wrap:wrap;justify-content:flex-end;padding:4px 6px!important;border:0;background:none}
-  .tb-more{display:grid;font-size:20px!important;font-weight:700}
-  .st-transport > .st-tgroup:first-of-type,.st-transport .st-right{display:none!important}
-  .more-open .st-transport{background:var(--pn);border:1px solid var(--sub)}
-  .more-open .st-transport > .st-tgroup:first-of-type,.more-open .st-transport .st-right{display:flex!important;width:100%;justify-content:flex-start;gap:4px;flex-wrap:wrap}
-  .more-open .st-transport .st-right #t-input{display:block!important;flex:1;min-width:0}
-  /* playback: a fixed player at the bottom … */
-  .st-transport .st-tcenter{position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--pn);border-top:1px solid var(--ln)!important;padding:6px 8px calc(6px + env(safe-area-inset-bottom))!important;box-shadow:0 -4px 14px rgba(0,0,0,.08);justify-content:space-around!important}
-  .studio{padding-bottom:76px!important}
-  /* … except in the plain word-list view: the word card has its own controls */
-  .no-editor.word-mode .st-transport .st-tcenter{display:none!important}
-  .no-editor.word-mode .studio{padding-bottom:20px!important}
-  .no-editor.word-mode .bt-live{display:flex;align-items:center;gap:8px;justify-content:center;margin:2px 0 6px;font:600 13px "JetBrains Mono",monospace;color:var(--mu)}
-  .no-editor.word-mode:not(.is-rec) .bt-live{visibility:hidden;height:0;margin:0}
-  .is-rec .bt-live #bt-clock{color:var(--rec)}
-  .bt-mt{width:120px;height:6px;border-radius:3px;background:var(--sub);overflow:hidden}
-  .bt-mt i{display:block;height:100%;width:0;background:#14866d;transition:width 60ms}
-  .bt-mt i.hot{background:#d73333}
-  .studio .st-batch #bt-go{min-height:52px;font-size:17px;flex-basis:100%}
-}
-/* ===== tablets and small laptops (861–1250px): word list on the left; record | upload as two tabs ===== */
-@media (min-width:861px) and (max-width:1250px){
-  .studio{grid-template-columns:240px minmax(0,1fr)!important;grid-template-rows:auto auto minmax(0,1fr)!important}
-  .studio .st-transport{grid-column:1/-1;grid-row:1}
-  .st-mnav{display:grid;grid-template-columns:1fr 1fr;gap:4px;grid-column:2;grid-row:2;background:var(--sub);border-radius:10px;padding:3px}
-  .st-mnav [data-mv="left"]{display:none}
-  .st-mnav button{border:0;background:none;border-radius:8px;padding:7px 4px;font:600 14px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer}
-  .st-mnav button[aria-current]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-  .studio .st-left{grid-column:1;grid-row:2/4}
-  .studio .st-center,.studio .st-right-col{grid-column:2!important;grid-row:3}
-  .studio .st-right-col{display:flex!important;flex-direction:column;grid-template-columns:none!important}
-  body:not([data-mview="right"]) .studio .st-right-col{display:none!important}
-  body[data-mview="right"] .studio .st-center{display:none!important}
-  .st-transport .st-meter{min-width:110px}
-  .st-transport #t-input{max-width:140px}
-}@media (min-width:861px) and (max-width:1250px){
-  .studio .st-left{contain:size} /* the long left column must not stretch the tab row */
-  .st-mnav{align-self:start}
-  .st-transport{flex-wrap:nowrap!important;gap:6px!important}
-  .st-transport .st-tcenter{gap:2px!important}
-  .st-transport .st-meter{min-width:70px!important}
-  .st-transport .st-meter small,.st-transport .st-clock small{display:none}
-  .st-transport .st-clock{min-width:0!important;padding:3px 8px!important}
-  .st-transport .st-clock span{font-size:18px!important}
-  .st-transport #t-input{max-width:110px!important}
-  .studio .tb{width:32px;height:32px}
-  .studio .tb-play,.studio .tb-rec{width:38px!important;height:38px!important}
-}
-@media (min-width:861px) and (max-width:1250px){ .sd-body:not(.easy-mode) .studio{grid-template-rows:auto auto minmax(0,1fr)!important} }
-
-.h-acts{margin-left:auto;display:inline-flex;gap:2px}
-.h-a{border:0;background:none;color:var(--mu);font:12px "Tiro Bangla",sans-serif;padding:2px 6px;border-radius:6px;cursor:pointer}
-.h-a:hover{background:var(--sub);color:var(--ac)}
-.h-a.red:hover{color:var(--rec)}
-.pn.collapsed .h-acts{display:none}
-.pn h3 .h-acts ~ .dk-fold{margin-left:4px}
-
-/* right column: two tabs */
-.rt-tabs{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--sub);border-radius:10px;padding:3px;flex:none}
-.rt-tabs button{border:0;background:none;border-radius:8px;padding:7px 4px;font:600 14px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-.rt-tabs button[aria-selected=true]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-.rt-tabs .cnt{background:var(--sub);border-radius:999px;padding:0 7px;font-size:11.5px;color:var(--mu)}
-.st-right-col > .pn[hidden]{display:none!important}
-.st-right-col > .pn{flex:1;min-height:0;display:flex;flex-direction:column}
-.st-right-col > .pn > h3{font-size:0;margin-bottom:6px}
-.st-right-col > .pn > h3 > *{font-size:13px}
-.st-right-col > .pn > h3 .cnt{display:none}
-.st-right-col .r-list,.st-right-col #pn-queue .q-list{flex:1;max-height:none!important}
-/* ===== player bar fixed at the bottom (every screen size) ===== */
-.studio .st-player{position:fixed!important;left:0;right:0;bottom:0;z-index:60;display:flex!important;justify-content:center;align-items:center;background:var(--pn)!important;border:0!important;border-top:1px solid var(--ln)!important;border-radius:0!important;padding:6px 12px calc(6px + env(safe-area-inset-bottom))!important;box-shadow:0 -4px 14px rgba(0,0,0,.06)!important;grid-row:auto!important}
-.studio .st-player .st-tcenter{display:flex!important;position:static!important;flex:0 1 auto;justify-content:center!important;flex-wrap:nowrap;gap:4px!important;border:0!important;box-shadow:none!important;background:none!important;padding:0!important;overflow-x:auto}
-.sd-body{box-sizing:border-box;padding-bottom:60px}
-@media (min-width:1251px){.sd-body:not(.easy-mode) .studio{grid-template-rows:minmax(0,1fr)!important}.studio .st-left,.studio .st-center,.studio .st-right-col{grid-row:1}}
-@media (max-width:860px){
-  .no-editor.word-mode .studio .st-player{display:none!important} /* the word card has its own controls */
-  .no-editor.word-mode.sd-body{padding-bottom:0}
-}
-
-/* ===== left column: settings ===== */
-#pn-mode .set-grp{display:grid;grid-template-columns:54px 1fr;gap:6px;align-items:start;padding:6px 0;border-top:1px solid var(--sub)}
-#pn-mode .set-grp:first-of-type{border-top:0;padding-top:0}
-.set-l{font-size:12px;color:var(--mu);padding-top:5px}
-.set-row{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.set-row select{flex:1;min-width:0;height:30px;font-size:13px!important}
-.chip-b{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border:1px solid var(--ln);border-radius:999px;background:var(--pn);color:var(--tx);font:13px "Tiro Bangla",sans-serif;cursor:pointer;white-space:nowrap}
-.chip-b:hover:not(:disabled){border-color:var(--ac);color:var(--ac)}
-.chip-b:disabled{opacity:.4;cursor:default}
-.chip-b.ic{width:30px;padding:0;justify-content:center}
-.chip-b.ic svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}
-.chip-b.tog[aria-pressed=true]{background:var(--ac);border-color:var(--ac);color:#fff}
-.chip-b.red{color:var(--rec)}
-#pn-mode .mode-row{gap:4px}
-#pn-mode .mode-row .sw{padding:4px 8px!important;font-size:13px!important;flex:1;justify-content:center}
-#pn-mode .mode-chk{margin:6px 0 0;font-size:12.5px}
-.set-foot{display:flex;gap:10px;padding-top:6px;border-top:1px solid var(--sub)}
-.link-b{border:0;background:none;color:var(--mu);font:12.5px "Tiro Bangla",sans-serif;cursor:pointer;padding:2px 0}
-.link-b:hover{color:var(--ac)}
-
-/* ===== left column: word list ===== */
-#pn-words h3 .cnt{font-family:"JetBrains Mono",monospace}
-.w-prog{height:4px;border-radius:2px;background:var(--sub);overflow:hidden;margin:0 0 8px}
-.w-prog i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s}
-.w-add{display:flex;gap:4px;margin-bottom:6px}
-.w-add input{flex:1;min-width:0;height:34px}
-.w-add .ib{width:34px;height:34px;font-size:16px}
-.w-many{margin-bottom:6px}
-.w-many textarea{width:100%;margin-bottom:4px}
-.w-many[hidden]{display:none}
-.studio .w-list{counter-reset:none;border:0;margin:0}
-.studio .w-list li{display:grid;grid-template-columns:26px 1fr auto auto;align-items:center;gap:6px;padding:6px 6px;border:0;border-radius:8px;margin-bottom:1px}
-.studio .w-list li:hover{background:var(--pn2)}
-.studio .w-list li .wn{font:12px "JetBrains Mono",monospace;color:var(--mu);text-align:center;width:22px;height:22px;line-height:22px;border-radius:50%;background:var(--sub)}
-.studio .w-list li .wt{display:flex;flex-direction:column;min-width:0}
-.studio .w-list li .wt .t{font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.studio .w-list li .wt small{max-width:none;font-size:11.5px;color:var(--mu)}
-.studio .w-list li.done .t::before{content:none}
-.studio .w-list li.done .wn{background:#e6f4ef;color:var(--ok);font-weight:700}
-.studio .w-list li.done .t{color:var(--mu)}
-.studio .w-list li.cur{background:var(--ac-soft);box-shadow:none}
-.studio .w-list li.cur .wn{background:var(--ac);color:#fff}
-.studio .w-list li .x{opacity:0}
-.studio .w-list li:hover .x{opacity:1}
-.studio .w-list li.empty{display:block;color:var(--mu);font-size:13px;line-height:1.6;padding:10px 4px}
-#pn-words{min-height:260px}#pn-mode .set-grp{grid-template-columns:1fr!important;gap:4px!important}
-.set-l{padding-top:0!important;font-size:11.5px!important;letter-spacing:.2px}
-#pn-mode .mode-row{display:grid!important;grid-template-columns:1fr 1fr}
-#pn-mode .mode-row .sw{white-space:nowrap}
-@media (min-width:1251px){.studio{grid-template-columns:270px minmax(0,1fr) 320px!important}}
-/* ===== left: Photoshop-like menu ===== */
-.ps-menu{display:flex;flex-direction:column;gap:1px;padding:6px 4px 10px;border-bottom:1px solid var(--sub);margin-bottom:6px}
+/* ---------- menu (left) ---------- */
+.st-left{background:var(--pn);border:1px solid var(--sub);border-radius:var(--r);padding:4px;align-self:start;max-height:100%}
+.ps-menu{display:flex;flex-direction:column;gap:1px;padding:4px 2px}
 .ps-title{font-size:11.5px;color:var(--mu);padding:2px 10px 6px}
-.ps-it{display:grid;grid-template-columns:22px 1fr auto auto;align-items:center;gap:6px;width:100%;text-align:left;border:0;background:none;color:var(--tx,#202122);padding:7px 10px;border-radius:7px;font:14.5px "Tiro Bangla",sans-serif;cursor:pointer}
-.ps-it:hover:not(:disabled),.ps-it.open{background:var(--ac-soft,#eaf3ff);color:var(--ac,#36c)}
+.ps-toggle{display:none}
+.ps-it,.ps-sw{display:grid;grid-template-columns:20px 1fr auto auto;align-items:center;gap:6px;width:100%;text-align:left;border:0;background:none;color:var(--tx);padding:8px;border-radius:7px;font:14.5px "Tiro Bangla",sans-serif;cursor:pointer}
+.ps-it:hover:not(:disabled),.ps-it.open{background:var(--ac-soft);color:var(--ac)}
 .ps-it:disabled{opacity:.4;cursor:default}
-.ps-it.danger{color:var(--rec,#d73333)}
-.ps-ic{text-align:center;font-size:13px;color:var(--ac,#36c)}
-.ps-it kbd{font:11px "JetBrains Mono",monospace;color:var(--mu,#54595d)}
-.ps-arr{color:var(--mu,#54595d);font-size:11px}
-.ps-sep{height:1px;background:var(--sub,#eef0f3);margin:4px 8px}
-.ps-sub{position:fixed;z-index:120;min-width:230px;max-width:320px;max-height:70vh;overflow:auto;background:#fff;border:1px solid #e1e4e8;border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.16);padding:5px;display:flex;flex-direction:column;gap:1px;--ac:#3366cc;--ac-soft:#eaf3ff;--tx:#202122;--mu:#54595d;--sub:#eef0f3;--rec:#d73333}
+.ps-it.danger{color:var(--rec)}
+.ps-ic{text-align:center;color:var(--mu)}
+.ps-ic svg{width:17px;height:17px;display:block;margin:auto}
+.ps-it:hover .ps-ic,.ps-it.open .ps-ic,.ps-ic.ck{color:var(--ac);font-weight:700}
+.ps-it kbd{font:11px "JetBrains Mono",monospace;color:var(--mu)}
+.ps-arr{color:var(--mu);font-size:11px}
+.ps-sep{height:1px;background:var(--sub);margin:4px 8px}
+.ps-sw{grid-template-columns:20px 1fr auto;font-size:14px}
+.ps-sw:hover{background:var(--pn2)}
+.ps-sw[aria-checked=true] .ps-ic{color:var(--ac)}
+.tgl{position:relative;width:30px;height:17px;border-radius:999px;background:var(--ln);transition:background .15s}
+.tgl::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.ps-sw[aria-checked=true] .tgl{background:var(--ac)}
+.ps-sw[aria-checked=true] .tgl::after{left:15px}
+.ps-pills{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;background:var(--sub);border-radius:999px}
+.ps-pill{border:0;background:none;border-radius:999px;padding:6px 4px;font:600 13px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;white-space:nowrap}
+.ps-pill[aria-pressed=true]{background:var(--ac);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+/* floating submenus (may sit outside .studio, so their colours are set here) */
+.ps-sub{position:fixed;z-index:120;min-width:230px;max-width:320px;max-height:70vh;overflow:auto;background:#fff;border:1px solid #e1e4e8;border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.16);padding:5px;display:flex;flex-direction:column;gap:1px;margin-left:-6px;
+  --ac:#3366cc;--ac-soft:#eaf3ff;--tx:#202122;--mu:#54595d;--sub:#eef0f3;--rec:#d73333;font:14.5px "Tiro Bangla",sans-serif}
 :root[data-theme="dark"] .ps-sub{background:#1b2025;border-color:#3a3f45;--tx:#eaecf0;--mu:#a2a9b1;--sub:#27292d;--ac:#6d8af0;--ac-soft:#233566}
-.ps-sub.inline{position:static;box-shadow:none;border:0;border-left:2px solid var(--sub);border-radius:0;margin:0 0 4px 16px;max-height:none;min-width:0;padding:2px 0 2px 4px}
-/* centre tabs */
-.ct-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);flex:none}
-.ct-tabs button{border:0;background:none;padding:8px 16px;font:600 15px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;display:inline-flex;align-items:center;gap:6px}
-.ct-tabs button[aria-selected=true]{color:var(--ac);border-bottom-color:var(--ac)}
-.ct-tabs .cnt{background:var(--sub);border-radius:999px;padding:0 7px;font-size:11.5px;color:var(--mu)}
-.ct-pane{display:flex;flex-direction:column;gap:10px;min-height:0}
-.ct-pane[hidden]{display:none!important}
-.ct-pane #pn-words{max-width:760px;width:100%;margin:0 auto}
-.ct-pane .w-list{max-height:none!important;columns:2 260px;column-gap:16px}
-.ct-pane .w-list li{break-inside:avoid}
-.w-go{min-height:28px!important;padding:0 12px!important;font-size:13px!important;margin-left:6px}
-/* left bar: just the menu — narrow, white */
-@media (min-width:1251px){.studio{grid-template-columns:190px minmax(0,1fr) 320px!important}}
-@media (min-width:861px) and (max-width:1250px){.studio{grid-template-columns:190px minmax(0,1fr)!important}}
-.studio .st-left{background:var(--pn);border:1px solid var(--sub);border-radius:12px;padding:4px!important;align-self:start;max-height:100%}
-.studio .ps-menu{border:0;margin:0;padding:4px 2px}
-.studio .ps-it{padding:8px 8px;grid-template-columns:20px 1fr auto auto}
-.ps-sub{margin-left:-6px} /* close to the menu */
-/* setup tab */
-.ct-setup{max-width:760px;width:100%;margin:0 auto}
-.ct-setup .pn{padding:14px 16px}
-.ct-setup #pn-speaker h3,.ct-setup #pn-proj h3{font-size:15px}
-.ct-setup .sp-form .two{grid-template-columns:1fr 1fr}
-.ct-warn{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--warn);color:#fff;font-size:11px;font-weight:700}
-.ct-warn[hidden]{display:none}
-@media (max-width:860px){.studio .st-left{border:0;background:none}}
-.ps-ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block;margin:auto}
-.ps-it .ps-ic{color:var(--mu)}
-.ps-it:hover .ps-ic,.ps-it.open .ps-ic{color:var(--ac)}
-.ps-sub .ps-ic{color:var(--ac);font-weight:700}
+.ps-sub.inline{position:static;box-shadow:none;border:0;border-left:2px solid var(--sub);border-radius:0;margin:0 0 4px 24px;max-height:none;min-width:0;max-width:none;padding:2px 0 2px 4px;background:none}
 
-/* ===== speaker setup: professional, minimal ===== */
-.spk{padding:18px 20px!important}
+/* ---------- tabs ---------- */
+.st-tabs{display:grid;grid-template-columns:minmax(0,1fr) var(--right-w);gap:var(--gap)}
+.tabs-c,.tabs-r{display:flex;gap:4px;border-bottom:1px solid var(--ln)}
+.st-tabs button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:8px 14px;font:600 14.5px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;position:relative}
+.st-tabs button svg{width:16px;height:16px}
+.st-tabs button[aria-selected=true]{color:var(--ac);border-bottom-color:var(--ac)}
+.t-short{display:none}
+.t-n{background:var(--sub);border-radius:999px;padding:0 7px;font-size:11.5px;color:var(--mu)}
+.t-n:empty{display:none}
+.t-warn{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--warn);color:#fff;font-size:11px;font-weight:700}
+
+/* ---------- setup pane ---------- */
+.pane-setup{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:start}
+.spk{padding:18px 20px}
 .spk-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
-.spk-head h3{font-size:17px!important;margin:0!important;color:var(--tx)!important}
-.spk-status{font-size:12.5px}
-.spk-status.ok{color:var(--ok)}
-.spk-status.warn{color:var(--warn)}
+.spk-head h3{font-size:17px;margin:0;color:var(--tx)}
+.spk-status{font-size:12.5px}.spk-status.ok{color:var(--ok)}.spk-status.warn{color:var(--warn)}
 .spk-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-bottom:14px;margin-bottom:6px;border-bottom:1px solid var(--sub)}
 .spk-chips{display:contents}
 .spk-chip{display:inline-flex;align-items:baseline;gap:6px;height:32px;padding:0 12px;border:1px solid var(--ln);border-radius:999px;background:var(--pn);color:var(--tx);font:14px "Tiro Bangla",sans-serif;cursor:pointer}
@@ -832,135 +166,255 @@ select.sb{padding:0 4px}
 .spk-chip.new{border-style:dashed}
 .spk-form fieldset{border:0;margin:0;padding:14px 0 10px;border-bottom:1px solid var(--sub)}
 .spk-form fieldset:last-of-type{border-bottom:0}
-.spk-form legend{float:left;width:100%;padding:0 0 10px;font-size:12px;font-weight:600;color:var(--mu);letter-spacing:.3px}
-.spk-grid{clear:both;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.spk-form legend{float:left;width:100%;padding:0 0 10px;font-size:12px;font-weight:600;color:var(--mu)}
+.spk-grid{clear:both;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px 16px}
 .spk-grid .span2{grid-column:1/-1}
-.spk-grid label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--mu)}
+.spk-grid label{display:block;font-size:13px;color:var(--mu)}
 .spk-grid label i{color:var(--rec);font-style:normal}
-.spk-grid input,.spk-grid select{height:38px;border:1px solid var(--ln)!important;border-radius:8px!important;padding:0 12px!important;font-size:15px!important;background:var(--pn)!important;width:100%}
-.spk-grid input:focus,.spk-grid select:focus{border-color:var(--ac)!important;box-shadow:0 0 0 3px var(--ac-soft)!important}
-.spk-consent{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--pn2);font-size:13.5px;line-height:1.55;color:var(--tx);cursor:pointer}
-.spk-consent input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--ac)}
+.spk-grid input,.spk-grid select{display:block;margin-top:5px;width:100%;height:38px;padding:0 12px;font-size:15px}
+.spk-consent{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--pn2);font-size:13.5px;line-height:1.55;cursor:pointer}
+.spk-consent input{width:18px;height:18px;margin-top:2px;flex:none}
 .spk-foot{display:flex;align-items:center;gap:10px;padding-top:14px}
 .spk-foot .sbtn{min-height:38px;padding:0 22px}
-.link-b.red{color:var(--rec)}
-@media (max-width:560px){.spk-grid{grid-template-columns:1fr}}
-.spk-grid label{display:block!important}
-.spk-grid label > input,.spk-grid label > select{display:block;margin-top:5px}
 
-/* centre tabs use the whole width */
-.ct-setup,.ct-pane #pn-words{max-width:none!important;margin:0!important}
-.ct-setup .spk-grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
-.ct-setup{display:grid!important;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px;align-items:start}
-.ct-setup[hidden]{display:none!important}
-@media (max-width:1100px){.ct-setup{grid-template-columns:1fr}}
-.ct-pane #pn-words{flex:1}
-.ct-pane .w-list{columns:3 240px!important}
-/* menu ticks */
-.ps-ic.ck{color:var(--ac)!important;font-weight:700;font-size:14px}
-.ps-pills{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin:8px 4px 2px;padding:3px;background:var(--sub);border-radius:999px}
-.ps-pill{border:0;background:none;border-radius:999px;padding:6px 4px;font:600 13px "Tiro Bangla",sans-serif;color:var(--mu);cursor:pointer;white-space:nowrap}
-.ps-pill[aria-pressed=true]{background:var(--ac);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.ps-sw{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:6px;width:100%;text-align:left;border:0;background:none;color:var(--tx);padding:7px 8px;border-radius:7px;font:14px "Tiro Bangla",sans-serif;cursor:pointer}
-.ps-sw:hover{background:var(--pn2)}
-.ps-sw .ps-ic{color:var(--mu)}
-.ps-sw[aria-checked=true] .ps-ic{color:var(--ac)}
-.tgl{position:relative;width:30px;height:17px;border-radius:999px;background:var(--ln);transition:background .15s;flex:none}
-.tgl::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
-.ps-sw[aria-checked=true] .tgl{background:var(--ac)}
-.ps-sw[aria-checked=true] .tgl::after{left:15px}
-/* ===== 861–1250px: the menu column stays visible ===== */
-@media (min-width:861px) and (max-width:1250px){
-  .studio .st-left{contain:none!important;align-self:stretch!important;grid-row:2/4!important;overflow-y:auto;max-height:none}
+/* ---------- word list pane ---------- */
+#pn-words{flex:1}
+#pn-words h3 .cnt{font-family:"JetBrains Mono",monospace}
+.w-go{min-height:28px;padding:0 12px;font-size:13px;margin-left:6px}
+.w-prog{height:4px;border-radius:2px;background:var(--sub);overflow:hidden;margin:0 0 8px}
+.w-prog i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s}
+.w-add{display:flex;gap:4px;margin-bottom:6px}
+.w-add textarea{flex:1;min-height:36px;max-height:200px;resize:none;line-height:1.45;padding:7px 10px}
+.w-add .ib{width:36px;height:36px;font-size:16px}
+.w-src{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.w-page{display:flex;gap:6px;margin-bottom:6px}
+.w-page input{flex:1;height:34px}
+.w-list{list-style:none;margin:8px 0 0;padding:0;columns:3 240px;column-gap:16px}
+.w-list li{break-inside:avoid;display:grid;grid-template-columns:26px 1fr auto auto;align-items:center;gap:6px;padding:6px;border-radius:8px;margin-bottom:1px;cursor:pointer}
+.w-list li:hover{background:var(--pn2)}
+.w-list .wn{font:12px "JetBrains Mono",monospace;color:var(--mu);text-align:center;width:22px;height:22px;line-height:22px;border-radius:50%;background:var(--sub)}
+.w-list .wt{display:flex;flex-direction:column;min-width:0}
+.w-list .t{font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-list small{font-size:11.5px;color:var(--mu)}
+.w-list li a{font-size:11px}
+.w-list li.done .wn{background:var(--ok-soft);color:var(--ok);font-weight:700}
+.w-list li.done .t{color:var(--mu)}
+.w-list li.cur{background:var(--ac-soft)}
+.w-list li.cur .wn{background:var(--ac);color:#fff}
+.w-list .x{opacity:0;border:0;background:none;color:var(--mu);cursor:pointer;font-size:12px}
+.w-list li:hover .x{opacity:1}
+.w-list li.empty{display:block;color:var(--mu);font-size:13px;line-height:1.6;padding:10px 4px;cursor:default}
+
+/* ---------- wizard pane: toolbar ---------- */
+.st-toolbar{display:flex;flex-wrap:wrap;align-items:center;background:var(--pn);border:1px solid var(--sub);border-radius:var(--r);padding:4px 6px}
+.st-toolbar .tg{display:flex;align-items:center;gap:1px;padding:0 6px;border-right:1px solid var(--sub)}
+.st-toolbar .tg:last-child{border-right:0}
+.st-toolbar .tg-r{margin-left:auto}
+.ic-b{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:32px;height:32px;padding:0 6px;border:0;border-radius:7px;background:none;color:var(--tx);cursor:pointer;font:13px "Tiro Bangla",sans-serif}
+.ic-b:hover:not(:disabled){background:var(--sub);color:var(--ac)}
+.ic-b.tog[aria-pressed=true]{background:var(--ac-soft);color:var(--ac)}
+.ic-b.mk{color:var(--ac)}
+.ic-b.mk b{font-size:15px}
+.ic-b.mk.on{background:var(--ok);color:#fff}
+.ic-sel{height:28px;border:1px solid var(--sub);border-radius:7px;background:none;font-size:12.5px;padding:0 4px}
+.ic-chk{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--mu);padding:0 6px;cursor:pointer;white-space:nowrap}
+/* effects and mix drawers */
+.st-drawer{background:var(--pn);border:1px solid var(--ac);border-radius:var(--r);padding:10px 12px}
+.dr-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.dr-head b{font-size:15px}
+.dr-head select{height:30px}
+.fx{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 16px}
+.fx-mod{padding:8px 2px;border-bottom:1px solid var(--sub)}
+.fx-mod:not(.on) .kn{opacity:.6}
+.fx-h{display:flex;align-items:center;gap:7px;font-weight:600;font-size:13.5px;cursor:pointer}
+#pn-mix .fx-h{cursor:default;margin-bottom:4px}
+.kn{display:grid;grid-template-columns:70px 1fr 56px;align-items:center;gap:6px;font-size:12.5px;color:var(--mu);margin-top:4px}
+.kn b{font:500 11.5px "JetBrains Mono",monospace;color:var(--tx);text-align:right}
+#fx-prof{color:var(--ok);font-size:12px;align-self:center}
+#pn-mix .chk{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--mu);margin-top:4px}
+/* recording mode pills + clear, above the word card */
+.wz-bar{display:flex;align-items:center;gap:10px}
+.wz-bar .ps-pills{width:240px;max-width:100%}
+.wz-clear{margin-left:auto}
+.sd-body:not(.has-audio) .wz-clear{display:none}
+/* word card */
+.st-batch{background:var(--pn);border:1px solid var(--ac);border-radius:var(--r);padding:14px 16px;box-shadow:inset 4px 0 0 var(--ac)}
+.is-rec .st-batch{border-color:var(--rec);box-shadow:inset 4px 0 0 var(--rec)}
+.bt-prog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mu)}
+.bt-prog .bar{flex:1;height:6px;background:var(--sub);border-radius:3px;overflow:hidden}
+.bt-prog i{display:block;height:100%;background:var(--ok);transition:width .2s}
+.bt-live{display:none}
+.is-rec .bt-live{display:flex;align-items:center;gap:8px;justify-content:center;margin:4px 0;font:600 13px "JetBrains Mono",monospace;color:var(--rec)}
+.bt-mt{width:120px;height:6px;border-radius:3px;background:var(--sub);overflow:hidden}
+.bt-mt i{display:block;height:100%;width:0;background:var(--ok);transition:width 60ms}
+.bt-mt i.hot{background:var(--rec)}
+.bt-main{display:flex;align-items:center;gap:14px;margin:8px 0}
+.bt-main .sbtn{height:48px;width:48px;padding:0;font-size:16px}
+.bt-word{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;min-width:0}
+.bt-word small{color:var(--mu);font-size:12.5px}
+.bt-word b{font:700 clamp(34px,5vw,64px)/1.2 "Tiro Bangla",serif;word-break:break-word}
+.bt-word b.done::after{content:" ✓";color:var(--ok);font-size:.5em;vertical-align:middle}
+.bt-word b.empty{font-size:17px;font-weight:500;color:var(--mu)}
+.bt-word span{color:var(--mu);font-size:14px;min-height:1.4em}
+.bt-next{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:24px}
+.bt-next span{background:var(--sub);border-radius:6px;padding:1px 9px;font-size:14px;color:var(--mu)}
+.bt-next span.done{text-decoration:line-through}
+/* recording comes first: one big record button; the rest are small links beneath it */
+.bt-acts{display:flex;gap:4px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.bt-acts::before{content:"";flex-basis:100%;order:1}
+.bt-acts > *{order:2}
+.bt-acts #bt-go{order:0;flex:0 1 340px;min-height:54px;margin-bottom:6px;border-radius:999px;font-size:18px}
+.bt-acts #bt-go.on{background:var(--rec);border-color:var(--rec)}
+.bt-acts .sbtn:not(#bt-go){min-height:28px;padding:0 10px;font-size:12.5px;font-weight:400;border-color:transparent;background:none;color:var(--mu)}
+.bt-acts .sbtn:not(#bt-go):hover:not(:disabled){background:var(--sub);color:var(--ac)}
+.bt-acts .hint{flex-basis:100%;text-align:center}
+/* tracks (only with 2+) */
+.st-tracks{display:flex;flex-direction:column;gap:3px}
+.trk-head{display:flex;align-items:center;justify-content:space-between}
+.trk-mix{font-size:12.5px;color:var(--mu);display:flex;align-items:center;gap:6px}
+.trk-clear{border:0;background:none;color:var(--rec);font:12.5px "Tiro Bangla",sans-serif;cursor:pointer;padding:2px 6px;border-radius:6px}
+.trk{display:grid;grid-template-columns:28px minmax(80px,1fr) 64px 30px 30px 90px 30px;align-items:center;gap:6px;background:var(--pn);border:1px solid var(--sub);border-radius:8px;padding:3px 6px}
+.trk.on{border-color:var(--ac);box-shadow:inset 3px 0 0 var(--ac)}
+.trk.muted{opacity:.55}
+.trk-pick{border:0;background:none;color:var(--ac);font-size:15px;cursor:pointer}
+.studio .trk-name{border:0;background:none;padding:2px 4px;font-weight:600}
+.trk-len{font-size:12px;color:var(--mu);text-align:right}
+.trk-b{width:28px;height:26px;border:1px solid var(--ln);border-radius:6px;background:var(--pn2);color:var(--mu);font:700 12px sans-serif;cursor:pointer}
+.trk-b.act{background:var(--ac);border-color:var(--ac);color:#fff}
+/* timeline */
+.st-stage{position:relative;background:var(--pn);border:1px solid var(--sub);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column}
+.st-stage.over{outline:2px dashed var(--ac);outline-offset:-6px}
+.c-ruler{display:block;width:100%;height:26px;background:var(--pn2);border-bottom:1px solid var(--sub)}
+.st-wavewrap{position:relative;height:clamp(140px,24vh,240px)}
+.c-wave{display:block;width:100%;height:100%;cursor:text;touch-action:none}
+.c-over{display:block;width:100%;height:38px;background:var(--pn2);border-top:1px solid var(--sub);cursor:pointer;touch-action:none}
+.st-drop{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--mu);font-size:15px;line-height:2}
+.st-drop b{color:var(--tx)}
+.st-status{display:flex;gap:16px;flex-wrap:wrap;font:12.5px "JetBrains Mono","Tiro Bangla",monospace;color:var(--mu);padding:0 2px}
+.st-msg{margin-left:auto;color:var(--ac);font-family:"Tiro Bangla",sans-serif;font-size:13.5px}
+
+/* ---------- parts pane ---------- */
+.st-right-col .pane > .pn{flex:1;display:flex;flex-direction:column;min-height:0}
+.r-tools{display:flex;gap:6px;margin-bottom:8px}
+.r-tools input{flex:1}
+.r-tools select{width:120px}
+.r-map{margin:0 0 8px;min-height:30px;font-size:13.5px}
+.r-list{display:flex;flex-direction:column;gap:4px;overflow:auto;flex:1;margin-bottom:8px}
+.r-list .hint{display:block}
+.rg{border:1px solid var(--sub);border-radius:8px;padding:5px 7px;display:flex;flex-direction:column;gap:4px}
+.rg.skip{opacity:.45}
+.rg.hl{border-color:var(--ac);background:var(--ac-soft)}
+.rg-top{display:flex;align-items:center;gap:6px}
+.studio .rg-top input{flex:1;border:0;background:none;padding:3px 2px;font-size:15px;font-weight:600}
+.studio .rg-top input:focus{background:var(--pn2);box-shadow:inset 0 -2px 0 var(--ac)}
+.rg-n{font-size:12px;color:var(--mu);min-width:16px}
+.rg .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.rg-sub{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mu);flex-wrap:wrap}
+.rg-sub select{height:24px;padding:0 4px;font-size:12px}
+.rg-sub .ib,.rg-top .ib{border-color:transparent;background:none}
+.rg-sub .ib:hover,.rg-top .ib:hover{background:var(--sub)}
+.rg-skip{display:inline-flex;align-items:center;gap:3px;cursor:pointer}
+.rg-text{font-size:13px;padding:3px 6px}
+.rg .lx{font-size:11.5px;white-space:nowrap}
+/* upload list pane */
+.q-list{display:flex;flex-direction:column;gap:5px;overflow:auto;flex:1;min-height:80px}
+.q-list > .hint{display:block}
+.q-item{display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--sub);border-left:3px solid var(--ln);padding:6px 4px}
+.q-item.st-done{border-left-color:var(--ok)}.q-item.st-error{border-left-color:var(--rec)}.q-item.st-uploading{border-left-color:var(--warn)}
+.q-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.q-main input{width:100%;padding:3px 6px}
+.q-main small{color:var(--mu);font-size:11.5px}
+.q-main em{color:var(--rec);font-style:normal}
+.q-cloud{color:var(--ok)}
+
+/* ---------- simple view (no timeline) ---------- */
+.no-editor .st-toolbar,.no-editor .st-drawer,.no-editor .st-tracks{display:none!important}
+/* without the timeline, word mode still shows a small preview of the waveform once there is audio */
+.no-editor.word-mode .c-ruler,.no-editor.word-mode .c-over,.no-editor.word-mode .st-meter{display:none}
+.no-editor.word-mode .st-wavewrap{height:110px}
+.no-editor.word-mode .st-clock{top:6px}
+.no-editor.word-mode:not(.has-audio) .st-stage,.no-editor.word-mode #s-sel,.no-editor.word-mode #s-info{display:none!important}
+.no-editor .st-batch{padding:22px 20px}
+.no-editor .bt-word b:not(.empty){font-size:clamp(44px,6vw,72px)}
+
+/* ---------- dialogs (outside .studio) ---------- */
+.st-help{position:fixed;inset:0;background:rgba(32,33,34,.5);display:grid;place-items:center;z-index:100}
+.st-help[hidden]{display:none}
+.st-help-in{background:var(--surface,#fff);color:var(--ink,#202122);border:1px solid #a2a9b1;border-radius:12px;padding:18px 22px;max-width:440px;width:calc(100% - 32px);max-height:90vh;overflow:auto;box-shadow:0 4px 16px rgba(0,0,0,.2);font-family:"Tiro Bangla",sans-serif}
+.st-help-in h3{margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #c8ccd1}
+.st-help dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 14px;font-size:14px}
+.st-help dt{font:12px "JetBrains Mono",monospace;background:#f8f9fa;color:#202122;border:1px solid #c8ccd1;border-radius:4px;padding:0 6px;align-self:center;justify-self:start}
+.st-help dd{margin:0}
+.st-help-in .sbtn{min-height:38px;border-radius:8px;padding:0 16px;border:1px solid #a2a9b1;background:#f8f9fa;color:#202122;cursor:pointer;font:600 14.5px "Tiro Bangla",sans-serif}
+.st-help-in .sbtn.pri{background:#3366cc;border-color:#3366cc;color:#fff}
+.st-help-in .sbtn.ghost{border-color:transparent;background:none;font-weight:400}
+.info-in{max-width:520px}
+.info-in label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:#54595d;margin-bottom:8px}
+.info-in input,.info-in select,.info-in textarea,.cm-in input{border:1px solid #c8ccd1;border-radius:8px;padding:8px 10px;font:15px "Tiro Bangla",sans-serif;color:#202122;background:#fff;width:100%}
+.info-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.ch-in{max-width:420px}
+.ch-opts{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+.ch-opts .sbtn{min-height:42px;width:100%}
+.ch-opts .sbtn:hover{border-color:#3366cc;color:#3366cc}
+.cm-in{max-width:620px}
+.cm-in .row{display:flex;gap:6px;margin-bottom:10px}
+.cm-list{max-height:55vh;overflow:auto;margin-bottom:12px}
+.cm-item{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eaecf0}
+.cm-item audio{width:150px;height:32px}
+.cm-item b{display:block;font-size:13.5px;word-break:break-all}
+.cm-item small{color:#54595d;font-size:12px}
+.cm-item.got{background:#e6f4ef}.cm-item.bad{background:#fee7e6}
+.cm-bar{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.cm-bar label{display:flex;gap:6px;align-items:center;font-size:14px}
+
+/* ================= medium and phone: one pane at a time ================= */
+@media (max-width:1250px){
+  .st-right-col{grid-area:center}
+  body[data-col="center"] .st-right-col,body[data-col="right"] .st-center{display:none}
+  .tabs-c,.tabs-r{display:contents}
 }
-
-/* ===== phones: the menu is a strip on top (no “menu” tab) ===== */
+/* medium: menu | tabs over the pane */
+@media (min-width:861px) and (max-width:1250px){
+  .studio{grid-template-columns:var(--menu-w) minmax(0,1fr);grid-template-areas:"menu tabs" "menu center"}
+  .st-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln)}
+  .st-left{align-self:stretch}
+}
+/* phone: one column */
 @media (max-width:860px){
-  .st-mnav [data-mv="left"]{display:none!important}
-  .st-mnav{grid-template-columns:1fr 1fr!important}
-  .studio .st-left,body[data-mview] .studio .st-left{display:block!important;order:-1;background:none!important;border:0!important;padding:0!important;max-height:none;overflow:visible}
-  .ps-menu{flex-direction:row!important;flex-wrap:nowrap;overflow-x:auto;gap:2px!important;padding:2px 0 4px!important;scrollbar-width:none;align-items:center}
-  .ps-menu::-webkit-scrollbar{display:none}
+  .studio{grid-template-columns:minmax(0,1fr);grid-template-areas:"menu" "tabs" "center";padding:8px 10px 14px;gap:8px}
+  /* menu: one row — মেনু, ↶ ↷, mode pills; the full menu opens below as a list */
+  .st-left{background:none;border:0;padding:0;align-self:auto;max-height:none}
+  .ps-menu{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;padding:0}
   .ps-title,.ps-menu > .ps-sep{display:none}
-  .ps-menu > .ps-it{width:auto;flex:none;grid-template-columns:auto auto;padding:7px 10px;background:var(--pn);border:1px solid var(--sub);border-radius:999px;font-size:13.5px}
-  .ps-menu > .ps-it kbd,.ps-menu > .ps-it .ps-arr{display:none}
-  .ps-menu > .ps-it[data-path="0.0"] .ps-l,.ps-menu > .ps-it[data-path="0.1"] .ps-l{display:none} /* undo, redo: icon only */
-  .ps-menu > .ps-sw{width:auto;flex:none;grid-template-columns:auto auto auto;padding:6px 10px;background:var(--pn);border:1px solid var(--sub);border-radius:999px;font-size:13px}
-  .ps-menu > .ps-pills{flex:none;margin:0;min-width:190px}
-  .ps-sub.sheet{position:fixed;left:8px!important;right:8px;max-width:none;max-height:60vh;z-index:130}
-}
-/* no child may widen the page */
-.studio > *{min-width:0}
-@media (max-width:860px){.studio{grid-template-columns:minmax(0,1fr)!important}.studio .st-left,.ps-menu{max-width:100%;min-width:0}}
-
-@media (max-width:860px){.studio .st-left,body[data-mview] .studio .st-left{order:-3!important}.st-mnav{order:-2!important}}
-
-/* ===== phones: one row of five tabs; the column tabs are not needed ===== */
-@media (max-width:860px){
-  .st-mnav{display:flex!important;grid-template-columns:none!important;overflow-x:auto;scrollbar-width:none;gap:2px!important;flex-wrap:nowrap}
-  .st-mnav::-webkit-scrollbar{display:none}
-  .st-mnav [data-mt]{flex:none;padding:8px 12px!important;white-space:nowrap}
-  .st-mnav [data-mt][aria-current=true]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-  .studio .ct-tabs,.studio .rt-tabs{display:none!important}
-}
-/* 861–1250px: the same five tabs above the work area */
-@media (min-width:861px) and (max-width:1250px){
-  .st-mnav{display:flex!important;gap:2px!important;overflow-x:auto}
-  .st-mnav [data-mt]{flex:1;white-space:nowrap}
-  .st-mnav [data-mt][aria-current=true]{background:var(--pn);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-  .studio .ct-tabs,.studio .rt-tabs{display:none!important}
-}
-/* ===== phones, cleaner ===== */
-.st-mnav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.st-mnav .ms{display:none}
-.ps-toggle{display:none}
-@media (min-width:861px) and (max-width:1250px){ .st-mnav [data-mt]{display:inline-flex;align-items:center;justify-content:center;gap:6px} }
-@media (max-width:860px){
-  /* five tabs: icon over a short word, all visible */
-  .st-mnav{display:grid!important;grid-template-columns:repeat(5,1fr)!important;overflow:visible!important;padding:3px!important}
-  .st-mnav [data-mt]{display:flex!important;flex-direction:column;align-items:center;gap:2px;padding:6px 2px!important;font-size:12px!important;position:relative;min-width:0}
-  .st-mnav .ml{display:none}.st-mnav .ms{display:block;white-space:nowrap}
-  .st-mnav #mnav-q{position:absolute;top:2px;right:8px;background:var(--rec);color:#fff;font-size:10px;padding:0 5px;border-radius:999px}
-  .st-mnav #mnav-q:empty{display:none}
-  /* menu: one row — মেনু, ↶ ↷, switches, mode pills; the full menu opens below as a list */
-  .ps-menu{flex-wrap:wrap!important;overflow:visible!important;gap:6px!important}
-  .ps-toggle{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border:1px solid var(--ln);border-radius:999px;background:var(--pn);color:var(--tx);font:600 14px "Tiro Bangla",sans-serif;cursor:pointer}
-  .ps-toggle svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  .ps-toggle{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid var(--ln);border-radius:999px;background:var(--pn);color:var(--tx);font:600 14px "Tiro Bangla",sans-serif;cursor:pointer}
+  .ps-toggle svg{width:16px;height:16px;stroke-width:2}
   .ps-menu.open .ps-toggle{background:var(--ac);border-color:var(--ac);color:#fff}
-  .ps-menu > .ps-it:not([data-path="0.0"]):not([data-path="0.1"]),.ps-menu > .ps-sw{display:none!important}
-  .ps-menu > .ps-it[data-path="0.0"],.ps-menu > .ps-it[data-path="0.1"]{width:34px;height:34px;padding:0;grid-template-columns:1fr;justify-items:center}
-  .ps-menu > .ps-pills{margin-left:auto!important;min-width:0!important;flex:0 1 200px}
-  /* open: a full-width list */
-  .ps-menu.open{background:var(--pn);border:1px solid var(--sub);border-radius:14px;padding:8px!important}
-  .ps-menu.open > .ps-it:not([data-path="0.0"]):not([data-path="0.1"]),.ps-menu.open > .ps-sw{display:grid!important;flex:1 1 100%;width:100%;border:0!important;background:none!important;border-radius:8px!important;padding:10px 8px!important;font-size:15px!important}
-  .ps-menu.open > .ps-it .ps-arr{display:inline!important}
-  .ps-menu.open > .ps-sub.inline{flex:1 1 100%}
-  .ps-sub.inline{margin-left:24px}
-  /* edit toolbar: wraps into rows, nothing cut off */
-  .studio .st-toolbar{flex-wrap:wrap!important;overflow:visible!important;justify-content:flex-start;gap:2px!important;padding:4px!important}
-  .studio .st-toolbar .tg{flex:none;border-right:0!important;padding:0 2px!important;background:var(--pn2)!important;border-radius:8px}
-  .studio .st-toolbar .tg-r{margin-left:0}
-  .studio .ic-b{min-width:34px;height:34px}
-  .studio .ic-b.ic-t span{display:none}
-  .studio .ic-chk{font-size:12px}
+  .ps-menu > .ps-it,.ps-menu > .ps-sw{display:none}
+  .ps-menu > .ps-it[data-path="0.0"],.ps-menu > .ps-it[data-path="0.1"]{display:grid;width:34px;height:34px;padding:0;grid-template-columns:1fr;justify-items:center;border:1px solid var(--sub);border-radius:999px;background:var(--pn)}
+  .ps-menu > .ps-it[data-path="0.0"] > :not(.ps-ic),.ps-menu > .ps-it[data-path="0.1"] > :not(.ps-ic){display:none}
+  .ps-menu.open{background:var(--pn);border:1px solid var(--sub);border-radius:14px;padding:8px}
+  .ps-menu.open > .ps-it:not([data-path="0.0"]):not([data-path="0.1"]),.ps-menu.open > .ps-sw{display:grid;flex:1 1 100%;padding:10px 8px;font-size:15px}
+  .ps-menu.open > .ps-sub{flex:1 1 100%}
+  /* tabs: five equal cells, icon over a short word */
+  .st-tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:var(--sub);border-radius:12px;padding:3px}
+  .st-tabs button{flex-direction:column;gap:2px;padding:6px 2px;font-size:12px;border:0;margin:0;border-radius:9px;min-width:0}
+  .st-tabs button svg{width:18px;height:18px}
+  .st-tabs button[aria-selected=true]{background:var(--pn);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .t-long{display:none}.t-short{display:block}
+  .t-n,.t-warn{position:absolute;top:2px;right:6px}
+  .t-n{background:var(--rec);color:#fff;font-size:10px;padding:0 5px}
+  /* panes */
+  .pane-setup,.spk-grid{grid-template-columns:minmax(0,1fr)}
+  .w-list{columns:1}
+  .st-toolbar{gap:2px;padding:4px}
+  .st-toolbar .tg{border-right:0;padding:0 2px;background:var(--pn2);border-radius:8px}
+  .st-toolbar .tg-r{margin-left:0}
+  .ic-b{min-width:34px;height:34px}
+  .ic-b.ic-t span{display:none}
+  .st-wavewrap{height:180px}
+  .trk{grid-template-columns:24px 1fr 30px 30px 70px 30px}.trk-len{display:none}
+  .cm-item{grid-template-columns:auto 1fr}.cm-item audio{grid-column:1/-1;width:100%}
+  /* player: buttons spread edge to edge */
+  .st-tcenter{width:100%;justify-content:space-between}
 }
-@media (max-width:860px){.ps-menu > .ps-pills{flex:1 1 150px!important;max-width:200px}.ps-menu > .ps-pills .ps-pill{font-size:12px;padding:6px 2px}.ps-toggle{padding:0 12px}}
-
-@media (max-width:860px){.ps-menu.open > .ps-it:not([data-path="0.0"]):not([data-path="0.1"]){grid-template-columns:22px 1fr auto auto!important;justify-items:stretch;text-align:left}.ps-menu.open > .ps-sw{grid-template-columns:22px 1fr auto!important}.ps-menu.open > .ps-it .ps-l{text-align:left}}
-
-/* ===== time on the timeline; the bar keeps only the buttons ===== */
-.studio .st-stage .st-clock{position:absolute;top:32px;right:8px;z-index:5;min-width:0!important;padding:2px 8px!important;background:color-mix(in srgb,var(--pn) 88%,transparent);border:1px solid var(--sub);border-radius:8px;backdrop-filter:blur(2px);pointer-events:none}
-.studio .st-stage .st-clock span{font-size:15px!important;letter-spacing:0}
-.studio .st-stage .st-clock small{display:inline!important;font-size:11px}
-/* the word card shows the running time while recording, on every screen */
-.is-rec .studio .bt-live,.is-rec .bt-live{display:flex!important;visibility:visible!important;height:auto!important;align-items:center;gap:8px;justify-content:center;margin:2px 0 6px;font:600 13px "JetBrains Mono",monospace;color:var(--rec)}
-/* bottom bar on phones: buttons only, evenly spread, never cut */
-@media (max-width:860px){
-  .studio .st-player .st-tcenter{width:100%;justify-content:space-between!important;gap:0!important;overflow:visible}
-  .studio .st-player .st-meter{display:none!important}
-  .studio .st-player .tb{width:36px;height:36px}
-  .studio .st-player .tb-play,.studio .st-player .tb-rec{width:44px!important;height:44px!important}
-}
-@media (max-width:360px){ .studio .st-player #t-home{display:none} }/* input level: small, under the time on the timeline */
-.studio .st-stage .st-meter{position:absolute;top:62px;right:8px;z-index:5;display:flex!important;min-width:0!important;width:140px;gap:6px;padding:3px 8px;background:color-mix(in srgb,var(--pn) 88%,transparent);border:1px solid var(--sub);border-radius:8px;pointer-events:none}
-.studio .st-stage .st-meter small{width:auto;font-size:10.5px}
+@media (max-width:360px){ #t-home{display:none} }
