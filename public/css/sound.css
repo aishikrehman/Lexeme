@@ -30,6 +30,7 @@
 .st-center{grid-area:center;display:flex;flex-direction:column;gap:var(--gap)}
 .st-right-col{grid-area:right;display:flex;flex-direction:column;gap:var(--gap)}
 .pane{display:flex;flex-direction:column;gap:var(--gap);min-height:0;flex:1}
+.st-center .pane > *{flex-shrink:0} /* sections keep their size; the column scrolls instead of squeezing the timeline */
 /* wide and medium screens: the studio fills the window; each column scrolls inside */
 @media (min-width:861px){
   .sd-body{height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
@@ -238,7 +239,16 @@
 .wz-bar{display:flex;align-items:center;gap:10px}
 .wz-bar .ps-pills{display:block;background:none;padding:0}
 .wz-bar .ps-sw{grid-template-columns:auto auto;width:auto;gap:8px;padding:4px 8px;font-weight:600}
-.wz-clear{margin-left:auto}
+.wz-bar:has(#wz-modes[hidden]){display:none}
+.wz-clear{margin-left:auto;font-size:12.5px}
+/* timeline panel: toolbar, waveform and status joined, no gaps */
+.st-editor{display:flex;flex-direction:column;background:var(--pn);border:1px solid var(--sub);border-radius:var(--r);overflow:hidden}
+.st-editor > .st-toolbar{border:0;border-radius:0;border-bottom:1px solid var(--sub)}
+.st-editor > .st-stage{border:0;border-radius:0}
+.st-editor > .st-status{padding:4px 10px;border-top:1px solid var(--sub);align-items:center}
+.st-editor .wz-clear{margin-left:8px}
+.trk-acts{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.trk-acts .sbtn{min-height:26px;padding:0 9px;font-size:12.5px}
 .sd-body:not(.has-audio) .wz-clear{display:none}
 /* word card */
 .st-batch{background:var(--pn);border:1px solid var(--ac);border-radius:var(--r);padding:14px 16px;box-shadow:inset 4px 0 0 var(--ac)}
@@ -272,7 +282,9 @@
 .bt-acts .sbtn:not(#bt-go):hover:not(:disabled){background:var(--sub);color:var(--ac)}
 .bt-acts .hint{flex-basis:100%;text-align:center}
 /* tracks (only with 2+) */
-.st-tracks{display:flex;flex-direction:column;gap:3px}
+/* many tracks scroll inside a fixed frame, so the waveform above stays in view */
+.st-tracks{display:flex;flex-direction:column;gap:3px;max-height:clamp(150px,30vh,260px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;border:1px solid var(--sub);border-radius:var(--r);background:var(--pn2);padding:0 6px 6px}
+.st-tracks .trk-head{position:sticky;top:0;z-index:1;background:var(--pn2);padding:6px 0 4px}
 .trk-head{display:flex;align-items:center;justify-content:space-between}
 .trk-mix{font-size:12.5px;color:var(--mu);display:flex;align-items:center;gap:6px}
 .trk-clear{border:0;background:none;color:var(--rec);font:12.5px "Noto Serif Bengali",sans-serif;cursor:pointer;padding:2px 6px;border-radius:6px}
@@ -331,7 +343,7 @@
 .q-cloud{color:var(--ok)}
 
 /* ---------- simple view (no timeline) ---------- */
-.no-editor .st-toolbar,.no-editor .st-drawer,.no-editor .st-tracks{display:none!important}
+.no-editor .st-toolbar,.no-editor .st-drawer{display:none!important}
 /* without the timeline, word mode still shows a small preview of the waveform once there is audio */
 .no-editor.word-mode .c-ruler,.no-editor.word-mode .c-over,.no-editor.word-mode .st-meter{display:none}
 .no-editor.word-mode .st-wavewrap{height:110px}

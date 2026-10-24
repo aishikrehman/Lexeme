@@ -645,24 +645,33 @@ function stopRecCancel() { if (!recording) return; recording = false; $("#t-rec"
 
 /* ================= import ================= */
 // Several files: one after another on the active track, or each on its own track.
+const fileKey = f => `${f.name}|${f.size}|${f.lastModified}`;
 async function importFiles(files) {
   files = [...files].filter(f => /^audio\/|\.(wav|mp3|ogg|oga|opus|m4a|aac|flac|webm)$/i.test(f.type || f.name)); if (!files.length) return;
+  // the same file twice: once on the timeline (any track) or in the upload list is enough
+  const inUse = new Set([...TR.list.flatMap(t => t.src || []), ...Q.map(c => c.src).filter(Boolean)]), fresh = new Set();
+  const dup = files.filter(f => { const k = fileKey(f); if (inUse.has(k) || fresh.has(k)) return true; fresh.add(k); return false; });
+  files = files.filter(f => !dup.includes(f));
+  if (dup.length) msg(`${dup.map(f => `“${f.name}”`).join(", ")} আগেই আনা হয়েছে — ${files.length ? "বাকিগুলো আনা হচ্ছে" : "আবার আনা হলো না"}`);
+  if (!files.length) return;
   let sep = false;
   const where = files.length > 1 || N() ? await choose(`${toBn(files.length)}টি অডিও কোথায় যাবে?`, [["queue", "সরাসরি আপলোড তালিকায় — নাম পরে লিখব"], ["same", files.length > 1 ? "টাইমলাইনে, একই ট্র্যাকে পরপর" : "সক্রিয় ট্র্যাকের শেষে"], ["sep", files.length > 1 ? "টাইমলাইনে, প্রতিটি আলাদা ট্র্যাকে" : "নতুন ট্র্যাকে"]]) : "same";
   if (!where) return; sep = where === "sep";
   if (where === "queue") { // each file becomes one upload, named after the file until renamed
-    for (const f of files) { try { msg(`“${f.name}” পড়া হচ্ছে…`); await tick0(); const a = await decode(f); await window.StudioLibre.addClip({ word: f.name.replace(/\.[^.]+$/, ""), kind: $("#r-kindall").value || "word", dur: a.pcm.length / a.rate, blob: encodeWav(a.pcm, a.rate) }); } catch (e) { msg(`“${f.name}” পড়া যায়নি`); } }
-    msg(`✓ ${toBn(files.length)}টি অডিও আপলোড তালিকায় — ডানে নাম লিখুন (Enter চাপলে পরেরটিতে যায়)`); $("#q-list [data-f=word]")?.focus(); return;
+    for (const f of files) { try { msg(`“${f.name}” পড়া হচ্ছে…`); await tick0(); const a = await decode(f); await window.StudioLibre.addClip({ src: fileKey(f), word: f.name.replace(/\.[^.]+$/, ""), kind: $("#r-kindall").value || "word", dur: a.pcm.length / a.rate, blob: encodeWav(a.pcm, a.rate) }); } catch (e) { msg(`“${f.name}” পড়া যায়নি`); } }
+    msg(`✓ ${toBn(files.length)}টি অডিও আপলোড তালিকায়${dup.length ? ` (${toBn(dup.length)}টি আগেই ছিল)` : ""} — ডানে নাম লিখুন (Enter চাপলে পরেরটিতে যায়)`); $("#q-list [data-f=word]")?.focus(); return;
   }
   for (const f of files) {
     msg(`“${f.name}” পড়া হচ্ছে…`); await tick0();
     try {
       const a = await decode(f); if (!maxLen()) P.rate = Math.min(a.rate, 48000);
       const pcm = await resample(a.pcm, a.rate, P.rate), name = f.name.replace(/\.[^.]+$/, "");
-      if (sep && (N() || TR.list.length > 1 || f !== files[0])) addTrack(pcm, name, { name }); else commit(() => appendPart(pcm, { name }));
+      if (sep && (N() || TR.list.length > 1 || f !== files[0])) { addTrack(pcm, name, { name }); curTrack().src = [fileKey(f)]; saveProject(); }
+      else { commit(() => appendPart(pcm, { name })); const t = curTrack(); t.src = [...(t.src || []), fileKey(f)];
+        if (sep) { t.name = name; drawTracks(); } } // the first of several, into the empty first track: it takes the file's name too
     } catch (e) { msg(`“${f.name}” পড়া যায়নি: ${e.message}`); }
   }
-  zoomFit(); msg(`✓ ${toBn(files.length)}টি অডিও যোগ হলো`);
+  zoomFit(); msg(`✓ ${toBn(files.length)}টি অডিও যোগ হলো` + (dup.length ? ` (${toBn(dup.length)}টি আগেই ছিল, আবার আনা হয়নি)` : ""));
 }
 // A small question with buttons; resolves to the chosen value (or null).
 function choose(title, options) {
@@ -1279,7 +1288,7 @@ $("#e-commons").onclick = commonsDialog;
 function drawTracks() {
   const el = $("#tracks"); if (!el) return; storeCur();
   el.hidden = TR.list.length < 2; // one track needs no track list
-  el.innerHTML = `<div class="trk-head"><label class="trk-mix" title="বন্ধ থাকলে শুধু সক্রিয় ট্র্যাক বাজে"><input type="checkbox" id="trk-mixplay"${load("lx_snd_mixplay", false) ? " checked" : ""}> সব ট্র্যাক একসঙ্গে শুনুন</label><button type="button" class="trk-clear" id="trk-clear" title="সব অডিও ট্র্যাক মুছুন">সব ট্র্যাক মুছুন ✕</button></div>` + TR.list.map((t, i) => `<div class="trk${i === TR.cur ? " on" : ""}${t.mute ? " muted" : ""}" data-i="${i}">
+  el.innerHTML = `<div class="trk-head"><label class="trk-mix" title="বন্ধ থাকলে শুধু সক্রিয় ট্র্যাক বাজে"><input type="checkbox" id="trk-mixplay"${load("lx_snd_mixplay", false) ? " checked" : ""}> সব ট্র্যাক একসঙ্গে শুনুন</label><span class="trk-acts"><button type="button" class="sbtn" data-ta="queue" title="প্রতিটি ট্র্যাক একটি করে ফাইল হয়ে আপলোড তালিকায় যাবে, ট্র্যাকের নামে">⇪ সব আপলোড তালিকায়</button><button type="button" class="sbtn" data-ta="concat" title="ট্র্যাকগুলো একটার পর একটা জুড়ে নতুন ট্র্যাক">⇥ পরপর জোড়া</button><button type="button" class="sbtn" data-ta="mix" title="শোনা-যায় এমন সব ট্র্যাক একসঙ্গে মিশিয়ে নতুন ট্র্যাক">⊕ মিশিয়ে এক</button><button type="button" class="trk-clear" id="trk-clear" title="সব অডিও ট্র্যাক মুছুন">সব মুছুন ✕</button></span></div>` + TR.list.map((t, i) => `<div class="trk${i === TR.cur ? " on" : ""}${t.mute ? " muted" : ""}" data-i="${i}">
       <button type="button" class="trk-pick" title="এই ট্র্যাক সম্পাদনা করুন">${i === TR.cur ? "●" : "○"}</button>
       <input class="trk-name" value="${esc(t.name)}" title="নাম বদলান">
       <span class="trk-len">${t.pcm.length ? fmtS(t.pcm.length / P.rate) : "খালি"}</span>
@@ -1293,6 +1302,7 @@ function drawTracks() {
 }
 $("#tracks").addEventListener("click", e => {
   if (e.target.id === "trk-clear") { $("#e-clear").click(); return; }
+  const ta = e.target.closest("[data-ta]")?.dataset.ta; if (ta) { trackAction(ta); return; }
   const row = e.target.closest(".trk"); if (!row) return; const i = +row.dataset.i, t = TR.list[i], a = e.target.closest("[data-a]")?.dataset.a;
   if (a === "mute") t.mute = !t.mute;
   else if (a === "solo") t.solo = !t.solo;
@@ -1306,9 +1316,34 @@ $("#tracks").addEventListener("click", e => {
   drawTracks(); saveProject();
 });
 $("#tracks").addEventListener("change", e => { if (e.target.id === "trk-mixplay") { store("lx_snd_mixplay", e.target.checked); return; } const row = e.target.closest(".trk"); if (!row) return; const t = TR.list[+row.dataset.i];
-  if (e.target.matches(".trk-name")) t.name = e.target.value.trim() || t.name;
+  if (e.target.matches(".trk-name")) { // parts that carried the old track name follow the new one
+    const old = t.name, nu = e.target.value.trim() || old; t.name = nu;
+    if (nu !== old) { t.regions.forEach(r => { if (!r.name || r.name === old) r.name = nu; }); drawRegions(); } }
   if (e.target.matches(".trk-vol")) t.gain = +e.target.value / 100;
   drawTracks(); saveProject(); status(); });
+
+// Whole tracks: each to the upload list as one file, joined one after another, or mixed into one.
+async function trackAction(a) {
+  storeCur(); const full = TR.list.filter(t => t.pcm.length);
+  if (!full.length) { msg("ট্র্যাকগুলো খালি"); return; }
+  if (a === "mix") { $("#mx-bounce").click(); return; }
+  if (a === "concat") {
+    const gap = Math.round(P.rate * 0.3), len = full.reduce((s, t) => s + t.pcm.length, 0) + gap * (full.length - 1), o = new Float32Array(len), regs = [];
+    let at = 0; full.forEach(t => { o.set(t.pcm, at); regs.push([at, at + t.pcm.length, t.name]); at += t.pcm.length + gap; });
+    addTrack(o, "জোড়া"); P.regions = curTrack().regions = regs.map(([a, b, name]) => newRegion(a, b, { name })); normalize(); drawRegions(); drawAll(); saveProject();
+    msg(`✓ ${toBn(full.length)}টি ট্র্যাক পরপর জুড়ে নতুন ট্র্যাক হলো — প্রতিটি আলাদা অংশ`); return;
+  }
+  if (a === "queue") {
+    let n = 0;
+    for (const t of full) {
+      if (t.clipId && Q.some(c => c.id === t.clipId && c.status !== "error")) continue; // already sent and still there
+      const c = await window.StudioLibre.addClip({ word: t.name, kind: $("#r-kindall").value || "word", dur: t.pcm.length / P.rate, blob: encodeWav(t.pcm, P.rate) });
+      t.clipId = c.id; n++;
+    }
+    saveProject(); setTab("queue");
+    msg(n ? `✓ ${toBn(n)}টি ট্র্যাক আপলোড তালিকায় — ট্র্যাকের নামে` : "সব ট্র্যাক আগেই আপলোড তালিকায় আছে");
+  }
+}
 
 /* ================= mix tracks ================= */
 $("#mx-track").onclick = () => {

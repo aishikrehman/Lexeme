@@ -123,6 +123,23 @@
     </section>
     </div>
     <div class="pane" data-pane="wizard">
+    <!-- word-list recording -->
+    <div class="wz-bar"><div class="ps-pills" id="wz-modes" role="group" aria-label="রেকর্ডের ধরন"></div></div>
+    <section class="st-batch" id="batch" hidden>
+      <div class="bt-prog"><span id="bt-pos">০ / ০</span><div class="bar"><i id="bt-bar"></i></div><span id="bt-done"></span></div>
+      <div class="bt-live"><span id="bt-clock">00:00</span><div class="bt-mt"><i id="bt-meter"></i></div></div>
+      <div class="bt-main">
+        <button type="button" class="sbtn" id="bt-prev" title="আগের শব্দ">◀</button>
+        <div class="bt-word"><small>এখন বলুন</small><b id="bt-word">—</b><span id="bt-gloss"></span></div>
+        <button type="button" class="sbtn" id="bt-next" title="পরের শব্দ">▶</button>
+      </div>
+      <div class="bt-next" id="bt-upcoming"></div>
+      <div class="bt-acts"><button type="button" class="sbtn pri" id="bt-go">● রেকর্ড</button><button type="button" class="sbtn" id="bt-play">▶ শুনুন</button><button type="button" class="sbtn" id="bt-redo">↺ আবার</button><button type="button" class="sbtn" id="bt-export">⇪ আপলোড তালিকায়</button>
+        <small class="hint" id="bt-hint"></small></div>
+    </section>
+
+    <!-- timeline: toolbar, waveform and status as one panel -->
+    <div class="st-editor">
     <div class="st-toolbar" role="toolbar" aria-label="সম্পাদনা">
       <div class="tg">
         <button type="button" class="ic-b" id="e-cut" data-sel title="কাটুন (Ctrl+X)"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg></button>
@@ -166,7 +183,15 @@
         <button type="button" class="ic-b" id="z-in" title="বড় (+)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6M11 8v6"/></svg></button>
       </div>
     </div>
-
+    <div class="st-stage" id="stage">
+      <canvas id="c-ruler" class="c-ruler"></canvas>
+      <div class="st-wavewrap"><canvas id="c-wave" class="c-wave"></canvas>
+        <div class="st-drop" id="drop"><div><b>রেকর্ড করুন</b> (R) — বা অডিও ফাইল এখানে টেনে আনুন<br><label class="sbtn pri">ফাইল বাছুন<input type="file" id="f-file" accept="audio/*" multiple hidden></label></div></div>
+      </div>
+      <canvas id="c-over" class="c-over" title="পুরো রেকর্ড — টেনে দেখার জায়গা বদলান"></canvas>
+    </div>
+    <div class="st-status"><span id="s-sel">—</span><span id="s-info"></span><span class="st-msg" id="s-msg"></span><button type="button" class="link-b red wz-clear" id="wz-clear" title="টাইমলাইনের সব অডিও মুছুন (শব্দ-তালিকা থাকবে)">✕ সব মুছুন</button></div>
+    </div>
     <!-- effects -->
     <section class="st-drawer" id="pane-fx" hidden>
       <div class="dr-head"><b>ইফেক্ট</b><select id="fx-preset"><option value="">প্রিসেট…</option><option value="voice">কণ্ঠ পরিষ্কার</option><option value="field">মাঠ-রেকর্ড (বেশি নয়েজ)</option><option value="song">গান</option><option value="phone">ফোনের রেকর্ড</option><option value="flat">শূন্য</option></select>
@@ -210,31 +235,7 @@
           <div class="row"><button type="button" class="sbtn" id="sp-band" title="মোনো: ১২০ Hz–৪ kHz রাখুন">কণ্ঠ-ব্যান্ড রাখুন</button><button type="button" class="sbtn" id="sp-noband" title="মোনো: কণ্ঠের মাঝের সুর কমান">কণ্ঠ-ব্যান্ড কমান</button></div></div>
       </div>
     </section>
-
-    <!-- word-list recording -->
-    <div class="wz-bar"><div class="ps-pills" id="wz-modes" role="group" aria-label="রেকর্ডের ধরন"></div><button type="button" class="link-b red wz-clear" id="wz-clear" title="টাইমলাইনের সব অডিও মুছুন (শব্দ-তালিকা থাকবে)">✕ সব অডিও মুছুন</button></div>
-    <section class="st-batch" id="batch" hidden>
-      <div class="bt-prog"><span id="bt-pos">০ / ০</span><div class="bar"><i id="bt-bar"></i></div><span id="bt-done"></span></div>
-      <div class="bt-live"><span id="bt-clock">00:00</span><div class="bt-mt"><i id="bt-meter"></i></div></div>
-      <div class="bt-main">
-        <button type="button" class="sbtn" id="bt-prev" title="আগের শব্দ">◀</button>
-        <div class="bt-word"><small>এখন বলুন</small><b id="bt-word">—</b><span id="bt-gloss"></span></div>
-        <button type="button" class="sbtn" id="bt-next" title="পরের শব্দ">▶</button>
-      </div>
-      <div class="bt-next" id="bt-upcoming"></div>
-      <div class="bt-acts"><button type="button" class="sbtn pri" id="bt-go">● রেকর্ড</button><button type="button" class="sbtn" id="bt-play">▶ শুনুন</button><button type="button" class="sbtn" id="bt-redo">↺ আবার</button><button type="button" class="sbtn" id="bt-export">⇪ আপলোড তালিকায়</button>
-        <small class="hint" id="bt-hint"></small></div>
-    </section>
-
     <div class="st-tracks" id="tracks" hidden></div>
-    <div class="st-stage" id="stage">
-      <canvas id="c-ruler" class="c-ruler"></canvas>
-      <div class="st-wavewrap"><canvas id="c-wave" class="c-wave"></canvas>
-        <div class="st-drop" id="drop"><div><b>রেকর্ড করুন</b> (R) — বা অডিও ফাইল এখানে টেনে আনুন<br><label class="sbtn pri">ফাইল বাছুন<input type="file" id="f-file" accept="audio/*" multiple hidden></label></div></div>
-      </div>
-      <canvas id="c-over" class="c-over" title="পুরো রেকর্ড — টেনে দেখার জায়গা বদলান"></canvas>
-    </div>
-    <div class="st-status"><span id="s-sel">—</span><span id="s-info"></span><span class="st-msg" id="s-msg"></span></div>
     </div>
   </section>
 
