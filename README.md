@@ -60,7 +60,8 @@ go through `/proxy/*`, where the server signs each call; plain reads are sent an
 ## লিব্রে স্টুডিও storage
 
 Logged-in users' speakers, settings, word lists and upload history (details only — audio never leaves the
-browser) are kept in one SQLite file, `data/lexeme.db` (or `STORE_DIR/lexeme.db`), via Node's built-in `node:sqlite`
+browser) are kept in one SQLite file, `lexeme.db`, via Node's built-in `node:sqlite`
 (Node 22.13 or newer; no packages).
-Set `STORE_DIR` to a folder outside the code so updates never touch it. Hosting on Namecheap: see
+It lives in a `lexeme-data` folder next to the code folder (or `STORE_DIR`), with the login sessions and a daily backup
+(`backups/`, last 14 kept), so code updates never touch it. Hosting on Namecheap: see
 [docs/NAMECHEAP.md](docs/NAMECHEAP.md).

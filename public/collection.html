@@ -25,11 +25,14 @@ const page = +params().page || 1;
 const T = { idiom: ["বাগধারা", "Idioms", "যে শব্দগুচ্ছের অর্থ আক্ষরিক অর্থ থেকে আলাদা।"], proverb: ["প্রবাদ-প্রবচন", "Proverbs", "লোকমুখে প্রচলিত জ্ঞানগর্ভ উক্তি।"] }[cat];
 $("#title").innerHTML = T[0]; $("#lead").textContent = T[2]; document.title = `${T[0]} · লেক্সিম.বাংলা`;
 $("#add").href = `wizard.html?cat=${cat}`;
+mountExport($("#count").parentElement);
 configReady.then(async () => {
   $("#out").innerHTML = skeleton(9);
   try {
     const j = await getJSON(`/api/collection?${qs({ lang: getLang(), cat, page, size: 60 })}`);
-    $("#count").textContent = `${toBn(j.total)}টি`;
+    $("#count").textContent = `মোট ${toBn(j.total)}টি`;
+    // export: this page, or all of them
+    setExport(T[0], j.list.map(s => expRowLex(s, {})), j.pages > 1 ? async progress => { const all = []; for (let p = 1, n = 1; p <= n && p <= 40; p++) { progress(`পাতা ${toBn(p)} / ${toBn(n)}…`); const k = await getJSON(`/api/collection?${qs({ lang: getLang(), cat, page: p, size: 200 })}`); n = k.pages; all.push(...k.list.map(s => expRowLex(s, {}))); } return all; } : null);
     const draw = f => { $("#out").innerHTML = j.list.map((s, k) => [s, (j.page - 1) * 60 + k + 1]).filter(([s]) => !f || (s.lemma + s.gloss).includes(f)).map(([s, n]) => rowItem(s, {}, n)).join("") || `<div class="msg">কিছু পাওয়া যায়নি।</div>`; };
     draw(""); $("#filter").addEventListener("input", e => draw(e.target.value.trim()));
     $("#pager").innerHTML = pager(j.page, j.pages, n => colUrl(cat) + (n > 1 ? (colUrl(cat).includes("?") ? "&" : "?") + "page=" + n : ""));

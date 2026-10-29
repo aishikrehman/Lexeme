@@ -57,13 +57,6 @@ dialog{border-radius:14px}
 .found{margin:8px 0 2px}
 .tabs{margin-top:8px}
 
-/* always-visible save bar (single-word wizard) */
-.savebar{position:sticky;bottom:0;z-index:40;display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0 0;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px 12px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.08)}
-.savebar .btn{font-size:17px;padding:10px 22px;background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
-.savebar .btn:disabled{background:var(--sunken);border-color:var(--line);color:var(--muted);opacity:1}
-.savebar .why{font-size:14px;color:var(--muted)}
-.savebar .why.ready{color:var(--ok)}
-body.is-bulk .savebar{display:none}
 /* ---------- phones: wizard and bulk ---------- */
 @media (max-width:980px){ aside .card{position:static} }
 @media (max-width:640px){
@@ -83,9 +76,6 @@ body.is-bulk .savebar{display:none}
   .row>.f{flex-basis:100%}
   .hit{padding:9px 11px}
   .hit .acts{margin-left:0;flex-wrap:wrap;width:100%}
-  .savebar{gap:6px;padding:8px 10px;margin-left:-4px;margin-right:-4px}
-  .savebar .btn{flex:1 1 100%;font-size:16px;padding:10px 12px;justify-content:center}
-  .savebar .why{font-size:13px}
   dialog{width:calc(100% - 20px);max-width:none;margin:10px auto;padding:14px}
   .foot .wrap{flex-direction:column;gap:6px}
   /* bulk page */
@@ -134,13 +124,6 @@ body:not(.is-bulk) .brand .bname::after{content:"নতুন বা হাল�
 .wikt-ref-body{margin-top:6px}
 
 /* the floating bar is the only save button; the review tab keeps summary, log and options */
-#p-review #submit,#p-review #submit-why{display:none!important}
-.savebar{padding:6px 10px!important;gap:10px!important;border-radius:10px 10px 0 0!important;min-height:0}
-.savebar .btn{font-size:15px!important;padding:6px 16px!important;border-radius:8px}
-.savebar .why{font-size:13px!important}
-.savebar .saved{font-size:13.5px;color:var(--ok);margin-left:auto;white-space:nowrap}
-.savebar .saved a{color:var(--primary);font-weight:600}
-@media (max-width:640px){.savebar .btn{flex:0 0 auto!important;font-size:14.5px!important}.savebar .saved{margin-left:0}}
 /* [শব্দ][শব্দশ্রেণি] in one row; [ডাটা][অভিধান] খুঁজুন */
 .lemma-row{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:14px;align-items:end}
 .lemma-row .lemma-cat{margin:0}

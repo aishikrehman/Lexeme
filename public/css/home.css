@@ -1,67 +1,80 @@
-/* Homepage: hero band, main column + side column, featured proverb, quiz. Uses the site's colour tokens. */
-.h-hero{background:none;padding:40px 0 26px;text-align:center}
-.h-hero h1{font-size:clamp(38px,6vw,60px);margin:0;line-height:1.15}
+/* Homepage: gradient hero with the search, a strip of numbers, then a grid of cards. Uses the site tokens. */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.h-hero{background:var(--hero);padding:56px 0 34px;text-align:center;border-bottom:1px solid var(--line)}
+.h-logo{height:64px;width:auto;margin:0 auto 10px}
+.h-hero h1{font-size:clamp(40px,6.5vw,66px);margin:0;line-height:1.1;letter-spacing:-.02em}
 .h-hero h1 b{color:var(--accent)}
-.h-tag{color:var(--muted);margin:8px auto 20px;max-width:640px}
-.h-hero .bigsearch input{box-shadow:0 6px 24px rgba(0,0,0,.06)}
-.h-adv{margin:10px 0 0;font-size:14px;color:var(--muted)}
-.h-hero .langpick{margin-top:14px}
-#home-results{max-width:760px;margin:14px auto 0;text-align:left}
+.h-tag{color:var(--muted);margin:10px auto 26px;max-width:620px;font-size:17.5px}
+#home-results{max-width:760px;margin:16px auto 0;text-align:left}
 #home-results:empty{display:none}
+.h-hero .letters{margin-top:24px;max-width:900px;margin-left:auto;margin-right:auto}
 
-.h-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;padding:8px 0 50px}
-.h-main>section:first-child h2.sec{margin-top:22px}
-.h-side{display:flex;flex-direction:column;gap:14px;padding-top:22px}
-.h-side .card h2{font-size:16px;margin:0 0 10px}
-.h-side .card p{font-size:14.5px;margin:0 0 10px}
+/* the numbers */
+.h-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:-1px 0 0;transform:translateY(-22px)}
+.h-stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px;box-shadow:var(--shadow)}
+.h-stat b{display:block;font-size:28px;line-height:1.2;letter-spacing:-.01em;color:var(--primary)}
+.h-stat span{font-size:13.5px;color:var(--muted)}
 
-/* contribute */
-.h-contrib{border-top:4px solid var(--ok)}
-.h-act{display:flex;gap:12px;align-items:center;padding:10px;margin:0 -6px;border-radius:10px;text-decoration:none;color:var(--ink)}
-.h-act:hover{background:var(--sunken)}
-.h-act b{display:block;font-size:15.5px}
-.h-act small{display:block;color:var(--muted);font-size:13px}
-.h-ic{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--ok-soft);color:var(--ok);font-size:18px;font-weight:700}
+/* bento grid: word of the day (wide), proverb, quiz, contribute */
+.h-bento{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:2px}
+.h-wotd{grid-column:span 2;position:relative;background-image:var(--hero)}
+.h-wotd-in{display:contents}
+.h-quiz{grid-column:span 2}
+.h-date{position:absolute;right:22px;top:18px;font-size:13px}
+.h-k{font-size:13px;font-weight:600;color:var(--muted);text-transform:none;margin:0 0 10px;display:flex;align-items:center;gap:6px}
+.wotd .lemma{font-size:clamp(44px,7vw,72px)}
 
-/* stats */
-.h-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.h-stat{background:var(--sunken);border-radius:10px;padding:10px 12px}
-.h-stat b{display:block;font-size:22px;line-height:1.2}
-.h-stat span{font-size:13px;color:var(--muted)}
-
-.h-letters{justify-content:flex-start;margin:0;gap:4px}
-.h-letters a{min-width:30px;padding:2px 4px;font-size:16px}
-.h-about p{color:var(--muted)}
-
-/* featured proverb */
-.h-quote{margin:0;position:relative;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:12px;padding:22px 24px 14px 58px}
-.h-quote::before{content:"“";position:absolute;left:16px;top:-4px;font:700 72px/1 Georgia,serif;color:var(--accent);opacity:.55}
-.h-quote blockquote{margin:0;font-size:clamp(21px,2.6vw,27px);font-weight:700;line-height:1.45}
+/* proverb */
+.h-quote-wrap{display:flex;flex-direction:column}
+.h-quote{flex:1;margin:0;position:relative;background:linear-gradient(135deg,var(--accent-soft),var(--surface) 70%);border:1px solid var(--line);border-radius:var(--radius);padding:24px 24px 16px 60px;box-shadow:var(--shadow)}
+.h-quote::before{content:"“";position:absolute;left:16px;top:2px;font:700 76px/1 Georgia,serif;color:var(--accent);opacity:.6}
+.h-quote blockquote{margin:0;font-size:clamp(21px,2.4vw,26px);font-weight:700;line-height:1.45}
 .h-quote blockquote a{color:var(--ink);text-decoration:none}
 .h-quote blockquote a:hover{color:var(--primary)}
 .h-quote figcaption{margin-top:8px;color:var(--muted);font-size:15.5px}
-.h-quote-acts{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px}
+.h-quote-acts{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px}
 
 /* quiz */
-.h-quiz{border-top:4px solid var(--primary)}
 .h-q-def{font-size:19px;margin:0 0 6px}
-.h-q-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.h-q-opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 12px;font:600 16px "Noto Serif Bengali",serif;cursor:pointer;text-align:center}
-.h-q-opt:hover:not(:disabled){border-color:var(--primary);background:var(--chip)}
+.h-q-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.h-q-opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 14px;font:600 16px "Noto Serif Bengali",serif;cursor:pointer;text-align:left;transition:all .12s}
+.h-q-opt:hover:not(:disabled){border-color:var(--primary);background:var(--chip);transform:translateX(2px)}
 .h-q-opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
 .h-q-opt.wrong{border-color:var(--err);background:var(--err-soft);color:var(--err)}
 .h-q-opt:disabled{cursor:default}
-.h-q-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;min-height:32px;font-size:14.5px}
+.h-q-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;min-height:32px;font-size:14.5px;flex-wrap:wrap}
 
-.h-main .cards{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+/* contribute */
+.h-contrib{display:flex;flex-direction:column;gap:4px}
+.h-act{display:flex;gap:12px;align-items:center;padding:10px;margin:0 -8px;border-radius:12px;text-decoration:none;color:var(--ink);transition:background .12s}
+.h-act:hover{background:var(--sunken)}
+.h-act b{display:block;font-size:15.5px}
+.h-act small{display:block;color:var(--muted);font-size:13px}
+.h-ic{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;font-size:18px;font-weight:700}
 
-@media (max-width:920px){
-  .h-layout{grid-template-columns:minmax(0,1fr)}
-  .h-side{padding-top:0}
+.h-cats a{font-size:15.5px;padding:6px 16px}
+
+@media (max-width:980px){
+  .h-bento{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .h-wotd{grid-column:1/-1}.h-quiz{grid-column:auto}
 }
 @media (max-width:640px){
-  .h-hero{padding:26px 0 18px}
-  .h-quote{padding:18px 16px 12px 44px}
-  .h-quote::before{font-size:56px;left:10px}
-  .h-q-opts{grid-template-columns:1fr}
+  .h-hero{padding:34px 0 26px}
+  .h-logo{height:48px}
+  .h-tag{font-size:15.5px;margin-bottom:18px}
+  .h-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;transform:translateY(-16px)}
+  .h-stat b{font-size:22px}
+  .h-bento{grid-template-columns:1fr}.h-quiz{grid-column:auto}
+  .h-date{position:static;display:block;margin-top:8px}
+  .h-quote{padding:20px 16px 12px 46px}
+  .h-quote::before{font-size:58px;left:10px}
 }
+
+/* proverbs: quote cards */
+.pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.pcard{position:relative;display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px 16px 52px;text-decoration:none;color:var(--ink);box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s,border-color .15s}
+.pcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-h);border-color:color-mix(in srgb,var(--ok) 35%,var(--line))}
+.pcard .pq{position:absolute;left:14px;top:4px;font:700 50px/1 Georgia,serif;color:var(--ok);opacity:.55}
+.pcard b{font-size:18.5px;line-height:1.5}
+.pcard .pm{color:var(--muted);font-size:14.5px;line-height:1.55}
+@media (max-width:640px){.pcards{grid-template-columns:1fr}}

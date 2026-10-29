@@ -23,7 +23,7 @@ const REG_COLORS = ["#4f8cff", "#2fbf71", "#f5a524", "#c56cf0", "#ff6b81", "#18c
 
 const store = (k, v) => { try { v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} if (PREF_KEYS.includes(k.slice(7))) try { pushPrefs(); } catch (e) {} }; // (before the sync code has loaded: nothing to push yet)
 // speakers and settings that follow a logged-in user to other devices (kept in the server database)
-const PREF_KEYS = ["speakers", "spcur", "pj", "mixplay", "wm", "auto", "autoq", "fx", "kindall", "editor"];
+const PREF_KEYS = ["speakers", "spcur", "pj", "mixplay", "wm", "auto", "autoq", "fx", "kindall", "editor", "noplayer", "menumini"];
 const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
 const langOf = name => SD_LANGS.find(l => l[2] === name) || SD_LANGS[0];
 const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -55,7 +55,16 @@ function fillSpeaker() {
   Object.entries(SP_FIELDS).forEach(([k, s]) => { const el = $(s); el.value = SP[k] ?? ""; if (el.tagName === "SELECT" && el.selectedIndex < 0) el.selectedIndex = 0; });
   $("#sp-consent").checked = !!SP.consent; $("#sp-other-l").hidden = langOf($("#sp-lang").value)[3] !== "other";
 }
-function saveSpeakers() { store("lx_snd_speakers", SPK); store("lx_snd_spcur", SP.id); drawPick(); }
+function saveSpeakers() { store("lx_snd_speakers", SPK); store("lx_snd_spcur", SP.id); drawPick(); drawShare(); try { pushSpeakers(); } catch (e) {} } // (before the sync code has loaded: nothing to send yet)
+// Logged in: each speaker has an id and a join code on the server, so other accounts can record as them too.
+let SPK_META = {};
+function drawShare() {
+  const el = $("#sp-share"); if (!el) return; const m = SPK_META[SP.id];
+  el.innerHTML = !window.LX_NODE ? "" : !window.LX_USER ? "লগ ইন করলে বক্তার তথ্য সার্ভারে থাকবে, আর একটি আইডি পাবেন — অন্য অ্যাকাউন্ট থেকেও একই বক্তা হিসেবে রেকর্ড করা যাবে।"
+    : !m ? "সংরক্ষণ করলে এই বক্তার আইডি তৈরি হবে।"
+    : m.mine ? `বক্তার আইডি <b class="mono">${esc(SP.id)}</b> · যুক্ত-কোড <b class="mono">${esc(m.code || "")}</b> — অন্য অ্যাকাউন্ট থেকে এই বক্তা ব্যবহার করতে দুটোই দিন <a href="/settings#speakers">আমার সেটিংসে</a>।`
+    : `${esc(m.owner)}-এর বক্তা, আপনার অ্যাকাউন্টে যুক্ত। <a href="/settings#speakers">বক্তা সামলান</a>`;
+}
 function drawPick() {
   $("#sp-pick").innerHTML = SPK.map(s => `<option value="${s.id}"${s.id === SP.id ? " selected" : ""}>${esc(s.name)}${s.district ? " — " + esc(s.district) : ""}</option>`).join("")
     + (SPK.some(s => s.id === SP.id) ? "" : `<option value="" selected>— নতুন বক্তা —</option>`);
@@ -70,8 +79,8 @@ function readSpeaker() {
 $("#spk-chips").addEventListener("click", e => { const b = e.target.closest("[data-sid]"); if (!b) return; $("#sp-pick").value = b.dataset.sid; $("#sp-pick").dispatchEvent(new Event("change")); });
 $("#sp-pick").onchange = e => { const s = SPK.find(x => x.id === e.target.value); if (!s) return; SP = s; fillSpeaker(); saveSpeakers(); drawSpeaker(); };
 $("#sp-new").onclick = () => { SP = { id: uid(), lang: SP.lang, district: SP.district, license: SP.license }; fillSpeaker(); drawPick(); drawSpeaker(); $("#sp-form").hidden = false; $("#sp-name").focus(); };
-$("#sp-del").onclick = () => { if (!SPK.some(s => s.id === SP.id) || !confirm(`বক্তা “${SP.name}” মুছবেন?`)) return; SPK = SPK.filter(s => s.id !== SP.id); SP = SPK[0] || { id: uid() }; fillSpeaker(); saveSpeakers(); drawSpeaker(); };
-fillSpeaker(); drawPick();
+$("#sp-del").onclick = () => { if (!SPK.some(s => s.id === SP.id) || !confirm(`বক্তা “${SP.name}” এই তালিকা থেকে সরাবেন?`)) return; store("lx_snd_spkhidden", [...load("lx_snd_spkhidden", []), SP.id]); SPK = SPK.filter(s => s.id !== SP.id); SP = SPK[0] || { id: uid() }; fillSpeaker(); saveSpeakers(); drawSpeaker(); };
+fillSpeaker(); drawPick(); drawShare();
 /* project name and extra Commons wikitext (templates, categories) for every upload */
 let PJ = load("lx_snd_pj", { name: "", extra: "" });
 $("#pj-name").value = PJ.name || ""; $("#pj-extra").value = PJ.extra || "";
@@ -325,7 +334,9 @@ async function decodeRaw(blob) {
 async function decode(blob) {
   const buf = await decodeRaw(blob), n = buf.length, ch = buf.numberOfChannels, mono = new Float32Array(n);
   for (let k = 0; k < ch; k++) { const d = buf.getChannelData(k); for (let i = 0; i < n; i++) mono[i] += d[i] / ch; }
-  return { pcm: mono, rate: buf.sampleRate };
+  let side = null; // stereo files: (L − R) / 2, kept beside the track for voice/music separation
+  if (ch >= 2) { const L = buf.getChannelData(0), R = buf.getChannelData(1); side = new Float32Array(n); for (let i = 0; i < n; i++) side[i] = (L[i] - R[i]) / 2; }
+  return { pcm: mono, side, rate: buf.sampleRate };
 }
 async function resample(pcm, from, to) {
   if (from === to || !pcm.length) return pcm;
@@ -666,8 +677,9 @@ async function importFiles(files) {
     try {
       const a = await decode(f); if (!maxLen()) P.rate = Math.min(a.rate, 48000);
       const pcm = await resample(a.pcm, a.rate, P.rate), name = f.name.replace(/\.[^.]+$/, "");
-      if (sep && (N() || TR.list.length > 1 || f !== files[0])) { addTrack(pcm, name, { name }); curTrack().src = [fileKey(f)]; saveProject(); }
-      else { commit(() => appendPart(pcm, { name })); const t = curTrack(); t.src = [...(t.src || []), fileKey(f)];
+      const side = a.side ? await resample(a.side, a.rate, P.rate) : null;
+      if (sep && (N() || TR.list.length > 1 || f !== files[0])) { addTrack(pcm, name, { name }); Object.assign(curTrack(), { src: [fileKey(f)], side }); saveProject(); }
+      else { const was = N(); commit(() => appendPart(pcm, { name })); const t = curTrack(); t.src = [...(t.src || []), fileKey(f)]; if (!was) { t.side = side; if (/^ট্র্যাক [০-৯]+$/.test(t.name)) { t.name = name; drawTracks(); } } // an empty, unnamed track takes the file's name
         if (sep) { t.name = name; drawTracks(); } } // the first of several, into the empty first track: it takes the file's name too
     } catch (e) { msg(`“${f.name}” পড়া যায়নি: ${e.message}`); }
   }
@@ -847,6 +859,44 @@ function spectrum(pcm) { // average magnitude per bin (NN = 2048)
   for (let f = 0; f * Hp + NN <= pcm.length; f++, n++) { re.fill(0); im.fill(0); for (let i = 0; i < NN; i++) re[i] = pcm[f * Hp + i] * win[i]; fft(re, im); for (let k = 0; k <= NN / 2; k++) prof[k] += Math.hypot(re[k], im[k]); }
   if (n) prof.forEach((v, k) => { prof[k] = v / n; }); return n ? prof : null;
 }
+// Without a chosen noise sample: the noise floor is followed through the recording (minimum statistics —
+// the lowest smoothed level of each frequency over the last ~1.5 s), so changing hiss, fans or traffic are
+// caught too; the gain is smoothed in time and across neighbouring frequencies to avoid "musical noise".
+function denoiseAdaptive(pcm, strength, rate) {
+  const NN = 2048, B = NN / 2 + 1, L = Math.max(8, Math.round(0.75 * rate / (NN / 4)));
+  const S = new Float32Array(B), cur = new Float32Array(B).fill(Infinity), last = new Float32Array(B).fill(Infinity), prevG = new Float32Array(B).fill(1), g = new Float32Array(B);
+  let frame = -1;
+  return stftGain(pcm, (k, m, f) => {
+    if (f !== frame) { frame = f; if (f % L === 0) { last.set(cur); cur.fill(Infinity); } }
+    S[k] = f === 0 ? m : 0.8 * S[k] + 0.2 * m; cur[k] = Math.min(cur[k], S[k]);
+    const noise = Math.min(cur[k], last[k]) * 1.5;
+    let x = Math.max(0.04, 1 - strength * 1.8 * noise / m); x = 0.6 * x + 0.4 * prevG[k]; prevG[k] = x;
+    g[k] = x; return k > 1 ? (g[k] + g[k - 1] + (k > 2 ? g[k - 2] : g[k])) / 3 : x;
+  });
+}
+// A gate closes the pauses (below the threshold) with soft attack and release.
+function gate(pcm, rate, db) {
+  const thr = Math.pow(10, db / 20), att = Math.exp(-1 / (0.003 * rate)), rel = Math.exp(-1 / (0.12 * rate)), hold = Math.round(0.08 * rate), out = new Float32Array(pcm.length);
+  let env = 0, gn = 0, h = 0;
+  for (let i = 0; i < pcm.length; i++) { const x = Math.abs(pcm[i]); env = x > env ? x : env * 0.9995 + x * 0.0005;
+    if (env > thr) { h = hold; gn = 1 - (1 - gn) * att; } else if (h > 0) h--; else gn *= rel; out[i] = pcm[i] * Math.max(gn, 0.02); }
+  return out;
+}
+// De-esser: frames whose 4.5–10 kHz share is high (ś, ṣ, s, ch) get that band turned down.
+function deEss(pcm, rate, amount) {
+  const NN = 2048, hz = k => k * rate / NN; let frame = -1, ratio = 0; const hi = [], lo = [];
+  // first pass: the share of sibilant energy in every frame
+  stftGain(pcm, (k, m, f) => { if (hi[f] == null) { hi[f] = 0; lo[f] = 0; } const e = m * m; if (hz(k) > 4500 && hz(k) < 10000) hi[f] += e; else if (hz(k) > 100) lo[f] += e; return 1; });
+  return stftGain(pcm, (k, m, f) => { if (f !== frame) { frame = f; const r = hi[f] / (hi[f] + lo[f] + 1e-12); ratio = Math.max(0, (r - 0.35) / 0.65); }
+    return hz(k) > 4500 && hz(k) < 10000 ? 1 - amount * Math.min(1, ratio * 2) * 0.85 : 1; });
+}
+// Limiter: never above the ceiling, with 5 ms look-ahead so peaks are caught before they arrive.
+function limit(pcm, rate, db) {
+  const c = Math.pow(10, db / 20), la = Math.round(0.005 * rate), rel = Math.exp(-1 / (0.08 * rate)), out = new Float32Array(pcm.length); let g = 1;
+  for (let i = 0; i < pcm.length; i++) { let pk = 0; if (i % 16 === 0 || g < 1) for (let j = i; j < Math.min(pcm.length, i + la); j += 4) pk = Math.max(pk, Math.abs(pcm[j]));
+    const need = pk > c ? c / pk : 1; g = need < g ? need : 1 - (1 - g) * rel; out[i] = Math.max(-c, Math.min(c, pcm[i] * g)); }
+  return out;
+}
 function denoise(pcm, strength, prof) {
   if (!prof) { // quietest 10 % of 2048-sample frames make the noise print
     const NN = 2048, en = []; for (let i = 0; i + NN <= pcm.length; i += NN / 2) { let s = 0; for (let j = i; j < i + NN; j += 8) s += pcm[j] * pcm[j]; en.push([s, i]); }
@@ -870,27 +920,37 @@ function pitchTempo(pcm, semis, tempo) {
 }
 async function filters(pcm) {
   const on = id => $(id).checked, val = id => +$(id).value;
-  if (!on("#fx-hp-on") && !on("#fx-eq-on") && !on("#fx-comp-on") && !on("#fx-gain-on")) return pcm;
-  const oc = new OfflineAudioContext(1, pcm.length, P.rate), buf = oc.createBuffer(1, pcm.length, P.rate); buf.copyToChannel(pcm, 0);
+  if (!["#fx-hp-on", "#fx-eq-on", "#fx-comp-on", "#fx-gain-on", "#fx-hum-on", "#fx-echo-on"].some(on)) return pcm;
+  const tail = on("#fx-echo-on") ? Math.round(P.rate * Math.min(3, val("#fx-echo") / 1000 * 6)) : 0; // room for the echo to die away
+  const oc = new OfflineAudioContext(1, pcm.length + tail, P.rate), buf = oc.createBuffer(1, pcm.length, P.rate); buf.copyToChannel(pcm, 0);
   const s = oc.createBufferSource(); s.buffer = buf; let node = s;
   const bq = (type, f, gain, q) => { const b = oc.createBiquadFilter(); b.type = type; b.frequency.value = f; if (gain != null) b.gain.value = gain; if (q) b.Q.value = q; node.connect(b); node = b; };
   if (on("#fx-hp-on")) bq("highpass", val("#fx-hp"), null, 0.7);
+  if (on("#fx-hum-on")) [1, 2, 3, 4].forEach(h => bq("notch", val("#fx-hum") * h, null, 30)); // mains hum and its harmonics
   if (on("#fx-eq-on")) { bq("lowshelf", 200, val("#fx-bass")); bq("peaking", 1500, val("#fx-mid"), 0.9); bq("highshelf", 4500, val("#fx-treble")); }
   if (on("#fx-comp-on")) { const c = oc.createDynamicsCompressor(); c.threshold.value = val("#fx-comp"); c.ratio.value = 4; c.attack.value = 0.005; c.release.value = 0.15; c.knee.value = 6; node.connect(c); node = c;
     const mk = oc.createGain(); mk.gain.value = Math.pow(10, (-val("#fx-comp") / 4) / 20); node.connect(mk); node = mk; }
   if (on("#fx-gain-on")) { const g = oc.createGain(); g.gain.value = Math.pow(10, val("#fx-gain") / 20); node.connect(g); node = g; }
+  if (on("#fx-echo-on")) { // echo: delayed copies fed back, mixed under the dry sound
+    const d = oc.createDelay(2), fb = oc.createGain(), wet = oc.createGain(), mix = oc.createGain();
+    d.delayTime.value = val("#fx-echo") / 1000; fb.gain.value = val("#fx-echofb") / 100; wet.gain.value = 0.5;
+    node.connect(mix); node.connect(d); d.connect(fb); fb.connect(d); d.connect(wet); wet.connect(mix); node = mix; }
   node.connect(oc.destination); s.start();
   return (await oc.startRendering()).getChannelData(0).slice();
 }
 async function processFx(pcm) {
   let o = pcm;
-  if ($("#fx-nr-on").checked) o = denoise(o, +$("#fx-nr").value / 100, noiseProfile);
+  if ($("#fx-nr-on").checked) o = noiseProfile || $("#fx-nr-mode").value === "fixed" ? denoise(o, +$("#fx-nr").value / 100, noiseProfile) : denoiseAdaptive(o, +$("#fx-nr").value / 100, P.rate);
+  if ($("#fx-gate-on").checked) o = gate(o, P.rate, +$("#fx-gate").value);
+  if ($("#fx-dess-on").checked) o = deEss(o, P.rate, +$("#fx-dess").value / 100);
   if ($("#fx-pitch-on").checked) o = pitchTempo(o, +$("#fx-pitch").value, +$("#fx-tempo").value / 100);
-  return filters(o);
+  o = await filters(o);
+  if ($("#fx-lim-on").checked) o = limit(o, P.rate, +$("#fx-lim").value);
+  return o;
 }
 
 /* ================= effects rack UI ================= */
-const FX_FMT = { "#fx-nr": v => toBn(v) + "%", "#fx-hp": v => toBn(v), "#fx-bass": v => toBn(v) + " dB", "#fx-mid": v => toBn(v) + " dB", "#fx-treble": v => toBn(v) + " dB", "#fx-comp": v => toBn(v) + " dB", "#fx-pitch": v => (v > 0 ? "+" : "") + toBn(v), "#fx-tempo": v => toBn(v) + "%", "#fx-gain": v => (v > 0 ? "+" : "") + toBn(v) + " dB", "#mx-vol": v => toBn(v) + " dB", "#mx-tvol": v => (v > 0 ? "+" : "") + toBn(v) + " dB", "#sp-vstr": v => toBn(v) + "%" };
+const FX_FMT = { "#fx-nr": v => toBn(v) + "%", "#fx-hp": v => toBn(v), "#fx-bass": v => toBn(v) + " dB", "#fx-mid": v => toBn(v) + " dB", "#fx-treble": v => toBn(v) + " dB", "#fx-comp": v => toBn(v) + " dB", "#fx-pitch": v => (v > 0 ? "+" : "") + toBn(v), "#fx-tempo": v => toBn(v) + "%", "#fx-gain": v => (v > 0 ? "+" : "") + toBn(v) + " dB", "#fx-gate": v => toBn(v) + " dB", "#fx-hum": v => toBn(v) + " Hz", "#fx-dess": v => toBn(v) + "%", "#fx-lim": v => toBn(v) + " dB", "#fx-echo": v => toBn(v) + " ms", "#fx-echofb": v => toBn(v) + "%", "#mx-vol": v => toBn(v) + " dB", "#mx-tvol": v => (v > 0 ? "+" : "") + toBn(v) + " dB", "#sp-vstr": v => toBn(v) + "%" };
 function fxLabels() {
   Object.entries(FX_FMT).forEach(([id, f]) => { const el = $(id); if (el) el.nextElementSibling.textContent = f(+el.value); });
   $$(".fx-mod").forEach(m => { const c = m.querySelector(".fx-h input"); if (c) m.classList.toggle("on", c.checked); });
@@ -902,11 +962,11 @@ $$("#pn-mix input[type=range]").forEach(i => i.addEventListener("input", fxLabel
 Object.entries(load("lx_snd_fx", {})).forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.type === "checkbox" ? (el.checked = v) : (el.value = v); });
 fxLabels();
 const PRESETS = {
-  voice: { "fx-nr-on": true, "fx-nr": 45, "fx-hp-on": true, "fx-hp": 80, "fx-eq-on": true, "fx-bass": -2, "fx-mid": 2, "fx-treble": 3, "fx-comp-on": true, "fx-comp": -22, "fx-pitch-on": false, "fx-gain-on": false },
-  field: { "fx-nr-on": true, "fx-nr": 75, "fx-hp-on": true, "fx-hp": 120, "fx-eq-on": true, "fx-bass": -4, "fx-mid": 3, "fx-treble": 2, "fx-comp-on": true, "fx-comp": -26, "fx-pitch-on": false, "fx-gain-on": false },
+  voice: { "fx-dess-on": true, "fx-dess": 40, "fx-lim-on": true, "fx-lim": -1, "fx-nr-on": true, "fx-nr": 45, "fx-hp-on": true, "fx-hp": 80, "fx-eq-on": true, "fx-bass": -2, "fx-mid": 2, "fx-treble": 3, "fx-comp-on": true, "fx-comp": -22, "fx-pitch-on": false, "fx-gain-on": false },
+  field: { "fx-gate-on": true, "fx-gate": -45, "fx-hum-on": true, "fx-lim-on": true, "fx-lim": -1, "fx-nr-on": true, "fx-nr": 75, "fx-hp-on": true, "fx-hp": 120, "fx-eq-on": true, "fx-bass": -4, "fx-mid": 3, "fx-treble": 2, "fx-comp-on": true, "fx-comp": -26, "fx-pitch-on": false, "fx-gain-on": false },
   song: { "fx-nr-on": true, "fx-nr": 25, "fx-hp-on": true, "fx-hp": 60, "fx-eq-on": true, "fx-bass": 1, "fx-mid": 0, "fx-treble": 2, "fx-comp-on": true, "fx-comp": -18, "fx-pitch-on": false, "fx-gain-on": false },
   phone: { "fx-nr-on": true, "fx-nr": 55, "fx-hp-on": true, "fx-hp": 150, "fx-eq-on": true, "fx-bass": 3, "fx-mid": -2, "fx-treble": 4, "fx-comp-on": true, "fx-comp": -20, "fx-pitch-on": false, "fx-gain-on": false },
-  flat: { "fx-nr-on": false, "fx-nr": 50, "fx-hp-on": false, "fx-hp": 80, "fx-eq-on": false, "fx-bass": 0, "fx-mid": 0, "fx-treble": 0, "fx-comp-on": false, "fx-comp": -24, "fx-pitch-on": false, "fx-pitch": 0, "fx-tempo": 100, "fx-gain-on": false, "fx-gain": 0 },
+  flat: { "fx-gate-on": false, "fx-hum-on": false, "fx-dess-on": false, "fx-lim-on": false, "fx-echo-on": false, "fx-nr-on": false, "fx-nr": 50, "fx-hp-on": false, "fx-hp": 80, "fx-eq-on": false, "fx-bass": 0, "fx-mid": 0, "fx-treble": 0, "fx-comp-on": false, "fx-comp": -24, "fx-pitch-on": false, "fx-pitch": 0, "fx-tempo": 100, "fx-gain-on": false, "fx-gain": 0 },
 };
 $("#fx-preset").onchange = e => { const p = PRESETS[e.target.value]; if (!p) return; Object.entries(p).forEach(([id, v]) => { const el = document.getElementById(id); el.type === "checkbox" ? (el.checked = v) : (el.value = v); }); fxLabels(); e.target.value = ""; msg("প্রিসেট বসানো হলো — প্রিভিউ শুনে প্রয়োগ করুন"); };
 $("#fx-profile").onclick = () => { if (!P.sel) return; noiseProfile = spectrum(P.pcm.slice(P.sel[0], P.sel[1])); $("#fx-prof").textContent = noiseProfile ? "✓ নয়েজ ধরা হয়েছে" : "আরও লম্বা অংশ বাছুন"; if (noiseProfile) { $("#fx-nr-on").checked = true; fxLabels(); } };
@@ -944,35 +1004,71 @@ $("#mx-add").onclick = async () => {
     }, `✓ “${f.name}” মিউজিক হিসেবে মেশানো হলো`);
   } catch (err) { msg("মিউজিক ফাইল পড়া যায়নি: " + err.message); }
 };
-// Stereo separation (a song file): voices usually sit in the middle, instruments are spread to the sides.
-async function separate(keepVoice) {
-  const f = await pickFile(); if (!f) return;
-  msg(keepVoice ? "কণ্ঠ আলাদা করা হচ্ছে…" : "কণ্ঠ সরানো হচ্ছে…"); await tick0();
-  try {
-    const buf = await decodeRaw(f);
-    if (buf.numberOfChannels < 2) { msg("এটি মোনো ফাইল — আলাদা করতে স্টেরিও গান লাগবে। মোনোর জন্য “কণ্ঠ-ব্যান্ড” বোতাম ব্যবহার করুন।"); return; }
-    const L = buf.getChannelData(0), R = buf.getChannelData(1), n = buf.length, mid = new Float32Array(n), side = new Float32Array(n);
-    for (let i = 0; i < n; i++) { mid[i] = (L[i] + R[i]) / 2; side[i] = (L[i] - R[i]) / 2; }
-    const str = +$("#sp-vstr").value / 100;
-    let out;
-    if (keepVoice) { // music remover: take the middle, subtract what also appears on the sides, keep the voice band
-      const bin = 1 / 2048 * buf.sampleRate;
-      out = stftGain(mid, (k, m, f, s) => { const hz = k * bin, band = hz < 90 || hz > 8000 ? 0.15 : 1; return band * Math.max(0.04, 1 - str * 1.6 * s / m); }, side);
-    } else { // voice remover: the sides only (centre cancelled), plus the bass from the middle so the music keeps its body
-      const oc = new OfflineAudioContext(1, n, buf.sampleRate), b = oc.createBuffer(1, n, buf.sampleRate); b.copyToChannel(mid, 0);
-      const s = oc.createBufferSource(); s.buffer = b; const lp = oc.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 150; s.connect(lp); lp.connect(oc.destination); s.start();
-      const bass = (await oc.startRendering()).getChannelData(0);
-      out = new Float32Array(n); for (let i = 0; i < n; i++) out[i] = side[i] * (1 + str) + bass[i];
+/* Separation engine (no files, no network): splits the audio already on the active track (selection or whole)
+   by soft time-frequency masks that always add up to 1, so the parts mixed together give back the original.
+   - harmonic vs percussive: magnitude smoothed along time vs along frequency (HPSS, box filters for speed);
+   - voice: harmonic energy in the speech/singing band, and — for stereo imports — how centred it is;
+   - bass: harmonic energy under ~220 Hz; drums: the percussive part; other: what is left.
+   Processed in blocks of frames so long recordings don't need gigabytes of memory. */
+function stemMasks(pcm, side, rate, stems, strength) {
+  const NN = 2048, Hp = NN / 4, B = NN / 2 + 1, win = HANN(NN), frames = Math.max(1, Math.ceil((pcm.length - NN) / Hp) + 1);
+  const outs = Object.fromEntries(stems.map(s => [s, new Float32Array(pcm.length)])), norm = new Float32Array(pcm.length);
+  const hz = k => k * rate / NN, W = 8, BLOCK = 256, st = Math.max(0.2, Math.min(1, strength));
+  const band = k => { const f = hz(k); return f < 100 ? 0 : f < 160 ? (f - 100) / 60 : f < 5000 ? 1 : f < 9000 ? (9000 - f) / 4000 : 0; };
+  for (let f0 = 0; f0 < frames; f0 += BLOCK) {
+    const a = Math.max(0, f0 - W), b = Math.min(frames, f0 + BLOCK + W), nf = b - a;
+    const RE = new Float32Array(nf * B), IM = new Float32Array(nf * B), MG = new Float32Array(nf * B), SG = side ? new Float32Array(nf * B) : null;
+    const re = new Float32Array(NN), im = new Float32Array(NN);
+    for (let f = 0; f < nf; f++) {
+      re.fill(0); im.fill(0); for (let i = 0; i < NN; i++) re[i] = (pcm[(a + f) * Hp + i] || 0) * win[i]; fft(re, im);
+      for (let k = 0; k < B; k++) { RE[f * B + k] = re[k]; IM[f * B + k] = im[k]; MG[f * B + k] = Math.hypot(re[k], im[k]); }
+      if (side) { re.fill(0); im.fill(0); for (let i = 0; i < NN; i++) re[i] = (side[(a + f) * Hp + i] || 0) * win[i]; fft(re, im); for (let k = 0; k < B; k++) SG[f * B + k] = Math.hypot(re[k], im[k]); }
     }
-    const pk = peakOf(out); if (pk > 1e-4) for (let i = 0; i < n; i++) out[i] *= 0.89 / pk;
-    if (!N()) P.rate = Math.min(buf.sampleRate, 48000);
-    const pcm = await resample(out, buf.sampleRate, P.rate);
-    commit(() => appendPart(pcm, { name: `${f.name.replace(/\.[^.]+$/, "")} — ${keepVoice ? "কণ্ঠ" : "মিউজিক"}`, kind: keepVoice ? "song" : "other" }), keepVoice ? "✓ কণ্ঠ আলাদা হলো (নতুন অংশ হিসেবে যোগ)" : "✓ কণ্ঠ সরানো হলো (নতুন অংশ হিসেবে যোগ)");
-    zoomFit();
-  } catch (err) { msg("ফাইল পড়া যায়নি: " + err.message); }
+    // box-smoothed magnitudes: along time (harmonic) and along frequency (percussive)
+    const H = new Float32Array(nf * B), Pc = new Float32Array(nf * B);
+    for (let k = 0; k < B; k++) { let s = 0; for (let f = 0; f < Math.min(nf, W); f++) s += MG[f * B + k];
+      for (let f = 0; f < nf; f++) { const add = f + W < nf ? MG[(f + W) * B + k] : 0, sub = f - W - 1 >= 0 ? MG[(f - W - 1) * B + k] : 0; s += add - sub; H[f * B + k] = s; } }
+    for (let f = 0; f < nf; f++) { let s = 0; for (let k = 0; k < Math.min(B, W); k++) s += MG[f * B + k];
+      for (let k = 0; k < B; k++) { const add = k + W < B ? MG[f * B + k + W] : 0, sub = k - W - 1 >= 0 ? MG[f * B + k - W - 1] : 0; s += add - sub; Pc[f * B + k] = s; } }
+    for (let f = Math.max(0, f0 - a); f < Math.min(nf, f0 + BLOCK - a); f++) {
+      const per = {}; stems.forEach(s => { per[s] = { re: new Float32Array(NN), im: new Float32Array(NN) }; });
+      for (let k = 0; k < B; k++) {
+        const o = f * B + k, h2 = H[o] * H[o], p2 = Pc[o] * Pc[o], mh = h2 / (h2 + p2 + 1e-12), mp = 1 - mh;
+        let centre = 1; if (SG) { const m2 = MG[o] * MG[o], s2 = SG[o] * SG[o]; centre = m2 / (m2 + 2.5 * s2 + 1e-12); }
+        const voice = Math.min(1, mh * band(k) * centre * (0.55 + 0.45 * st) * (SG ? 1.4 : 1));
+        const bass = hz(k) < 220 ? Math.max(0, mh - voice) : 0, drums = Math.max(0, Math.min(1 - voice - bass, mp * (0.6 + 0.4 * st)));
+        const m = stems.length === 2 ? { voice, music: 1 - voice } : { voice, drums, bass, other: Math.max(0, 1 - voice - drums - bass) };
+        for (const s of stems) { per[s].re[k] = RE[o] * m[s]; per[s].im[k] = IM[o] * m[s]; if (k && k < NN / 2) { per[s].re[NN - k] = per[s].re[k]; per[s].im[NN - k] = -per[s].im[k]; } }
+      }
+      const pos = (a + f) * Hp;
+      for (const s of stems) { const x = per[s]; fft(x.re, x.im, true); for (let i = 0; i < NN; i++) if (pos + i < pcm.length) outs[s][pos + i] += x.re[i] * win[i]; }
+      for (let i = 0; i < NN; i++) if (pos + i < pcm.length) norm[pos + i] += win[i] * win[i];
+    }
+  }
+  for (const s of stems) { const o = outs[s]; for (let i = 0; i < o.length; i++) o[i] = norm[i] > 1e-6 ? o[i] / norm[i] : 0; }
+  return outs;
 }
-$("#sp-voice").onclick = () => separate(true);
-$("#sp-music").onclick = () => separate(false);
+const STEM_BN = { voice: "কণ্ঠ", music: "বাজনা", drums: "ড্রাম/তাল", bass: "বেস", other: "অন্যান্য বাদ্য" };
+// Split the active track (selection or all) into new tracks, one per part; the original stays as it is.
+async function splitStems(stems) {
+  if (!N()) { msg("আগে সক্রিয় ট্র্যাকে অডিও রাখুন"); return; }
+  const t = curTrack(), [a, b] = selOrAll(), side = t.side && t.side.length === N() ? t.side.subarray(a, b) : null;
+  msg(`আলাদা করা হচ্ছে${side ? " (স্টেরিও থেকে)" : ""}… লম্বা অডিওতে কিছুক্ষণ লাগবে`); await tick0();
+  const outs = stemMasks(P.pcm.subarray(a, b), side, P.rate, stems, +$("#sp-vstr").value / 100);
+  for (const s of stems) addTrack(outs[s], `${t.name} — ${STEM_BN[s]}`, { name: `${t.name} — ${STEM_BN[s]}` });
+  zoomFit(); msg(`✓ “${t.name}” থেকে ${toBn(stems.length)}টি নতুন ট্র্যাক: ${stems.map(s => STEM_BN[s]).join(", ")} — আসল ট্র্যাক যেমন ছিল আছে${side ? "" : " (মোনো রেকর্ড, তাই আনুমানিক)"}`);
+}
+// Keep only one part, in place on the active track (selection or all).
+async function keepStem(which) {
+  if (!N()) return; const t = curTrack(), [a, b] = selOrAll(), side = t.side && t.side.length === N() ? t.side.subarray(a, b) : null;
+  msg("প্রক্রিয়া চলছে…"); await tick0();
+  const out = stemMasks(P.pcm.subarray(a, b), side, P.rate, ["voice", "music"], +$("#sp-vstr").value / 100)[which];
+  commit(() => replaceRange(a, b, out), which === "voice" ? "✓ বাজনা সরিয়ে শুধু কণ্ঠ রাখা হলো" : "✓ কণ্ঠ সরানো হলো");
+}
+$("#sp-voice").onclick = () => keepStem("voice");
+$("#sp-music").onclick = () => keepStem("music");
+$("#sp-two").onclick = () => splitStems(["voice", "music"]);
+$("#sp-four").onclick = () => splitStems(["voice", "drums", "bass", "other"]);
 // Mono material: keep only the voice band (~120 Hz – 4 kHz, emphasised) or cut it out.
 async function voiceBand(keep) {
   if (!N()) return; const [a, b] = selOrAll(); msg("প্রক্রিয়া চলছে…"); await tick0();
@@ -988,21 +1084,42 @@ $("#sp-band").onclick = () => voiceBand(true);
 $("#sp-noband").onclick = () => voiceBand(false);
 
 /* ================= regions table ================= */
+// "1:02.5", "62.5", "01:02.500" → seconds (null when unreadable)
+const parseTime = s => { s = String(s).trim().replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)); const m = s.match(/^(?:(\d+):)?(\d+(?:\.\d*)?)$/); return m ? (+m[1] || 0) * 60 + +m[2] : null; };
+// A part's start or end typed in: the neighbour shares that boundary, so it moves with it (never past its other end).
+function setRegionTime(r, f, txt) {
+  const sec = parseTime(txt), i = P.regions.indexOf(r); if (sec == null || i < 0) { msg("সময় বোঝা গেল না — যেমন 0:12.5"); drawRegions(); return; }
+  const prev = P.regions[i - 1], next = P.regions[i + 1], min = Math.round(P.rate * 0.02); let x = Math.round(sec * P.rate);
+  commit(() => {
+    if (f === "a") { x = Math.max(prev ? prev.a + min : 0, Math.min(x, r.b - min)); r.a = x; if (prev) prev.b = x; }
+    else { x = Math.min(next ? next.b - min : N(), Math.max(x, r.a + min)); r.b = x; if (next) next.a = x; }
+  }, "অংশের সময় বদলানো হলো");
+  drawRegions();
+}
+// From the parts list: open the timeline and select that part there.
+function showOnTimeline(r) {
+  if (TAB.c !== "wizard") setTab("wizard");
+  if (document.body.classList.contains("no-editor")) setEditor(true);
+  setTimeout(() => { P.sel = [r.a, r.b]; P.cursor = r.a; if (xOf(r.a) < 0 || xOf(r.b) > viewW()) V.start = r.a - (viewW() * V.spp - (r.b - r.a)) / 2; clampView(); drawAll(); status(); $("#stage").scrollIntoView({ block: "nearest" }); }, 0);
+}
 const kindOpts = sel => Object.entries(KINDS).map(([k, v]) => `<option value="${k}"${k === sel ? " selected" : ""}>${v[0]}</option>`).join("");
 $("#r-kindall").innerHTML = `<option value="">সব অংশের ধরন…</option>` + kindOpts("");
 // Compact cards in the right column: name and play on top; time, kind and the small tools below.
 function drawRegions() {
   $("#r-count").textContent = toBn(P.regions.length); $("#rt-r").textContent = P.regions.length ? toBn(P.regions.length) : "";
+  // one recording in one piece needs no parts list: the tab appears once there are two or more parts
+  const many = TR.list.some(t => (t === curTrack() ? P.regions : t.regions).length > 1), tab = $("#st-tabs [data-tab=regions]");
+  if (tab.hidden === many) { tab.hidden = !many; if (!many && typeof TAB !== "undefined" && TAB.c === "regions") setTab("wizard"); }
   $("#r-body").innerHTML = P.regions.map((r, k) => `<div class="rg${r.skip ? " skip" : ""}" data-id="${r.id}">
     <div class="rg-top"><span class="dot" style="background:${REG_COLORS[k % REG_COLORS.length]}"></span><span class="rg-n">${toBn(k + 1)}</span>
       <input data-f="name" value="${esc(r.name)}" placeholder="শব্দ বা শিরোনাম">
       <button type="button" class="ib" data-act="play" title="শুনুন">▶</button></div>
-    <div class="rg-sub"><span class="mono">${fmt(r.a / P.rate).slice(0, 8)} · ${fmtS((r.b - r.a) / P.rate)}</span>
+    <div class="rg-sub"><input class="rg-t mono" data-f="a" value="${fmt(r.a / P.rate)}" title="শুরু (মিনিট:সেকেন্ড) — বদলালে আগের অংশের শেষও সরে"><span>–</span><input class="rg-t mono" data-f="b" value="${fmt(r.b / P.rate)}" title="শেষ — বদলালে পরের অংশের শুরুও সরে"><span class="mono">${fmtS((r.b - r.a) / P.rate)}</span>
       <select data-f="kind">${kindOpts(r.kind)}</select>
       ${r.lexeme ? `<a class="lx" href="https://www.wikidata.org/wiki/Lexeme:${esc(r.lexeme)}" target="_blank" rel="noopener">${esc(r.lexeme)}</a>` : ""}
       <span class="s-fill"></span>
       <button type="button" class="ib${infoCount(r) ? " has" : ""}" data-act="info" title="শব্দের বিস্তারিত (অর্থ ইত্যাদি)">ⓘ</button>
-      <button type="button" class="ib" data-act="sel" title="টাইমলাইনে নির্বাচন">⌖</button>
+      <button type="button" class="ib" data-act="sel" title="টাইমলাইনে দেখান ও নির্বাচন করুন">⌖</button>
       ${k < P.regions.length - 1 ? `<button type="button" class="ib" data-act="join" title="পরের অংশের সঙ্গে জোড়া">⤓</button>` : ""}
       <label class="rg-skip" title="আপলোডে বাদ"><input type="checkbox" data-f="skip"${r.skip ? " checked" : ""}>বাদ</label></div>
     ${r.kind !== "word" ? `<input class="rg-text" data-f="text" value="${esc(r.text)}" placeholder="কথা / লিরিক (ঐচ্ছিক)">` : ""}</div>`).join("") || `<p class="hint">রেকর্ড করলে বা ফাইল আনলে অংশগুলো এখানে আসবে। ✂ দিয়ে ভাগ করুন, ⤓ দিয়ে জোড়া দিন।</p>`;
@@ -1010,6 +1127,7 @@ function drawRegions() {
 const regOf = el => P.regions.find(r => r.id === el.closest("[data-id]")?.dataset.id);
 $("#r-body").addEventListener("change", async e => {
   const r = regOf(e.target), f = e.target.dataset.f; if (!r || !f) return;
+  if (f === "a" || f === "b") { setRegionTime(r, f, e.target.value); return; }
   r[f] = e.target.type === "checkbox" ? e.target.checked : e.target.value.trim();
   if (f === "name" || f === "kind") { r.lexeme = r.kind === "word" ? await findLexeme(r.name) : ""; drawRegions(); }
   if (f === "skip") e.target.closest(".rg").classList.toggle("skip", r.skip);
@@ -1023,7 +1141,7 @@ $("#r-body").addEventListener("keydown", e => {
 $("#r-body").addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return; const r = regOf(b);
   if (b.dataset.act === "play") playBuffer(P.pcm, r.a, r.b);
-  if (b.dataset.act === "sel") { P.sel = [r.a, r.b]; if (xOf(r.a) < 0 || xOf(r.b) > viewW()) V.start = r.a - (viewW() * V.spp - (r.b - r.a)) / 2; drawAll(); }
+  if (b.dataset.act === "sel") showOnTimeline(r);
   if (b.dataset.act === "info") { r.word = r.name; openInfo(r, () => { delete r.word; drawRegions(); saveProject(); }); return; }
   if (b.dataset.act === "join") commit(() => { const i = P.regions.indexOf(r), nx = P.regions[i + 1]; if (nx) { r.b = nx.b; P.regions.splice(i + 1, 1); } }, "অংশ জোড়া হলো");
 });
@@ -1068,7 +1186,7 @@ function drawQueue() {
   const html = Q.map(c => `<div class="q-item st-${c.status}" data-id="${c.id}">
       <button type="button" class="ib" data-act="play">▶</button>
       <div class="q-main">${c.status === "done" ? `<b>${esc(c.word)}</b>` : `<input data-f="word" value="${esc(c.word)}" placeholder="শব্দ বা শিরোনাম *">`}
-        <small>${esc(c.speaker?.name || "")} · ${esc(KINDS[c.kind]?.[0] || "")} · ${fmtS(c.dur || 0)} · <span class="st">${ST_BN[c.status]}</span>${c.file ? ` · <a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(c.file)}" target="_blank" rel="noopener">কমন্স</a>` : ""}${c.linked ? ` · <a href="https://www.wikidata.org/wiki/Lexeme:${esc(c.linked.split("-")[0])}" target="_blank" rel="noopener">${esc(c.linked)}</a>` : ""}${c.error ? `<br><em>${esc(c.error)}</em>` : ""}</small></div>
+        <small title="${esc([c.speaker?.name, KINDS[c.kind]?.[0], fmtS(c.dur || 0)].filter(Boolean).join(" · "))}"><span class="st">${ST_BN[c.status]}</span>${c.file ? ` · <a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(c.file)}" target="_blank" rel="noopener">কমন্স</a>` : ""}${c.linked ? ` · <a href="https://www.wikidata.org/wiki/Lexeme:${esc(c.linked.split("-")[0])}" target="_blank" rel="noopener">${esc(c.linked)}</a>` : ""}${c.status === "done" && c.file && c.kind === "word" && !c.linked && !c.lexeme ? ` · <a href="/wizard?${new URLSearchParams({ lemma: c.word, audio: c.file })}" target="_blank" rel="noopener" title="উইকি উপাত্তে এই শব্দের লেক্সিম নেই — উইজার্ডে নতুন লেক্সিম তৈরি করুন, উচ্চারণ এই অডিও">＋ লেক্সিম বানান</a>` : ""}${c.error ? `<br><em>${esc(c.error)}</em>` : ""}</small></div>
       <button type="button" class="ib${infoCount(c) ? " has" : ""}" data-act="info" title="শব্দের বিস্তারিত">ⓘ${infoCount(c) ? `<sup>${toBn(infoCount(c))}</sup>` : ""}</button><button type="button" class="ib q-open" data-act="open" title="স্টুডিওর টাইমলাইনে খুলুন">↗</button><button type="button" class="ib" data-act="del" title="${c.status === "done" ? "তালিকা থেকে সরান" : "মুছুন"}">✕</button></div>`).join("") || `<p class="hint">অংশগুলো “আপলোড তালিকায় পাঠান” চাপলে এখানে আসবে। ইন্টারনেট ছাড়াও জমা থাকে।</p>`;
   $$(".q-list").forEach(el => { el.innerHTML = html; }); // full studio and the simple mode
   const left = Q.filter(c => c.status !== "done").length;
@@ -1194,15 +1312,36 @@ function pushPrefs() {
   prefsT = setTimeout(() => fetch("/store/prefs", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.fromEntries(PREF_KEYS.map(k => [k, load("lx_snd_" + k, undefined)]).filter(([, v]) => v !== undefined))) }).catch(() => {}), 1200);
 }
 // After login: the server copy wins (another device may have changed it); with nothing there yet, this browser's goes up.
+// speakers: this browser's list goes up; every speaker this account may use (own and linked) comes back
+let spkT;
+function pushSpeakers() { if (!SYNC() || !prefsReady) return; clearTimeout(spkT); spkT = setTimeout(() => pullSpeakers(true), 1500); }
+async function pullSpeakers(send = true) {
+  if (!SYNC()) return;
+  try {
+    const list = await (await fetch("/store/speakers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(send ? SPK : []) })).json();
+    if (!Array.isArray(list)) return;
+    const hidden = load("lx_snd_spkhidden", []); let added = 0; SPK_META = {};
+    for (const s of list) {
+      SPK_META[s.id] = { mine: s.mine, code: s.code, owner: s.owner };
+      if (!SPK.some(x => x.id === s.id) && !hidden.includes(s.id)) { const { mine, code, owner, ...data } = s; SPK.push(data); added++; }
+    }
+    if (added) { store("lx_snd_speakers", SPK); drawPick(); if (!SP.name) { SP = SPK[0]; fillSpeaker(); drawSpeaker(); } }
+    drawShare();
+  } catch (e) {}
+}
 async function syncPrefs() {
   const r = await (await fetch("/store/prefs")).json();
   if (!r.data) { prefsReady = true; pushPrefs(); return; }
+  // speakers made here while logged out are kept: the server list plus every local one it doesn't have
+  const mine = load("lx_snd_speakers", []) || [], theirs = Array.isArray(r.data.speakers) ? r.data.speakers : [];
+  const extra = mine.filter(s => s?.id && !theirs.some(t => t.id === s.id));
+  if (extra.length) { r.data.speakers = [...theirs, ...extra]; r.updated += "+local"; }
   const changed = PREF_KEYS.filter(k => r.data[k] !== undefined && JSON.stringify(r.data[k]) !== JSON.stringify(load("lx_snd_" + k, undefined)));
   if (changed.length && sessionStorage.getItem("lx_snd_prefs_applied") !== r.updated) {
     changed.forEach(k => { try { localStorage.setItem("lx_snd_" + k, JSON.stringify(r.data[k])); } catch (e) {} });
     sessionStorage.setItem("lx_snd_prefs_applied", r.updated); location.reload(); return;
   }
-  prefsReady = true; if (changed.length) pushPrefs();
+  prefsReady = true; if (changed.length || extra.length) pushPrefs();
 }
 const META_KEYS = ["id", "word", "kind", "text", "lexeme", "dur", "status", "file", "linked", "error", "created", "speaker", "project", "extra", "info"];
 async function syncClip(c) {
@@ -1222,7 +1361,7 @@ function cloud(t) { $$(".q-cloud").forEach(el => { el.textContent = t; }); }
 async function syncDown() {
   if (!SYNC()) { cloud(window.LX_NODE ? "লগ ইন করলে বক্তা, সেটিংস আর শব্দ-তালিকা সার্ভারে থাকবে — অন্য ডিভাইসেও পাবেন" : ""); return; }
   try {
-    await syncPrefs();
+    await syncPrefs(); await pullSpeakers();
     const list = await (await fetch("/store/clips")).json(); const have = new Map(Q.map(c => [c.id, c]));
     // from other devices only what is already on Commons (history); unsent takes there have no audio here
     for (const m of list) { const c = have.get(m.id); if (!c) { if (m.status !== "done") continue; const n = { ...m, synced: true, blob: null }; await DB.put(n); Q.push(n); } else if ((m.status === "done") && c.status !== "done") { Object.assign(c, m); await DB.put(c); } }
@@ -1357,14 +1496,14 @@ $("#mx-bounce").onclick = () => { const end = maxLen(); if (!end) return; const 
 
 /* ================= one studio: simple view, or with the editor ================= */
 // Without the editor: word list, record (listen, retake, skip), parts and the upload list — the old লিব্রে.
-// With it: timeline, toolbar, effects, mix and tracks as well. /libre opens it without the editor.
+// With it: timeline, toolbar, effects, mix and tracks as well.
 function setEditor(on) {
   if (typeof drawMenu === "function") setTimeout(() => { if (!psOpen.length) drawMenu(); });
   document.body.classList.toggle("no-editor", !on); $("#t-editor").setAttribute("aria-pressed", String(on)); store("lx_snd_editor", on);
   if (on) requestAnimationFrame(() => zoomFit());
 }
 $("#t-editor").onclick = () => setEditor(!document.body.classList.contains("no-editor") ? false : true);
-if (/\/libre\/?$/.test(location.pathname)) { store("lx_snd_editor", false); if (window.LX_NODE) history.replaceState(null, "", "/studio" + location.search); }
+
 setEditor(load("lx_snd_editor", false));
 // Microphone test: 3 seconds, then played back; the level shows in the top bar.
 $("#t-mictest").onclick = async () => {
@@ -1376,38 +1515,39 @@ $("#t-mictest").onclick = async () => {
 $("#t-autoq").checked = load("lx_snd_autoq", true);
 $("#t-autoq").onchange = () => store("lx_snd_autoq", $("#t-autoq").checked);
 
-/* ================= tabs: one bar for five panes ================= */
-// Wide screens show one centre pane (setup, words, wizard) and one right pane (regions, queue) side by side;
-// narrower screens show a single pane. The same buttons and the same state serve both.
-const C_TABS = ["setup", "words", "wizard"], R_TABS = ["regions", "queue"];
-const TAB = { c: load("lx_snd_ctab", speakerWhy() ? "setup" : WORDS.length ? "wizard" : "words"), r: load("lx_snd_rtab3", "regions") };
-TAB.one = load("lx_snd_one", TAB.c);
+/* ================= tabs: one bar, one pane at a time ================= */
+// Setup, word list, recording, parts and upload list all live in the centre. On wide screens the right column
+// holds the settings of the tool in use (effects, mix) while recording; elsewhere those settings sit under the
+// timeline. The same buttons and state serve every screen size.
+const C_TABS = ["setup", "words", "wizard", "regions", "queue"];
+const TAB = { c: load("lx_snd_tab", speakerWhy() ? "setup" : WORDS.length ? "wizard" : "words") };
+if (!C_TABS.includes(TAB.c)) TAB.c = "wizard";
 const WIDE = matchMedia("(min-width: 1251px)");
+function placeInspector() { // the tool settings: right column when wide, under the timeline otherwise
+  const body = $("#insp-body"), home = WIDE.matches ? $("#insp") : $("[data-pane=wizard]");
+  if (body.parentElement !== home) { if (WIDE.matches) home.prepend(body); else $("[data-pane=wizard] .st-editor").after(body); }
+  document.body.classList.toggle("insp-on", $$(".st-drawer").some(d => !d.hidden)); // the column exists only while a tool is open
+}
 function applyTabs() {
   // word list switched off: its tab goes away (and whoever was on it lands in the wizard)
   const wl = $("#t-wordmode").checked; $("#st-tabs [data-tab=words]").hidden = !wl;
-  if (!wl) { if (TAB.c === "words") TAB.c = "wizard"; if (TAB.one === "words") TAB.one = "wizard"; }
-  const w = WIDE.matches, on = t => (w ? t === TAB.c || t === TAB.r : t === TAB.one);
+  if (!wl && TAB.c === "words") TAB.c = "wizard";
+  const on = t => t === TAB.c;
   $$(".pane").forEach(p => { p.hidden = !on(p.dataset.pane); });
   $$("#st-tabs [data-tab]").forEach(b => b.setAttribute("aria-selected", String(on(b.dataset.tab))));
-  document.body.dataset.col = w ? "" : R_TABS.includes(TAB.one) ? "right" : "center";
-  document.body.classList.toggle("on-wizard", on("wizard")); // the player bar belongs to the wizard only
-  if (on("wizard")) {
-    // words waiting in the list: open the wizard straight on them (word card, ◀ ▶, upcoming)
-    drawBatch(); requestAnimationFrame(() => drawAll());
-  }
+  document.body.classList.toggle("on-wizard", on("wizard")); // the player bar and the tool settings belong to the wizard
+  placeInspector();
+  if (on("wizard")) { drawBatch(); requestAnimationFrame(() => drawAll()); }
 }
 function setTab(id) {
-  if (C_TABS.includes(id)) TAB.c = id; else if (R_TABS.includes(id)) TAB.r = id; else return;
-  TAB.one = id; store("lx_snd_ctab", TAB.c); store("lx_snd_rtab3", TAB.r); store("lx_snd_one", TAB.one);
-  applyTabs();
+  if (!C_TABS.includes(id)) return;
+  TAB.c = id; store("lx_snd_tab", id); applyTabs();
   if (id === "setup" && speakerWhy()) $("#sp-form").hidden = false; // speaker details still missing: show the form
 }
 const setCTab = setTab, setRTab = id => setTab(id === "pn-queue" ? "queue" : "regions"), setMView = () => {}; // older call sites
 $("#st-tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); });
 WIDE.addEventListener?.("change", applyTabs);
-applyTabs();
-$("#w-go").onclick = () => setTab("wizard");
+applyTabs();$("#w-go").onclick = () => setTab("wizard");
 // double-click a word: record it now
 $("#w-list").addEventListener("dblclick", e => { const li = e.target.closest("li[data-i]"); if (li) { wordPos = +li.dataset.i; saveWords(); setCTab("wizard"); } });
 
@@ -1421,6 +1561,7 @@ const openPanel = id => () => { setCTab("setup"); setMView("center"); requestAni
 // line icons for the top-level menu
 const MI = {
   file: '<path d="M3 7h6l2 2h10v10H3z"/>', edit: '<path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/>', rec: '<circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="9"/>',
+  player: '<rect x="3" y="14" width="18" height="7" rx="2"/><path d="M10 16.5v2l2-1z"/>',
   words: '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
   timeline: '<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2M21 12h0"/>', autoup: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',
@@ -1477,6 +1618,7 @@ const MENU = () => [
 const SWITCHES = () => [
   { icon: "timeline", label: "টাইমলাইন", tip: "টাইমলাইন ও সম্পাদনার যন্ত্র দেখান", on: !document.body.classList.contains("no-editor"), run: clickEl("#t-editor") },
   { icon: "autoup", label: "সরাসরি আপলোড", tip: "রেকর্ড হলেই আপলোড তালিকায় পাঠান", on: $("#t-autoq").checked, run: toggleEl("#t-autoq") },
+  { icon: "player", label: "প্লেয়ার বার", tip: "নিচের বাজানোর বার দেখান বা লুকান (Space দিয়ে বাজানো চলবেই)", on: !document.body.classList.contains("no-player"), run: () => { const off = !document.body.classList.contains("no-player"); document.body.classList.toggle("no-player", off); store("lx_snd_noplayer", off); } },
   { icon: "words", label: "শব্দ-তালিকা", tip: "তালিকা ধরে একটা একটা শব্দ রেকর্ড; বন্ধ থাকলে শব্দ-তালিকার ট্যাব থাকে না", on: $("#t-wordmode").checked, run: toggleEl("#t-wordmode") },
 ];
 const PS = $("#ps-menu");
@@ -1496,7 +1638,7 @@ function openSub(btn, items, level) {
   if (narrow()) { btn.after(el); el.classList.add("inline"); } // phones: submenus open in place, inside the open menu
   if (!el.isConnected) {
     document.body.appendChild(el); const r = btn.getBoundingClientRect(), lr = btn.querySelector(".ps-l").getBoundingClientRect();
-    el.style.left = `${Math.min(r.right - 6, lr.right + 28)}px`; // right beside the words, not at the far edge
+    el.style.left = `${lr.width ? Math.min(r.right - 6, lr.right + 28) : r.right + 8}px`; // folded menu: just right of the icon // right beside the words, not at the far edge
     el.style.top = `${r.top - 5}px`; const h = el.getBoundingClientRect().height; if (r.top - 5 + h > innerHeight - 70) el.style.top = `${Math.max(8, innerHeight - 70 - h)}px`; // level with the row; up only if it would run off the screen
   }
   psOpen[level] = { el, items };
@@ -1511,8 +1653,10 @@ function onItem(btn, fromHover) {
   if (fromHover) { closeFrom(lvl); return; } // hovering a plain item closes deeper submenus
   closeFrom(0); if (narrow()) PS.classList.remove("open"); it.run?.(); drawMenu();
 }
+document.body.classList.toggle("menu-mini", !!load("lx_snd_menumini", false));
+document.body.classList.toggle("no-player", !!load("lx_snd_noplayer", false));
 function drawMenu() {
-  PS.innerHTML = `<div class="ps-title">মেনু</div><button type="button" class="ps-toggle" id="ps-toggle" aria-expanded="${PS.classList.contains("open")}"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>মেনু</button>` + menuHtml(MENU(), 0)
+  PS.innerHTML = `<div class="ps-title"><span>মেনু</span><button type="button" class="ps-mini" id="ps-mini" title="${document.body.classList.contains("menu-mini") ? "মেনু খুলুন" : "মেনু গুটান"}" aria-label="মেনু গুটান/খুলুন">${document.body.classList.contains("menu-mini") ? "»" : "«"}</button></div><button type="button" class="ps-toggle" id="ps-toggle" aria-expanded="${PS.classList.contains("open")}"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>মেনু</button>` + menuHtml(MENU(), 0)
     + `<div class="ps-sep"></div>` + SWITCHES().map((s, i) => `<button type="button" class="ps-sw" data-sw="${i}" role="switch" aria-checked="${s.on}" title="${s.tip}"><span class="ps-ic">${micon(s.icon)}</span><span class="ps-l">${s.label}</span><span class="tgl"></span></button>`).join("")
     ;
   drawModes();
@@ -1526,6 +1670,7 @@ function drawModes() {
 $("#wz-modes").addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (b) { toggleEl(b.dataset.mode)(); drawMenu(); } });
 $("#wz-clear").onclick = () => $("#e-clear").click();
 PS.addEventListener("click", e => {
+  if (e.target.closest("#ps-mini")) { e.stopPropagation(); closeFrom(0); const m = !document.body.classList.contains("menu-mini"); document.body.classList.toggle("menu-mini", m); store("lx_snd_menumini", m); drawMenu(); requestAnimationFrame(() => drawAll()); return; }
   if (e.target.closest("#ps-toggle")) { e.stopPropagation(); closeFrom(0); PS.classList.toggle("open"); drawMenu(); return; }
   const s = e.target.closest(".ps-sw"); if (s) { SWITCHES()[+s.dataset.sw].run(); setTimeout(drawMenu); return; }
 });
@@ -1544,7 +1689,7 @@ $("#stage").appendChild($(".st-player .st-meter")); // the input level goes with
 /* ================= layout: file menu, tabs, drawers ================= */
 [["#tg-fx", "#pane-fx"], ["#tg-mix", "#pane-mix"]].forEach(([b, p]) => $(b).addEventListener("click", () => {
   const open = $(p).hidden; $$(".st-drawer").forEach(d => { d.hidden = true; }); $$("#tg-fx, #tg-mix").forEach(x => x.setAttribute("aria-pressed", "false"));
-  $(p).hidden = !open; $(b).setAttribute("aria-pressed", String(open)); if (open) drawTracks();
+  $(p).hidden = !open; $(b).setAttribute("aria-pressed", String(open)); if (open) drawTracks(); placeInspector();
 }));
 
 /* ================= keys, help, start ================= */
@@ -1580,7 +1725,7 @@ document.addEventListener("keydown", e => {
 addEventListener("online", () => msg("ইন্টারনেট ফিরেছে — আপলোড করা যাবে।")); addEventListener("offline", () => msg("ইন্টারনেট নেই — কাজ চালিয়ে যান, সব এই ব্রাউজারে জমা থাকছে।"));
 
 /* “প্যানেল আগের জায়গায় ফেরান”: forget the remembered tabs and switches of the layout */
-$("#t-layout").onclick = () => { ["lx_snd_ctab", "lx_snd_rtab3", "lx_snd_one"].forEach(k => store(k)); location.reload(); };
+$("#t-layout").onclick = () => { ["lx_snd_tab", "lx_snd_menumini"].forEach(k => store(k)); location.reload(); };
 
 // For tests and power users.
 $$(".q-up").forEach(b => { b.onclick = uploadAll; });

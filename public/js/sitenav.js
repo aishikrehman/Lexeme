@@ -35,18 +35,19 @@ function cleanUrl(href) {
   const file = location.pathname.split("/").pop() || "index.html";
   const curCat = (location.pathname.match(/\/collection\/(idiom|proverb)/) || [])[1] || new URLSearchParams(location.search).get("cat");
   const isBulkPage = /\/bulk\/?$/.test(location.pathname) || (/wizard/.test(file) && new URLSearchParams(location.search).get("mode") === "bulk");
-  const page = /\/studio\/?$/.test(location.pathname) ? "sound" : /\/libre\/?$/.test(location.pathname) ? "libre" : /collection/.test(location.pathname) ? `collection-${curCat}` : isBulkPage ? "bulk" : (file.replace(/\.html$/, "") || "index");
+  const page = /\/studio\/?$/.test(location.pathname) ? "sound" : /collection/.test(location.pathname) ? `collection-${curCat}` : isBulkPage ? "bulk" : (file.replace(/\.html$/, "") || "index");
   const pageKey = page === "browse" && curCat ? `browse-${curCat}` : page;
   // Menu: অভিধান · তালিকা ▾ · লেক্সিম ▾ · লিব্রে স্টুডিও
   const chev = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>';
+  // tool names can be changed by the site admin (/admin → সাইটের সেটিংস)
+  const S = Object.assign({ siteName: "লেক্সিম.বাংলা", studioName: "লিব্রে স্টুডিও", wizardName: "লেক্সিম উইজার্ড", bulkName: "একসঙ্গে অনেক", lexinaryName: "লেক্সিনারি উইজার্ড" }, window.LX_SITE || {});
   const MENU = [
     ["অভিধান", "index.html", "index"],
-    ["তালিকা", [["browse.html", "সব শব্দ", "browse", "বর্ণানুক্রমে, পাতায় পাতায়"],
+    ["তালিকা", [["browse.html", "সব শব্দ", "browse", "বর্ণানুক্রমে, পাতায় পাতায়"], ["collection.html?cat=idiom", "বাগধারা", "collection-idiom", "অর্থসহ সংকলন"], ["collection.html?cat=proverb", "প্রবাদ-প্রবচন", "collection-proverb", "লোকমুখের কথা"],
       ...[["noun", "বিশেষ্য"], ["proper_noun", "নামবাচক বিশেষ্য"], ["pronoun", "সর্বনাম"], ["verb", "ক্রিয়া"], ["adjective", "বিশেষণ"], ["adverb", "ক্রিয়াবিশেষণ"], ["postposition", "অনুসর্গ"], ["conjunction", "সংযোজক অব্যয়"], ["interjection", "আবেগসূচক অব্যয়"], ["numeral", "সংখ্যাবাচক শব্দ"], ["phrase", "বাক্যাংশ"], ["prefix", "উপসর্গ"]]
-        .map(([k, t]) => [`browse.html?cat=${k}`, t, `browse-${k}`]),
-      ["collection.html?cat=idiom", "বাগধারা", "collection-idiom"], ["collection.html?cat=proverb", "প্রবাদ-প্রবচন", "collection-proverb"]], "grid"],
-    ["লেক্সিম", [["wizard.html", "লেক্সিম উইজার্ড", "wizard", "একটি শব্দ যোগ বা সম্পাদনা"], ["wizard.html?mode=bulk", "একসঙ্গে অনেক", "bulk", "স্প্রেডশিটে অনেক শব্দ"], ["lexinary.html", "লেক্সিনারি উইজার্ড", "lexinary", "লেক্সিম থেকে উইকিঅভিধানের ভুক্তি"]]],
-    ["লিব্রে স্টুডিও", "sound.html", "sound"],
+        .map(([k, t]) => [`browse.html?cat=${k}`, t, `browse-${k}`])], "grid"],
+    ["লেক্সিম", [["wizard.html", S.wizardName, "wizard", "একটি শব্দ যোগ বা সম্পাদনা"], ["wizard.html?mode=bulk", S.bulkName, "bulk", "স্প্রেডশিটে অনেক শব্দ"], ["lexinary.html", S.lexinaryName, "lexinary", "লেক্সিম থেকে উইকিঅভিধানের ভুক্তি"]]],
+    [S.studioName, "sound.html", "sound"],
   ];
   const cur = k => (k === pageKey ? ' aria-current="page"' : "");
   const P = { index: '<path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/>', list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
@@ -54,16 +55,30 @@ function cleanUrl(href) {
     browse: '<path d="M4 7V4h16v3M9 20h6M12 4v16"/>', tag: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.2"/>', idiom: '<path d="M5 8h5v5c0 3-2 5-5 5M14 8h5v5c0 3-2 5-5 5"/>',
     proverb: '<path d="M4 5h16v11H9l-5 4z"/>', libre: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>', wizard: '<path d="M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3"/>', bulk: '<path d="M3 5h18v14H3zM3 10h18M3 15h18M9 5v14"/>', lexinary: '<path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM12 7v6M9 10h6"/>' };
   const ico = k => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${P[k] || P[/^browse-/.test(k) ? "tag" : /^collection-idiom/.test(k) ? "idiom" : /^collection-proverb/.test(k) ? "proverb" : "list"]}</svg>`;
-  const TOP = { "তালিকা": "list", "লেক্সিম": "lexeme", "লিব্রে স্টুডিও": "sound" };
+  const TOP = { "তালিকা": "list", "লেক্সিম": "lexeme", [S.studioName]: "sound" };
+  // তালিকা: on the left the main ways to read (all words, idioms, proverbs) with icons; on the right the word
+  // classes as plain chips — one icon each would only repeat the same picture twelve times.
+  const listMenu = h => {
+    const main = h.filter(x => !/^browse-/.test(x[2])), classes = h.filter(x => /^browse-/.test(x[2]));
+    return `<span class="sn-mcol">${main.map(([u, n, kk, d]) => `<a href="${cleanUrl(u)}"${cur(kk)}>${ico(kk)}<span><b>${n}</b>${d ? `<small>${d}</small>` : ""}</span></a>`).join("")}</span>
+      <span class="sn-mcol sn-mcats"><span class="sn-mh">শব্দশ্রেণি ধরে</span><span class="sn-chips">${classes.map(([u, n, kk]) => `<a href="${cleanUrl(u)}"${cur(kk)}>${n}</a>`).join("")}</span></span>`;
+  };
   const menuHtml = MENU.map(([t, h, k]) => !Array.isArray(h) ? `<a class="nl" href="${cleanUrl(h)}"${cur(k)}>${ico(k)}${t}</a>`
     : `<span class="sn-drop${h.some(x => x[2] === pageKey) ? " on" : ""}${k === "grid" ? " sn-wide" : ""}"><button type="button" class="nl sn-dbtn" aria-expanded="false" aria-haspopup="true">${ico(TOP[t])}${t}${chev}</button>
-      <span class="sn-dmenu"><span class="sn-dhead">${t}</span>${h.map(([u, n, kk, d]) => `<a href="${cleanUrl(u)}"${cur(kk)}>${ico(kk)}<span><b>${n}</b>${d ? `<small>${d}</small>` : ""}</span></a>`).join("")}</span></span>`).join("");
+      <span class="sn-dmenu"><span class="sn-dhead">${t}</span>${k === "grid" ? listMenu(h) : h.map(([u, n, kk, d]) => `<a href="${cleanUrl(u)}"${cur(kk)}>${ico(kk)}<span><b>${n}</b>${d ? `<small>${d}</small>` : ""}</span></a>`).join("")}</span></span>`).join("");
   let user = ""; try { user = sessionStorage.getItem("wd_token") ? sessionStorage.getItem("wd_user") || "" : ""; } catch (e) {}
   const nav = document.createElement("nav");
   nav.className = "sitenav"; nav.setAttribute("aria-label", "সাইটের পাতা");
-  nav.innerHTML = `<div class="sn-in"><a class="logo" href="${cleanUrl("index.html")}"><span class="logo-mark" aria-hidden="true">অ</span><span>লেক্সিম<b>.</b>বাংলা</span></a><button type="button" class="sn-burger" aria-label="মেনু" aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><span class="sn-links">${menuHtml}</span>
-    <span class="nav-acct" id="nav-acct"><a class="nl-btn" href="${cleanUrl("search.html")}"${page === "search" ? ' aria-current="page"' : ""}><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>অনুসন্ধান</span></a><button type="button" class="login-btn${user ? " on" : ""}" id="login-btn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>${user ? user.replace(/[<>&"]/g, "") : "লগ ইন"}</span></button></span></div>`;
+  nav.innerHTML = `<div class="sn-in"><a class="logo" href="${cleanUrl("index.html")}"><img class="logo-img" src="/LexemBangla.svg" alt="" width="46" height="32"><span>${S.siteName === "লেক্সিম.বাংলা" ? "লেক্সিম<b>.</b>বাংলা" : S.siteName.replace(/[<>&"]/g, "")}</span></a><button type="button" class="sn-burger" aria-label="মেনু" aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><span class="sn-links">${menuHtml}</span>
+    <span class="nav-acct" id="nav-acct"><a class="nl-btn" href="${cleanUrl("search.html")}"${page === "search" ? ' aria-current="page"' : ""}><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>অনুসন্ধান</span></a><button type="button" class="login-btn${user ? " on" : ""}" id="login-btn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span${user ? ` title="${user.replace(/[<>&"]/g, "")}"` : ""}>${user ? user.replace(/[<>&"]/g, "") : "লগ ইন"}</span></button></span></div>`;
   document.body.prepend(nav);
+  // the admin's notice, above every page (closable for this visit)
+  if (S.notice && sessionStorage.getItem("lx_notice_x") !== S.notice) {
+    const n = document.createElement("div"); n.className = "site-notice"; n.setAttribute("role", "status");
+    n.innerHTML = `<span></span><button type="button" aria-label="বন্ধ করুন">✕</button>`; n.firstChild.textContent = S.notice;
+    n.lastChild.onclick = () => { try { sessionStorage.setItem("lx_notice_x", S.notice); } catch (e) {} n.remove(); };
+    nav.after(n);
+  }
   // Phones: the page links fold into the ☰ button.
   const burger = nav.querySelector(".sn-burger");
   burger.addEventListener("click", () => { const open = nav.classList.toggle("open"); burger.setAttribute("aria-expanded", String(open)); });

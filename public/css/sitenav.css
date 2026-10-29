@@ -26,11 +26,15 @@
 .sitenav .nl .ic:last-child:not(:first-child){margin:0 0 0 4px}
 .sn-dmenu b{display:block;font-size:15.5px;font-weight:600}
 .sn-dhead{display:none}
-.sn-drop.sn-wide .sn-dmenu{min-width:500px}
-.sn-drop.sn-wide.open .sn-dmenu{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px}
-.sn-drop.sn-wide .sn-dmenu a:first-of-type{grid-column:1/-1}
-.sn-drop.sn-wide .sn-dmenu a b{font-weight:400}
-.sn-drop.sn-wide .sn-dmenu a:first-of-type b{font-weight:600}
+/* তালিকা: reading ways on the left, word classes as chips on the right */
+.sn-drop.sn-wide .sn-dmenu{min-width:580px;padding:10px}
+.sn-drop.sn-wide.open .sn-dmenu{display:grid;grid-template-columns:220px minmax(0,1fr);gap:8px}
+.sn-mcol{display:flex;flex-direction:column}
+.sn-mcats{border-left:1px solid var(--line);padding:4px 4px 4px 14px}
+.sn-mh{font-size:12.5px;color:var(--muted);font-weight:600;margin:2px 0 8px}
+.sn-chips{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.sn-dmenu .sn-chips a{display:inline-flex;padding:4px 12px;border-radius:999px;background:var(--chip);color:var(--ink);font-size:14.5px}
+.sn-dmenu .sn-chips a:hover,.sn-dmenu .sn-chips a[aria-current="page"]{background:var(--primary);color:var(--on-primary)}
 .sn-dmenu small{display:block;color:var(--muted);font-size:13px}
 .nav-acct{display:flex;align-items:center;gap:8px;margin-left:auto}
 /* অনুসন্ধান: the most visible control on the right, next to login */
@@ -65,7 +69,8 @@
   /* phones: each dropdown opens in place when its name is tapped */
   .sn-drop{display:block}.sitenav .sn-dbtn{display:flex!important;width:100%;justify-content:space-between}
   .sn-dmenu,.sn-drop.sn-wide .sn-dmenu{display:none!important}
-  .sn-drop.open .sn-dmenu,.sn-drop.sn-wide.open .sn-dmenu{display:grid!important;grid-template-columns:1fr 1fr;gap:0 6px;position:static;box-shadow:none;border:0;border-radius:0;padding:2px 0 6px 18px;margin:0;min-width:0}
+  .sn-mcats{border-left:0;padding:6px 12px 2px}
+  .sn-drop.open .sn-dmenu,.sn-drop.sn-wide.open .sn-dmenu{display:grid!important;grid-template-columns:1fr;gap:0 6px;position:static;box-shadow:none;border:0;border-radius:0;padding:2px 0 6px 18px;margin:0;min-width:0}
   .sn-dhead{display:block;grid-column:1/-1;font-size:13px;color:var(--muted);padding:2px 12px}
   .sn-dmenu small{display:none}
   .sn-dmenu a{padding:6px 12px}
@@ -83,3 +88,22 @@
 @media (max-width:760px){.sitenav .sn-dhead{display:none!important}}
 
 @media (max-width:760px){.sitenav .sn-drop{display:block!important;width:100%}.sitenav .sn-dbtn{justify-content:flex-start!important;gap:0}.sitenav .sn-dbtn .ic:last-child{margin-left:auto!important}}
+
+/* admin's notice under the header */
+.site-notice{display:flex;gap:10px;align-items:center;justify-content:center;padding:8px 16px;background:var(--accent-soft,#FBF1D6);color:var(--ink,#162030);font-size:15px;border-bottom:1px solid var(--line,#D1D8DD)}
+.site-notice button{border:0;background:none;cursor:pointer;color:inherit;font-size:14px}
+
+.lx-menu a[role=menuitem]{display:block;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none}
+.lx-menu a[role=menuitem]:hover{background:var(--sunken)}
+
+/* long user names: shortened in the header, full name on hover */
+.login-btn span{max-width:14ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}
+.panel .who{display:inline-block;max-width:24ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+
+.lx-menu-who{overflow-wrap:anywhere}
+
+/* the site's mark (public/LexemBangla.svg, black): white on dark backgrounds */
+.logo-img{display:block;height:32px;width:auto;flex:none}
+:root[data-theme="dark"] .logo-img{filter:invert(1)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .logo-img{filter:invert(1)}}
+@media (max-width:760px){.sitenav .logo-img{height:28px}}

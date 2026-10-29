@@ -25,8 +25,32 @@ const LXAuth = (function () {
   const token = () => ss.get("wd_token") || "";
   const user = () => (token() ? ss.get("wd_user") || "" : "");
 
+  // Whatever was typed on the page survives the login round trip: changed fields go to sessionStorage just
+  // before leaving, and are put back once the page has loaded again. (Pages with their own model, like the
+  // lexeme wizard, stash that themselves and set LX_STASHED.)
+  const STASH = "lx_form_stash:" + location.pathname;
+  window.addEventListener("lx-before-login", () => {
+    const v = {};
+    document.querySelectorAll("input[id], textarea[id], select[id]").forEach(el => {
+      if (/^(password|file|hidden)$/.test(el.type) || el.closest("[data-nostash]")) return;
+      if (el.type === "checkbox" || el.type === "radio") { if (el.checked !== el.defaultChecked) v[el.id] = el.checked; }
+      else if (el.tagName === "SELECT" ? el.selectedIndex >= 0 && !el.options[el.selectedIndex].defaultSelected : el.value !== el.defaultValue) v[el.id] = el.value;
+    });
+    if (Object.keys(v).length) ss.set(STASH, JSON.stringify(v));
+  });
+  window.addEventListener("load", () => setTimeout(() => {
+    let v; try { v = JSON.parse(ss.get(STASH) || "null"); } catch (e) {} ss.set(STASH, null);
+    if (!v || window.LX_STASHED) return;
+    for (const [id, val] of Object.entries(v)) {
+      const el = document.getElementById(id); if (!el) continue;
+      if (typeof val === "boolean") el.checked = val; else el.value = val;
+      el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }, 50));
   async function login(id = clientId()) {
     if (server() && window.LX_PASTEBACK) return pasteBackLogin();
+    // pages keep unsaved work across the login round trip (they listen for this and stash it in sessionStorage)
+    window.dispatchEvent(new Event("lx-before-login"));
     if (server()) { location.href = "/auth/login?back=" + encodeURIComponent(location.pathname + location.search + location.hash); return; }
     // Without the Node server there is nowhere to keep the OAuth 1.0a secret, so login cannot start.
     // Served by Node but no consumer configured (e.g. a host without the OAUTH_* environment variables).
@@ -111,7 +135,7 @@ const LXAuth = (function () {
     const b = document.getElementById("login-btn"); if (!b) return;
     const u = user();
     b.classList.toggle("on", !!u);
-    b.querySelector("span").textContent = u || (token() ? "অ্যাকাউন্ট" : "লগ ইন");
+    const sp = b.querySelector("span"); sp.textContent = u || (token() ? "অ্যাকাউন্ট" : "লগ ইন"); sp.title = u || ""; // long names are cut short in the header (CSS); full name on hover
     b.title = u ? `${u} হিসেবে লগ ইন করা আছে` : "নতুন শব্দ যোগ বা সম্পাদনার জন্য লগ ইন (পড়তে লাগে না)";
   }
   // Logged in: a small dropdown under the header button (not a popup window) with the name and লগ আউট.
@@ -126,6 +150,7 @@ const LXAuth = (function () {
       document.addEventListener("keydown", e => { if (e.key === "Escape") m.hidden = true; });
     }
     m.innerHTML = `<div class="lx-menu-who">${esc(user() || "অ্যাকাউন্ট")}<small>উইকিমিডিয়া অ্যাকাউন্টে লগ ইন করা আছে</small></div>
+      ${window.LX_NODE ? `<a role="menuitem" href="/settings">আমার সেটিংস</a>${window.LX_ADMIN ? `<a role="menuitem" href="/admin">অ্যাডমিন ড্যাশবোর্ড</a>` : ""}<a role="menuitem" href="/feedback">ফিডব্যাক / সমস্যা জানান</a>` : ""}
       <button type="button" role="menuitem" id="lx-logout">লগ আউট</button>`;
     m.querySelector("#lx-logout").onclick = async () => { m.hidden = true; await logout(); };
     m.hidden = false;

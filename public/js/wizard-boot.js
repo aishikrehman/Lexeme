@@ -21,24 +21,8 @@
     $(".top .bsub").textContent = "স্প্রেডশিটে অনেক শব্দ একসঙ্গে লিখুন বা পেস্ট করুন, যাচাই করুন, তারপর একবারে উইকি উপাত্তে সংরক্ষণ করুন";
     document.title = "একসঙ্গে অনেক · লেক্সিম.বাংলা";
   } else setMode(false);
-  // Save bar: always visible at the bottom of the single-word wizard (any tab). It drives the real
-  // #submit button, so the save itself, its checks and its log stay as they are.
-  if (!isBulk) {
-    const bar = document.createElement("div"); bar.className = "savebar";
-    bar.innerHTML = `<button type="button" class="btn" id="save-now">উইকি উপাত্তে সংরক্ষণ</button><span class="why" id="save-why"></span><span class="saved" id="save-done" hidden></span>`;
-    $("#single").appendChild(bar);
-    $("#save-now").addEventListener("click", () => {
-      if ($("#p-review").hidden) selectTab("review");
-      if (!$("#submit").disabled) $("#submit").click();
-      $("#p-review").scrollIntoView({ block: "start", behavior: "smooth" });
-    });
-    const sync = () => {
-      const s = $("#submit"); const off = s.disabled, w = $("#submit-why")?.textContent || "";
-      $("#save-now").disabled = off;
-      const why = $("#save-why"); why.textContent = off ? w || s.title || "" : "সব ঠিক আছে — সংরক্ষণ করা যাবে।"; why.classList.toggle("ready", !off);
-    };
-    setInterval(sync, 400); sync();
-  }
+  // (no fixed save bar: the review tab has the save button, with its checks and log)
+
   // A row sent from the bulk sheet (“উইজার্ডে খুলুন”) becomes the draft here.
   if (!isBulk && q.get("from") === "bulk") {
     let row = null; try { row = JSON.parse(sessionStorage.getItem("lx_bulk_row") || "null"); sessionStorage.removeItem("lx_bulk_row"); } catch (e) {}
@@ -86,6 +70,7 @@
   };
 
   if (q.get("code")) return; // OAuth callback is handled by wizard.js
+  if (window.LX_STASHED) return; // work from before the login is back on screen; don't load ?id / ?lemma over it
   if (q.get("login") === "1" && !LXAuth.token()) setTimeout(() => LXAuth.login(), 300); // old links
   const id = q.get("id"), lemma = q.get("lemma"), lang = q.get("lang"), cat = q.get("cat");
   if (lang) { const s = $("#lang-preset"); if ([...s.options].some(o => o.value === lang)) { s.value = lang; s.dispatchEvent(new Event("change")); } }
@@ -93,4 +78,7 @@
   const backBtn = lid => ` <a class="btn ghost small" href="${readUrl(lid)}">${ret ? "সম্পাদনা না করে পড়ার পাতায় ফিরুন" : "অভিধানে দেখুন"}</a>`;
   if (id && /^L\d+$/.test(id)) { origLoad(id).then(() => { $("#found .msg.ok")?.insertAdjacentHTML("beforeend", backBtn(id)); }).catch(e => { $("#found").innerHTML = `<div class="msg err">${esc(id)} লোড করা যায়নি: ${esc(e.message)}</div>`; }); }
   else if (lemma) { const el = $("#lemma"); el.value = lemma; el.dispatchEvent(new Event("input", { bubbles: true })); }
+  // From the studio's upload list (“＋ লেক্সিম বানান”): the recording already on Commons becomes the pronunciation (P443).
+  const audio = q.get("audio");
+  if (audio && /\.(wav|ogg|oga|opus|flac|mp3|webm)$/i.test(audio) && !draft.claims.some(c => c.prop === "P443" && c.value === audio)) { draft.claims.push(newClaim("P443", audio)); renderAll(); }
 })();

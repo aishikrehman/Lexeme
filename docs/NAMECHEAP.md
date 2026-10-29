@@ -35,7 +35,7 @@ cPanel → **Setup Node.js App** → Create Application:
 | `PUBLIC_URL` | `https://lexeme.bnwp.org` |
 | `OAUTH_CONSUMER_KEY` | এখনকার consumer token (ঠিকানা একই, তাই নতুন লাগবে না) |
 | `OAUTH_CONSUMER_SECRET` | এখনকার secret |
-| `STORE_DIR` | `/home/<cpanel-user>/lexeme-data` (কোডের ফোল্ডারের বাইরে, যাতে আপডেটে মুছে না যায়) |
+| `STORE_DIR` | ঐচ্ছিক — না দিলে কোডের ফোল্ডারের পাশে `lexeme-data` ফোল্ডারে থাকে (যেমন `~/lexeme` → `~/lexeme-data`), আপডেটে ছোঁয়া পড়ে না |
 
 `PORT` দেবেন না — cPanel (Passenger) নিজেই দেয়। কোনো প্যাকেজ নেই, তাই "Run NPM Install"-এর দরকার নেই।
 তারপর **Start / Restart**।
@@ -124,4 +124,4 @@ cd /opt/lexeme && sudo git pull && sudo systemctl restart lexeme
 
 - `https://lexeme.bnwp.org/auth/me` — `"missing": []` থাকলে লগ ইন ঠিক আছে।
 - লগ ইন করে স্টুডিওতে বক্তা যোগ করুন, অন্য ব্রাউজারে লগ ইন করে দেখুন এসেছে কিনা।
-- ডাটাবেজ ফাইল: `STORE_DIR/lexeme.db` — মাঝে মাঝে এর কপি রাখুন (ব্যাকআপ)।
+- ডাটাবেজ: `lexeme-data/lexeme.db`; প্রতিদিন নিজে থেকে কপি হয় `lexeme-data/backups/`-এ (শেষ ১৪ দিনের)।

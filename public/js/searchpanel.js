@@ -29,15 +29,16 @@ function mountSearch(root, out, { page = false } = {}) {
         <button type="button" data-f="lemma">শব্দে</button><button type="button" data-f="gloss">সংজ্ঞায়</button>
       </div>
     </div>
-    <p class="sp-hint muted"></p>`;
+    <div class="sp-bar"><p class="sp-hint muted"></p></div>`;
   const q$ = s => root.querySelector(s), q$$ = s => [...root.querySelectorAll(s)];
   const one = q$('[data-k="one"]');
 
   const p = params();
   const fields = new Set(String(p.field || "").split(",").filter(f => f === "lemma" || f === "gloss"));
   if (!fields.size) fields.add("lemma"); // default: words only
+  // sources: from the link if it names them, otherwise the site-wide choice (getSource, common.js)
   const srcs = new Set(String(p.src || "").split(",").filter(s => s === "wd" || s === "wikt"));
-  if (!srcs.size) srcs.add("wd"); // default: Wikidata lexemes
+  if (!srcs.size) (getSource() === "both" ? ["wd", "wikt"] : [getSource()]).forEach(s => srcs.add(s));
   let mode = p.exact ? "exact" : (p.starts || p.ends || p.contains) ? "parts" : p.q ? "relevant" : (() => { try { return localStorage.getItem("search_amode") || "relevant"; } catch (e) { return "relevant"; } })();
   if (!MODE_KEYS[mode]) mode = "relevant";
   if (page) { one.value = p.exact || p.q || ""; ["starts", "ends", "contains"].forEach(k => { q$(`[data-k="${k}"]`).value = p[k] || ""; }); }
@@ -59,36 +60,51 @@ function mountSearch(root, out, { page = false } = {}) {
   async function run() {
     const v = values(), filled = Object.keys(v).filter(k => v[k]); drawFields();
     q$(".sp-x").hidden = !one.value;
-    const params = { ...v, field: fieldStr(), src: srcs.size === 1 && srcs.has("wd") ? "" : [...srcs].join(",") };
+    const params = { ...v, field: fieldStr() };
     const label = filled.map(k => (k === "q" ? `“${v.q}”` : `${HOW_BN[k]} “${v[k]}”`)).join(" ও ");
     if (page) { history.replaceState(null, "", cleanUrl("search.html?" + qs(params))); document.title = (label ? `${label} · ` : "") + "খুঁজুন · লেক্সিম.বাংলা"; }
     const hint = q$(".sp-hint");
-    if (!filled.length) { hint.textContent = ""; out.innerHTML = ""; return; }
+    if (!filled.length) { hint.textContent = ""; out.innerHTML = ""; if (page) setExport("", []); return; }
     const my = ++seq, limit = page ? 200 : 12; out.innerHTML = skeleton(page ? 5 : 3);
     const where = fields.size === 1 ? (fields.has("gloss") ? " · সংজ্ঞায়" : " · শব্দে") : "";
     const more = n => !page && n >= limit ? ` · <a href="${cleanUrl("search.html?" + qs(params))}">সব ফল দেখুন →</a>` : "";
     const add = v.q || v.exact;
     const jobs = [];
     if (srcs.has("wd")) jobs.push(getJSON(`/api/search?${qs({ ...v, field: fieldStr(), lang: getLang(), limit })}`).then(j => ({
-      n: j.list.length, head: "উইকি উপাত্ত (লেক্সিম)",
+      n: j.total || j.list.length, head: "উইকি উপাত্ত (লেক্সিম)", rows: j.list.map(s => expRowLex(s, j.labels)),
       html: j.list.length ? j.list.map((s, i) => rowItem(s, j.labels, i + 1).replace('<span class="g">', s.inGloss ? '<span class="g"><span class="chip">সংজ্ঞায় মিল</span> ' : '<span class="g">')).join("")
         : `<div class="sp-empty">কিছু পাওয়া যায়নি।${add ? ` <a class="btn small" href="wizard.html?${qs({ lemma: add, return: 1 })}">“${esc(add)}” নতুন শব্দ হিসেবে যোগ করুন</a>` : ""}</div>` })));
     if (srcs.has("wikt")) jobs.push(wiktSearch(v, limit, fields.has("gloss")).then(list => ({
-      n: list.length, head: "বাংলা উইকিঅভিধান",
-      html: list.length ? list.map((r, i) => `<a class="dent wk" href="https://bn.wiktionary.org/wiki/${encodeURIComponent(r.title)}" target="_blank" rel="noopener"><span class="sn">${toBn(i + 1)}</span><span class="lem">${esc(r.title)}</span>${r.snippet ? ` <span class="g">${esc(r.snippet)}</span>` : ""} <span class="n">উইকিঅভিধান ↗</span></a>`).join("")
+      n: list.length, head: "বাংলা উইকিঅভিধান", rows: list.map(expRowWikt),
+      html: list.length ? list.map((r, i) => wiktRow(r, i + 1)).join("")
         : `<div class="sp-empty">উইকিঅভিধানে কিছু পাওয়া যায়নি।</div>` })));
-    // Each source shows as soon as it answers.
-    const heads = jobs.length > 1;
+    // Both sources: one list in alphabetical order, a word found in both as one row.
+    if (jobs.length > 1) {
+      out.innerHTML = skeleton(page ? 5 : 3); hint.textContent = "খোঁজা হচ্ছে…";
+      const [wd, wk] = await Promise.all([
+        getJSON(`/api/search?${qs({ ...v, field: fieldStr(), lang: getLang(), limit })}`).catch(() => ({ list: [], labels: {} })),
+        wiktSearch(v, limit, fields.has("gloss")).catch(() => [])]);
+      if (my !== seq) return;
+      const total = new Set([...wd.list.map(s => s.lemma), ...wk.map(r => r.title)]).size;
+      // all that matched, not only what fits on screen: Wikidata reports its own total; Wiktionary as many as were fetched
+      const all = Math.max(total, (wd.total || wd.list.length) + wk.filter(r => !wd.list.some(s => s.lemma === r.title)).length);
+      if (page) setExport(`অনুসন্ধান — ${label}`, [...wd.list.map(s => expRowLex(s, wd.labels)), ...wk.filter(r => !wd.list.some(s => s.lemma === r.title)).map(expRowWikt)].sort((a, b) => a["শব্দ"].localeCompare(b["শব্দ"], "bn")));
+      out.innerHTML = total ? mergedRows(wd.list, wd.labels, wk) : `<div class="sp-empty">কিছু পাওয়া যায়নি।${add ? ` <a class="btn small" href="wizard.html?${qs({ lemma: add, return: 1 })}">“${esc(add)}” নতুন শব্দ হিসেবে যোগ করুন</a>` : ""}</div>`;
+      hint.innerHTML = `${esc(label)}${where} — মোট <b>${toBn(all)}</b>${wk.length >= limit ? "+" : ""}টি শব্দ${all > total ? `, দেখানো হচ্ছে ${toBn(total)}টি` : ""}, বর্ণানুক্রমে <span class="tip" tabindex="0" data-tip="উইকি উপাত্ত ${toBn(wd.list.length)}টি, উইকিঅভিধান ${toBn(wk.length)}টি; দুই জায়গাতেই থাকা শব্দ একসঙ্গে দেখানো হয়েছে।">ⓘ</span>${more(Math.max(wd.list.length, wk.length))}`;
+      return;
+    }
+    // One source: it shows as soon as it answers.
+    const heads = false;
     out.innerHTML = jobs.map((_, i) => `<div class="sp-sec" data-i="${i}">${skeleton(3)}</div>`).join("");
     const got = [];
     const fill = () => {
       const total = got.filter(Boolean).reduce((a, r) => a + r.n, 0), wait = got.filter(Boolean).length < jobs.length;
-      hint.innerHTML = `${esc(label)}${where} — <b>${toBn(total)}</b>${got.some(r => r && r.n >= limit) ? "+" : ""}টি ফল${wait ? " (আরও আসছে…)" : ""}${more(Math.max(0, ...got.filter(Boolean).map(r => r.n)))}`;
+      hint.innerHTML = `${esc(label)}${where} — মোট <b>${toBn(total)}</b>${got.some(r => r && r.n >= limit && !r.exact) ? "+" : ""}টি শব্দ${wait ? " (আরও আসছে…)" : ""}${more(Math.max(0, ...got.filter(Boolean).map(r => r.n)))}`;
     };
     jobs.forEach((job, i) => job.catch(e => ({ n: 0, head: "", html: `<div class="msg err">খোঁজা যায়নি: ${esc(e.message || e)}</div>` })).then(r => {
       if (my !== seq) return; got[i] = r;
       const box = out.querySelector(`.sp-sec[data-i="${i}"]`); if (box) box.innerHTML = (heads ? `<h3 class="sp-head">${r.head} <span class="muted">${toBn(r.n)}</span></h3>` : "") + r.html;
-      fill();
+      fill(); if (page) setExport(`অনুসন্ধান — ${label}`, got.filter(Boolean).flatMap(x => x.rows || []));
     }));
   }  const later = () => { clearTimeout(timer); timer = setTimeout(run, 280); };
   q$$(".sp-in").forEach(i => i.addEventListener("input", later));
@@ -99,9 +115,11 @@ function mountSearch(root, out, { page = false } = {}) {
     setMode(b.dataset.m, true); run();
   }));
   q$(".sp-src").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
-    const s = b.dataset.s; if (srcs.has(s) && srcs.size > 1) srcs.delete(s); else srcs.add(s); run(); });
+    const s = b.dataset.s; if (srcs.has(s) && srcs.size > 1) srcs.delete(s); else srcs.add(s);
+    setSource(srcs.size === 2 ? "both" : [...srcs][0]); run(); }); // one choice for the whole site
   q$(".sp-field").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return;
     const f = b.dataset.f; if (fields.has(f) && fields.size > 1) fields.delete(f); else fields.add(f); run(); }); // one always stays on
+  if (page) mountExport(q$(".sp-bar")); // the results as a file
   setMode(mode); drawFields();
   configReady.then(run);
   return { focus: () => (mode === "parts" ? q$('[data-k="starts"]') : one).focus() };

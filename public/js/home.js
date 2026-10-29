@@ -16,11 +16,14 @@ async function load() {
     quoteAt(0);
     newQuiz();
     $("#idioms").innerHTML = h.idioms.length ? h.idioms.slice(0, 8).map(s => wcard(s, "idiom")).join("") : `<div class="msg">কোনো বাগধারা পাওয়া যায়নি। <a href="wizard.html?cat=idiom">যোগ করুন</a></div>`;
-    $("#proverbs").innerHTML = h.proverbs.length ? h.proverbs.slice(0, 8).map((s, i) => rowItem(s, h.labels, i + 1)).join("") : `<div class="msg">কোনো প্রবাদ পাওয়া যায়নি। <a href="wizard.html?cat=proverb">যোগ করুন</a></div>`;
+    $("#proverbs").innerHTML = h.proverbs.length ? h.proverbs.slice(0, 6).map(pcard).join("") : `<div class="msg">কোনো প্রবাদ পাওয়া যায়নি। <a href="wizard.html?cat=proverb">যোগ করুন</a></div>`;
   } catch (e) {
     $("#wotd").innerHTML = `<div class="msg err">লোড করা যায়নি: ${esc(e.message)}</div>`; $("#idioms").innerHTML = ""; $("#quote").innerHTML = ""; $("#quiz").innerHTML = "";
   }
 }
+
+// A proverb as a small quote card: the saying, its meaning under it.
+const pcard = s => `<a class="pcard" href="${wordUrl(s.id)}"><span class="pq" aria-hidden="true">“</span><b>${esc(s.lemma)}</b>${s.gloss ? `<span class="pm">${esc(s.gloss)}</span>` : ""}</a>`;
 
 /* word of the day (and the random-word button, which swaps only this box) */
 function drawWord(w, labels, kicker) {

@@ -59,8 +59,7 @@
 
   <!-- One tab bar for five panes. Wide screens: the first three over the middle, the last two over the right column. Smaller screens: one row, one pane at a time. -->
   <nav class="st-tabs" id="st-tabs" role="tablist">
-    <div class="tabs-c"><button type="button" role="tab" data-tab="setup"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span class="t-long">সেটআপ</span><span class="t-short">সেটআপ</span><span class="t-warn" id="ct-sw" hidden>!</span></button><button type="button" role="tab" data-tab="words"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span class="t-long">শব্দ-তালিকা</span><span class="t-short">তালিকা</span><span class="t-n" id="ct-wc"></span></button><button type="button" role="tab" data-tab="wizard"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="t-long">রেকর্ড উইজার্ড</span><span class="t-short">রেকর্ড</span></button></div>
-    <div class="tabs-r"><button type="button" role="tab" data-tab="regions"><svg viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg><span class="t-long">অংশসমূহ</span><span class="t-short">অংশ</span><span class="t-n" id="rt-r"></span></button><button type="button" role="tab" data-tab="queue"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 21h16"/></svg><span class="t-long">আপলোড তালিকা</span><span class="t-short">আপলোড</span><span class="t-n" id="rt-q"></span></button></div>
+    <div class="tabs-c"><button type="button" role="tab" data-tab="setup"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span class="t-long">সেটআপ</span><span class="t-short">সেটআপ</span><span class="t-warn" id="ct-sw" hidden>!</span></button><button type="button" role="tab" data-tab="words"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span class="t-long">শব্দ-তালিকা</span><span class="t-short">তালিকা</span><span class="t-n" id="ct-wc"></span></button><button type="button" role="tab" data-tab="wizard"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="t-long">রেকর্ড উইজার্ড</span><span class="t-short">রেকর্ড</span></button><button type="button" role="tab" data-tab="regions"><svg viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg><span class="t-long">অংশসমূহ</span><span class="t-short">অংশ</span><span class="t-n" id="rt-r"></span></button><button type="button" role="tab" data-tab="queue"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 21h16"/></svg><span class="t-long">আপলোড তালিকা</span><span class="t-short">আপলোড</span><span class="t-n" id="rt-q"></span></button></div>
   </nav>
 
   <section class="st-center">
@@ -93,6 +92,7 @@
           <label class="spk-consent"><input type="checkbox" id="sp-consent"><span>নিজের কণ্ঠ রেকর্ড করছি এবং বেছে নেওয়া লাইসেন্সে উইকিমিডিয়া কমন্সে প্রকাশে সম্মতি দিচ্ছি। অপ্রাপ্তবয়স্ক হলে অভিভাবকের সম্মতি নিয়েছি।</span></label>
         </fieldset>
         <div class="spk-foot"><button type="button" class="link-b red" id="sp-del">এই বক্তাকে মুছুন</button><span class="s-fill"></span><button type="button" class="sbtn pri" id="sp-done">সংরক্ষণ</button></div>
+        <p class="hint sp-share" id="sp-share"></p>
       </div>
     </section>
     <section class="pn" id="pn-proj">
@@ -192,6 +192,30 @@
     </div>
     <div class="st-status"><span id="s-sel">—</span><span id="s-info"></span><span class="st-msg" id="s-msg"></span><button type="button" class="link-b red wz-clear" id="wz-clear" title="টাইমলাইনের সব অডিও মুছুন (শব্দ-তালিকা থাকবে)">✕ সব মুছুন</button></div>
     </div>
+
+    <div class="st-tracks" id="tracks" hidden></div>
+    </div>
+    <div class="pane pane-list" data-pane="regions" hidden>
+    <section class="pn pn-regions" id="pn-regions">
+      <h3>অংশসমূহ <span class="cnt" id="r-count">০</span><span class="h-acts"><button type="button" class="h-a" id="r-unsplit" title="সব ভাগ তুলে এক অংশ">ভাগ তুলুন</button><button type="button" class="h-a red" id="r-clear" title="সব অডিও ও অংশ মুছুন">সব মুছুন</button></span></h3>
+      <div class="r-tools"><input id="r-title" placeholder="সাধারণ শিরোনাম (ঐচ্ছিক)"><select id="r-kindall" title="সব অংশের ধরন"></select></div>
+      <button type="button" class="sbtn wide r-map" id="r-map" title="নামহীন অংশগুলোতে শব্দ-তালিকার বাকি শব্দ ক্রমানুসারে বসান">↧ শব্দ-তালিকা থেকে নাম বসান</button>
+      <div class="r-list" id="r-body"></div>
+      <button type="button" class="sbtn pri wide" id="r-export">আপলোড তালিকায় পাঠান ›</button>
+    </section>
+    </div>
+    <div class="pane pane-list" data-pane="queue" hidden>
+    <section class="pn pn-grow" id="pn-queue">
+      <h3>আপলোড তালিকা <span class="cnt" id="q-count">০</span><span class="h-acts"><button type="button" class="h-a" id="q-clear-done" title="কমন্সে উঠে যাওয়াগুলো তালিকা থেকে সরান">উঠেছেগুলো সরান</button><button type="button" class="h-a red" id="q-clear-all" title="পুরো তালিকা খালি করুন">সব সরান</button></span></h3>
+      <div class="q-list" id="q-list"></div>
+      <p class="hint q-msg" id="q-msg"></p><p class="hint q-cloud"></p>
+      <button type="button" class="sbtn pri wide q-up" id="q-up">কমন্সে আপলোড করুন</button>
+    </section>
+    </div>
+  </section>
+
+  <aside class="st-right-col st-insp" id="insp" aria-label="টুলের সেটিংস">
+    <div id="insp-body">
     <!-- effects -->
     <section class="st-drawer" id="pane-fx" hidden>
       <div class="dr-head"><b>ইফেক্ট</b><select id="fx-preset"><option value="">প্রিসেট…</option><option value="voice">কণ্ঠ পরিষ্কার</option><option value="field">মাঠ-রেকর্ড (বেশি নয়েজ)</option><option value="song">গান</option><option value="phone">ফোনের রেকর্ড</option><option value="flat">শূন্য</option></select>
@@ -200,7 +224,14 @@
       <div class="fx">
         <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-nr-on"> নয়েজ রিডাকশন</label>
           <div class="kn"><span>মাত্রা</span><input type="range" id="fx-nr" min="0" max="100" value="50"><b></b></div>
+          <div class="row"><select id="fx-nr-mode" title="নয়েজ কীভাবে চেনা হবে"><option value="adaptive">চলমান (বদলানো নয়েজও ধরে)</option><option value="fixed">স্থির (সবচেয়ে চুপ অংশ থেকে)</option></select></div>
           <div class="row"><button type="button" class="sbtn" id="fx-profile" data-sel>নির্বাচিত = নয়েজ</button><small id="fx-prof"></small></div></div>
+        <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-gate-on"> নয়েজ গেট <small class="hint">বিরতিগুলো নিঃশব্দ</small></label>
+          <div class="kn"><span>সীমা</span><input type="range" id="fx-gate" min="-70" max="-20" value="-45"><b></b></div></div>
+        <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-hum-on"> হাম রিমুভার <small class="hint">বিদ্যুতের গুনগুন</small></label>
+          <div class="kn"><span>Hz</span><input type="range" id="fx-hum" min="50" max="60" step="10" value="50"><b></b></div></div>
+        <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-dess-on"> ডি-এসার <small class="hint">শ/স-এর হিস</small></label>
+          <div class="kn"><span>মাত্রা</span><input type="range" id="fx-dess" min="0" max="100" value="40"><b></b></div></div>
         <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-hp-on"> হাই-পাস</label>
           <div class="kn"><span>Hz</span><input type="range" id="fx-hp" min="40" max="300" value="80"><b></b></div></div>
         <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-eq-on"> ইকুয়ালাইজার</label>
@@ -214,9 +245,13 @@
           <div class="kn"><span>গতি %</span><input type="range" id="fx-tempo" min="50" max="150" value="100"><b></b></div></div>
         <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-gain-on"> গেইন</label>
           <div class="kn"><span>dB</span><input type="range" id="fx-gain" min="-20" max="20" value="0"><b></b></div></div>
+        <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-echo-on"> ইকো</label>
+          <div class="kn"><span>দেরি</span><input type="range" id="fx-echo" min="40" max="800" step="10" value="220"><b></b></div>
+          <div class="kn"><span>ফিরতি</span><input type="range" id="fx-echofb" min="0" max="80" value="30"><b></b></div></div>
+        <div class="fx-mod"><label class="fx-h"><input type="checkbox" id="fx-lim-on"> লিমিটার <small class="hint">কখনো ফাটবে না</small></label>
+          <div class="kn"><span>সর্বোচ্চ</span><input type="range" id="fx-lim" min="-12" max="0" step="0.5" value="-1"><b></b></div></div>
       </div>
     </section>
-
     <!-- mix & separate -->
     <section class="st-drawer" id="pane-mix" hidden>
       <div class="dr-head"><b>মিক্স ও আলাদা করা</b><span class="hint">নির্বাচিত অংশে, নইলে কার্সর থেকে — সক্রিয় ট্র্যাকে</span></div>
@@ -229,32 +264,14 @@
           <div class="kn"><span>ভলিউম</span><input type="range" id="mx-vol" min="-30" max="0" value="-14"><b></b></div>
           <label class="chk"><input type="checkbox" id="mx-loop" checked> ছোট হলে বারবার বাজবে</label>
           <button type="button" class="sbtn wide" id="mx-add">মিউজিক ফাইল বেছে মেশান</button></div>
-        <div class="fx-mod on"><div class="fx-h">কণ্ঠ ও মিউজিক আলাদা</div>
+        <div class="fx-mod on"><div class="fx-h">কণ্ঠ ও বাজনা আলাদা <small class="hint">সক্রিয় ট্র্যাকের অডিওতেই — নির্বাচিত অংশে, নইলে পুরোটায়</small></div>
           <div class="kn"><span>জোর</span><input type="range" id="sp-vstr" min="0" max="100" value="70"><b></b></div>
-          <div class="row"><button type="button" class="sbtn" id="sp-voice" title="স্টেরিও গান থেকে কণ্ঠ রাখুন">মিউজিক রিমুভার</button><button type="button" class="sbtn" id="sp-music" title="স্টেরিও গান থেকে কণ্ঠ সরান">ভয়েস রিমুভার</button></div>
-          <div class="row"><button type="button" class="sbtn" id="sp-band" title="মোনো: ১২০ Hz–৪ kHz রাখুন">কণ্ঠ-ব্যান্ড রাখুন</button><button type="button" class="sbtn" id="sp-noband" title="মোনো: কণ্ঠের মাঝের সুর কমান">কণ্ঠ-ব্যান্ড কমান</button></div></div>
-      </div>
-    </section>
-    <div class="st-tracks" id="tracks" hidden></div>
-    </div>
-  </section>
+          <div class="row"><button type="button" class="sbtn" id="sp-two" title="কণ্ঠ আর বাজনা দুটি নতুন ট্র্যাকে; আসলটি থাকবে">২ ট্র্যাকে: কণ্ঠ + বাজনা</button><button type="button" class="sbtn" id="sp-four" title="কণ্ঠ, ড্রাম/তাল, বেস আর অন্যান্য বাদ্য — চারটি নতুন ট্র্যাক">৪ ট্র্যাকে: কণ্ঠ, ড্রাম, বেস, বাকি</button></div>
+          <div class="row"><button type="button" class="sbtn" id="sp-voice" title="এই ট্র্যাকেই বাজনা সরান">শুধু কণ্ঠ রাখুন</button><button type="button" class="sbtn" id="sp-music" title="এই ট্র্যাকেই কণ্ঠ সরান">কণ্ঠ সরান</button></div>
+          <div class="row"><button type="button" class="sbtn" id="sp-band" title="১২০ Hz–৪ kHz রাখুন">কণ্ঠ-ব্যান্ড রাখুন</button><button type="button" class="sbtn" id="sp-noband" title="কণ্ঠের মাঝের সুর কমান">কণ্ঠ-ব্যান্ড কমান</button></div>
+          <p class="hint">স্টেরিও ফাইল থেকে আনা ট্র্যাকে ফল সবচেয়ে ভালো; মোনো রেকর্ডে আনুমানিক। নতুন ট্র্যাকগুলো একসঙ্গে বাজালে আসলটাই শোনা যায়।</p></div>
 
-  <aside class="st-right-col">
-    <div class="pane" data-pane="regions">
-    <section class="pn pn-regions" id="pn-regions">
-      <h3>অংশসমূহ <span class="cnt" id="r-count">০</span><span class="h-acts"><button type="button" class="h-a" id="r-unsplit" title="সব ভাগ তুলে এক অংশ">ভাগ তুলুন</button><button type="button" class="h-a red" id="r-clear" title="সব অডিও ও অংশ মুছুন">সব মুছুন</button></span></h3>
-      <div class="r-tools"><input id="r-title" placeholder="সাধারণ শিরোনাম (ঐচ্ছিক)"><select id="r-kindall" title="সব অংশের ধরন"></select></div>
-      <button type="button" class="sbtn wide r-map" id="r-map" title="নামহীন অংশগুলোতে শব্দ-তালিকার বাকি শব্দ ক্রমানুসারে বসান">↧ শব্দ-তালিকা থেকে নাম বসান</button>
-      <div class="r-list" id="r-body"></div>
-      <button type="button" class="sbtn pri wide" id="r-export">আপলোড তালিকায় পাঠান ›</button>
-    </section>
-    </div>
-    <div class="pane" data-pane="queue" hidden>
-    <section class="pn pn-grow" id="pn-queue">
-      <h3>আপলোড তালিকা <span class="cnt" id="q-count">০</span><span class="h-acts"><button type="button" class="h-a" id="q-clear-done" title="কমন্সে উঠে যাওয়াগুলো তালিকা থেকে সরান">উঠেছেগুলো সরান</button><button type="button" class="h-a red" id="q-clear-all" title="পুরো তালিকা খালি করুন">সব সরান</button></span></h3>
-      <div class="q-list" id="q-list"></div>
-      <p class="hint q-msg" id="q-msg"></p><p class="hint q-cloud"></p>
-      <button type="button" class="sbtn pri wide q-up" id="q-up">কমন্সে আপলোড করুন</button>
+      </div>
     </section>
     </div>
   </aside>

@@ -58,7 +58,62 @@ let SITE = { languages: [], categories: [], plabelBn: {} };
 const configReady = getJSON("/api/config").then(c => (SITE = c)).then(c => { if (c.languages?.length && !c.languages.some(l => l.qid === getLang())) setLang("Q9610"); return c; }).catch(() => SITE);
 // Without the Node server, load the local word index of the reading language (from IndexedDB, or build it once).
 configReady.then(() => { if (serverOk === false && window.LX?.index) LX.index.get(getLang()); });
-const getLang = () => { try { return localStorage.getItem("reader_lang") || "Q9610"; } catch (e) { return "Q9610"; } };
+// Which dictionary to show — "both", "wd" (Wikidata lexemes) or "wikt" (bn.wiktionary) — one choice for the whole
+// site (home, search, word list). Kept in this browser and, logged in, on the server (it arrives as LX_SOURCE).
+const getSource = () => { try { return window.LX_SOURCE || localStorage.getItem("lx_source") || "wd"; } catch (e) { return window.LX_SOURCE || "wd"; } }; // default: Wikidata only
+function setSource(v) {
+  if (!/^(both|wd|wikt)$/.test(v) || v === getSource()) return; window.LX_SOURCE = v;
+  try { localStorage.setItem("lx_source", v); } catch (e) {}
+  if (window.LX_USER) fetch("/store/source", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: v }) }).catch(() => {});
+}
+/* ---------- export: the list on screen (or the whole list) as CSV, TSV, JSON, text or print/PDF ---------- */
+const EXP = { name: "", rows: [], all: null };
+const expRowLex = (s, labels) => ({ "শব্দ": s.lemma, "শব্দশ্রেণি": s.category ? catLabel(s.category, labels) : "", "অর্থ": (s.glosses?.length ? s.glosses : s.gloss ? [s.gloss] : []).join("; "), "আইডি": s.id, "উৎস": "উইকি উপাত্ত", "লিংক": new URL(wordUrl(s.id), location.href).href });
+const expRowWikt = r => ({ "শব্দ": r.title, "শব্দশ্রেণি": "", "অর্থ": r.snippet || "", "আইডি": "", "উৎস": "উইকিঅভিধান", "লিংক": wiktUrl(r.title) });
+// rows: what is shown; all (optional): async () => every row of the list, for lists longer than one page
+function setExport(name, rows, all = null) { Object.assign(EXP, { name, rows, all }); document.querySelectorAll(".exp").forEach(d => { d.hidden = !rows.length; }); }
+function mountExport(where) {
+  const d = document.createElement("details"); d.className = "exp"; d.hidden = true;
+  d.innerHTML = `<summary title="তালিকাটি ফাইল হিসেবে নামান"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>এক্সপোর্ট</summary>
+    <div class="exp-menu"><label class="exp-scope" hidden><input type="checkbox" checked> পুরো তালিকা (সব পাতা)</label>
+    ${[["csv", "CSV", "এক্সেল, গুগল শিট"], ["tsv", "TSV", "ট্যাব দিয়ে আলাদা"], ["json", "JSON", "প্রোগ্রামের জন্য"], ["txt", "লেখা (TXT)", "শুধু শব্দ ও অর্থ"], ["print", "ছাপুন / PDF", "ব্রাউজারের প্রিন্ট"]].map(([f, l, s]) => `<button type="button" data-f="${f}"><b>${l}</b><small>${s}</small></button>`).join("")}<span class="exp-msg muted"></span></div>`;
+  where.appendChild(d);
+  d.addEventListener("toggle", () => { d.querySelector(".exp-scope").hidden = !EXP.all; });
+  d.addEventListener("click", async e => {
+    const b = e.target.closest("button[data-f]"); if (!b) return;
+    const msg = d.querySelector(".exp-msg"); let rows = EXP.rows;
+    if (EXP.all && d.querySelector(".exp-scope input").checked) { msg.textContent = "পুরো তালিকা আনা হচ্ছে…"; try { rows = await EXP.all(m => { msg.textContent = m; }); } catch (err) { msg.textContent = "আনা গেল না: " + err.message; return; } }
+    msg.textContent = ""; exportRows(rows, b.dataset.f, EXP.name); d.open = false;
+  });
+}
+function exportRows(rows, f, name) {
+  const cols = ["শব্দ", "শব্দশ্রেণি", "অর্থ", "আইডি", "উৎস", "লিংক"], file = `${(name || "তালিকা").replace(/[\\/:*?"<>|“”]+/g, "").replace(/\s+/g, " ").trim().slice(0, 80)}-${new Date().toISOString().slice(0, 10)}`;
+  if (f === "print") {
+    const w = window.open("", "_blank"); if (!w) return;
+    w.document.write(`<!doctype html><html lang="bn"><meta charset="utf-8"><title>${esc(name)}</title><style>body{font:14px/1.5 "Noto Serif Bengali",serif;margin:24px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:5px 8px;text-align:left;vertical-align:top}th{background:#f1f3f8}</style><h1 style="font-size:20px">${esc(name)}</h1><p>${toBn(rows.length)}টি শব্দ · ${esc(location.host)}</p><table><thead><tr><th>#</th>${cols.slice(0, 5).map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>${rows.map((r, i) => `<tr><td>${toBn(i + 1)}</td>${cols.slice(0, 5).map(c => `<td>${esc(r[c])}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+    w.document.close(); setTimeout(() => w.print(), 300); return;
+  }
+  const cell = (v, sep) => { v = String(v ?? ""); return sep === "," ? (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v) : v.replace(/[\t\n]/g, " "); };
+  const body = f === "json" ? JSON.stringify(rows, null, 2)
+    : f === "txt" ? rows.map((r, i) => `${i + 1}. ${r["শব্দ"]}${r["শব্দশ্রেণি"] ? ` (${r["শব্দশ্রেণি"]})` : ""} — ${r["অর্থ"] || "—"}`).join("\n")
+    : (() => { const sep = f === "tsv" ? "\t" : ","; return [cols, ...rows.map(r => cols.map(c => r[c]))].map(line => line.map(v => cell(v, sep)).join(sep)).join("\r\n"); })();
+  const type = { csv: "text/csv", tsv: "text/tab-separated-values", json: "application/json", txt: "text/plain" }[f];
+  const blob = new Blob([f === "csv" || f === "tsv" ? "\uFEFF" + body : body], { type: type + ";charset=utf-8" }); // BOM: Excel reads Bengali right
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${file}.${f}`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+// bn.wiktionary entry row (opens the wiki page)
+const wiktUrl = t => `https://bn.wiktionary.org/wiki/${encodeURIComponent(String(t).replace(/ /g, "_"))}`;
+const wiktRow = (r, num) => `<a class="dent wk" href="${wiktUrl(r.title)}" target="_blank" rel="noopener">${num ? `<span class="sn">${toBn(num)}</span>` : ""}<span class="lem">${esc(r.title)}</span>${r.snippet ? ` <span class="g">${esc(r.snippet)}</span>` : ""} <span class="n" title="বাংলা উইকিঅভিধানে খুলবে">উইকিঅভিধান ↗</span></a>`;
+// Both sources in one alphabetical list: a word found in both is one row (the lexeme, with a link to its
+// Wiktionary page beside it).
+function mergedRows(wdList, labels, wkList, startNum = 1) {
+  const map = new Map(), key = s => String(s).normalize("NFC").trim();
+  for (const s of wdList) { const k = key(s.lemma); if (!map.has(k)) map.set(k, { lemma: k, wd: [], wk: null }); map.get(k).wd.push(s); }
+  for (const r of wkList) { const k = key(r.title); if (!map.has(k)) map.set(k, { lemma: k, wd: [], wk: null }); map.get(k).wk = r; }
+  let n = startNum;
+  return [...map.values()].sort((a, b) => a.lemma.localeCompare(b.lemma, "bn")).map(g => !g.wd.length ? wiktRow(g.wk, n++)
+    : g.wd.map(s => `<div class="dent-grp">${rowItem(s, labels, n++)}${g.wk ? `<a class="wk-also" href="${wiktUrl(g.wk.title)}" target="_blank" rel="noopener" title="একই শব্দ বাংলা উইকিঅভিধানেও আছে">উইকিঅভিধানেও ↗</a>` : ""}</div>`).join("")).join("");
+}const getLang = () => { try { return localStorage.getItem("reader_lang") || "Q9610"; } catch (e) { return "Q9610"; } };
 const setLang = q => { try { localStorage.setItem("reader_lang", q); } catch (e) {} };
 function catLabel(qid, labels = {}) { const c = SITE.categories.find(x => x.qid === qid); return c ? c.bn : labels[qid]?.label || qid || ""; }
 function langLabel(qid, labels = {}) { const l = SITE.languages.find(x => x.qid === qid); return l ? l.bn : labels[qid]?.label || qid || ""; }
@@ -72,7 +127,8 @@ const etyUrl = id => (window.LX_NODE ? `/etymology/${id}` : `etymology.html?id=$
 const hitUrl = s => (s.formId ? `${wordUrl(s.id)}#${s.formId}` : wordUrl(s.id));
 
 // The header (navigation, অনুসন্ধান, login, light/dark) is built by sitenav.js — the same on every page.
-function initChrome() {  document.body.insertAdjacentHTML("beforeend", `<footer class="footer"><div class="wrap"><span><b>লেক্সিম.বাংলা</b> · তথ্য: <a href="https://www.wikidata.org/wiki/Wikidata:Lexicographical_data" target="_blank" rel="noopener">উইকি উপাত্ত লেক্সিম</a> (CC0)</span><span>নির্মাতা: <a href="https://www.wikidata.org/wiki/User:Aishik_Rehman" target="_blank" rel="noopener">ঐশিক রেহমান (User:Aishik Rehman)</a></span></div></footer>`);
+// The footer comes from the server (lib/footer.js); this short one is only for pages opened as plain files.
+function initChrome() { if (window.LX_NODE || document.querySelector(".site-foot")) return; document.body.insertAdjacentHTML("beforeend", `<footer class="footer"><div class="wrap"><span><b>লেক্সিম.বাংলা</b> · তথ্য: <a href="https://www.wikidata.org/wiki/Wikidata:Lexicographical_data" target="_blank" rel="noopener">উইকি উপাত্ত লেক্সিম</a> (CC0)</span><span>নির্মাতা: <a href="https://www.wikidata.org/wiki/User:Aishik_Rehman" target="_blank" rel="noopener">ঐশিক রেহমান (User:Aishik Rehman)</a></span></div></footer>`);
 }
 
 /* shared renderers */
@@ -83,7 +139,13 @@ const POS_ABBR = { Q1084: "বি.", Q147276: "নাম.", Q36224: "সর্�
 const posAbbr = (q, labels) => POS_ABBR[q] || catLabel(q, labels);
 // Entry layout follows the Accessible Dictionary (accessibledictionary.gov.bd): headword in a light box,
 // the word class written out in (italics), then the definition; one entry per line, thin rule between.
-const rowItem = (s, labels, num) => `<a class="dent" href="${hitUrl(s)}">${num ? `<span class="sn">${toBn(num)}</span>` : ""}<span class="lem">${esc(s.lemma)}</span>${s.form && s.form !== s.lemma ? ` <small class="muted">(${esc(s.form)})</small>` : ""}${s.category ? ` <em class="pos">(${esc(catLabel(s.category, labels))})</em>` : ""} <span class="g">${s.gloss ? esc(s.gloss.replace(/[।.]\s*$/, "")) + "।" : '<span class="muted">—</span>'}</span><span class="n">${s.id}</span></a>`;
+const rowItem = (s, labels, num) => `<a class="dent" href="${hitUrl(s)}">${num ? `<span class="sn">${toBn(num)}</span>` : ""}<span class="lem">${esc(s.lemma)}</span>${s.form && s.form !== s.lemma ? ` <small class="muted">(${esc(s.form)})</small>` : ""}${s.category ? ` <em class="pos">(${esc(catLabel(s.category, labels))})</em>` : ""} <span class="g">${glossList(s)}</span><span class="n">${s.id}</span></a>`;
+// All meanings: one plainly, several numbered ① ② … in one flowing line (as in a printed dictionary).
+function glossList(s) {
+  const all = (s.glosses?.length ? s.glosses : s.gloss ? [s.gloss] : []).map(g => esc(String(g).replace(/[।.]\s*$/, "")));
+  if (!all.length) return '<span class="muted">—</span>';
+  return all.length === 1 ? all[0] + "।" : all.map((g, i) => `<span class="gi"><b>${toBn(i + 1)}.</b> ${g}</span>`).join(" ");
+}
 // Card used on the home page (word of the day area, idioms, proverbs).
 const wcard = (s, cls = "") => `<a class="wcard ${cls}" href="${wordUrl(s.id)}"><div class="lem">${esc(s.lemma)}</div>${s.gloss ? `<div class="g">${esc(s.gloss)}</div>` : ""}</a>`;
 function pager(cur, pages, href) {

@@ -2,6 +2,7 @@
 // লেক্সিম.বাংলা — Node.js server (no external dependencies; Node 18+).
 // Serves the reader/dictionary pages and the Lexeme Wizard, a cached JSON API over Wikidata,
 // and a pass-through proxy the wizard uses for all Wikidata / Commons / SPARQL traffic.
+require("./lib/log"); // first: keeps the last lines of console output for the admin dashboard
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -10,6 +11,9 @@ const CFG = require("./lib/config");
 const OAUTH1 = require("./lib/oauth1");
 const SEO = require("./lib/seo");
 const WIKT = require("./lib/wiktionary");
+const FOOT = require("./lib/footer");
+const SSR = require("./lib/ssr"); // <noscript> content: pages keep working with JavaScript blocked
+const PANEL = require("./lib/panel"); // /settings, /feedback, /admin — server-made pages
 const STORE = require("./lib/store"); // স্টুডিও লিব্রে: recordings and word lists per logged-in user // titles, descriptions, structured data, sitemap // Wikimedia OAuth 1.0a login, server-side (secret stays here)
 
 // Port: PORT, or `node server.js 3001`, or the port of the public URL (oauth.local.json "publicUrl"), else 3000.
@@ -23,18 +27,16 @@ const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=u
 const CLEAN = [
   [/^\/$/, "index.html"],
   [/^\/(search|browse|wizard|lexinary)\/?$/, m => `${m[1]}.html`],
-  [/^\/(studio|libre)\/?$/, "sound.html"], // স্টুডিও লিব্রে
+  [/^\/studio\/?$/, "sound.html"], // লিব্রে স্টুডিও
   [/^\/bulk\/?$/, "wizard.html"], // “একসঙ্গে অনেক” — same engine as the wizard, its own page
   [/^\/word\/(L\d+)\/?$/, "word.html"],
   [/^\/etymology\/(L\d+)\/?$/, "etymology.html"],
   [/^\/collection\/(idiom|proverb)\/?$/, "collection.html"],
 ];
-// Any old address (x.html, x.html?id=L1, collection.html?cat=…, /lemma/L1) → its clean URL.
+// The pages link each other as x.html (they also work without this server); here those become clean URLs.
 function cleanRedirect(p, search) {
   const q = new URLSearchParams(search);
   let to = null;
-  const lem = p.match(/^\/lemma\/(L\d+)\/?$/); if (lem) to = `/word/${lem[1]}`;
-  if (/^\/sound(\.html)?\/?$/.test(p)) to = "/studio";
   if (/^\/wizard\/?$/.test(p) && q.get("mode") === "bulk") { q.delete("mode"); to = "/bulk"; }
   const m = p.match(/^\/(index|search|browse|wizard|lexinary|word|etymology|collection)\.html$/);
   if (m) {
@@ -47,8 +49,13 @@ function cleanRedirect(p, search) {
   const rest = q.toString();
   return to + (rest ? "?" + rest : "");
 }
+// Names, notice and footer text from the admin's site settings (safe to put inside a <script>).
+// the dictionary source a logged-in user chose (both / wd / wikt), so every page starts with it
+const sourceOf = req => { const u = OAUTH1.loggedIn(req) && OAUTH1.userOf(req); return (u && STORE.getPrefs(u).data?.source) || ""; };
+const siteJson = () => { const s = STORE.site(); delete s.admins; return JSON.stringify(s).replace(/</g, "\\u003c"); };
 // Tell every page it is behind this server (clean links, wizard proxy) and who is logged in.
-const nodeFlag = req => h => h.replace("<head>", '<head><base href="/">').replace("</head>", `<script>window.LX_NODE = true; window.LX_OAUTH1 = ${OAUTH1.enabled}; window.LX_PASTEBACK = ${OAUTH1.pasteBack}; window.LX_USER = ${JSON.stringify(OAUTH1.loggedIn(req) ? OAUTH1.userOf(req) || "অ্যাকাউন্ট" : "").replace(/</g, "\\u003c")}; window.LX_CAN_EDIT = ${OAUTH1.canEdit(req)}; window.LX_GRANTS = ${JSON.stringify(OAUTH1.grantsOf(req)).replace(/</g, "\\u003c")}; window.LX_OAUTH_CLIENT = ${JSON.stringify(process.env.OAUTH_CLIENT_ID || CFG.oauthClientId || "")};</script></head>`).replace("<!--NODE-->", "<script>window.LX_PROXY = true;</script>");
+const nodeFlag = req => h => h.replace("<head>", '<head><base href="/">').replace("</head>", `<script>window.LX_NODE = true; window.LX_OAUTH1 = ${OAUTH1.enabled}; window.LX_PASTEBACK = ${OAUTH1.pasteBack}; window.LX_USER = ${JSON.stringify(OAUTH1.loggedIn(req) ? OAUTH1.userOf(req) || "অ্যাকাউন্ট" : "").replace(/</g, "\\u003c")}; window.LX_CAN_EDIT = ${OAUTH1.canEdit(req)}; window.LX_GRANTS = ${JSON.stringify(OAUTH1.grantsOf(req)).replace(/</g, "\\u003c")}; window.LX_OAUTH_CLIENT = ${JSON.stringify(process.env.OAUTH_CLIENT_ID || CFG.oauthClientId || "")}; window.LX_SITE = ${siteJson()}; window.LX_ADMIN = ${PANEL.isAdmin(OAUTH1.loggedIn(req) && OAUTH1.userOf(req))}; window.LX_SOURCE = ${JSON.stringify(sourceOf(req))};</script></head>`).replace("<!--NODE-->", "<script>window.LX_PROXY = true;</script>")
+  .replace(/<\/body>/, m => (/class="sd-body"|<body[^>]*class="[^"]*\bwz\b|id="single"/.test(h) ? "" : FOOT.footer(STORE.site())) + m); // the footer, on every page but the work tools (studio, lexeme wizard, bulk)
 
 // JSON API.
 const API = {
@@ -78,6 +85,15 @@ function send(res, status, body, type = "application/json; charset=utf-8", extra
   res.writeHead(status, { "Content-Type": type, "X-Content-Type-Options": "nosniff", ...extra });
   res.end(body);
 }
+// Every script, stylesheet and font a page links gets ?v=<its modification time>. A new upload therefore has a
+// new address, so neither the browser nor Cloudflare can hand out the old copy, and versioned files may be
+// cached for a year (below).
+function stamp(html) {
+  return html.replace(/\b(src|href)="((?:\.\.\/)?(?:js|css|fonts|lib)\/[^"?#]+)"/g, (m, attr, ref) => {
+    const f = ref.startsWith("../lib/") || ref.startsWith("lib/") ? path.join(LIB, path.basename(ref)) : path.join(PUB, ref.replace(/^\.\.\//, ""));
+    try { return `${attr}="${ref}?v=${fs.statSync(f).mtimeMs.toString(36).replace(".", "")}"`; } catch (e) { return m; }
+  });
+}
 // Browsers must re-check every file on each load (no-cache) and get a quick 304 when it is unchanged,
 // so a code update is never hidden behind a stale cached copy.
 function sendFile(res, file, transform, req) {
@@ -89,7 +105,8 @@ function sendFile(res, file, transform, req) {
     fs.readFile(file, (err2, buf) => {
       if (err2) return send(res, 404, "Not found", "text/plain; charset=utf-8");
       const ext = path.extname(file);
-      send(res, 200, transform ? transform(buf.toString("utf8")) : buf, MIME[ext] || "application/octet-stream", transform ? { "Cache-Control": "no-store" } : { "Cache-Control": "no-cache", "Last-Modified": lastMod });
+      const versioned = req && /[?&]v=/.test(req.url || "");
+      send(res, 200, transform ? transform(buf.toString("utf8")) : buf, MIME[ext] || "application/octet-stream", transform ? { "Cache-Control": "no-store" } : { "Cache-Control": versioned ? "public, max-age=31536000, immutable" : "no-cache", "Last-Modified": lastMod });
     });
   });
 }
@@ -132,7 +149,8 @@ const server = http.createServer(async (req, res) => {
     // Login (OAuth 1.0a). Wikimedia returns to the consumer's registered callback with oauth_verifier + oauth_token;
     // whatever path that is, it is handled here.
     if (url.searchParams.has("oauth_verifier") && url.searchParams.has("oauth_token")) {
-      const r = await OAUTH1.callback(req, res, url.searchParams); res.writeHead(302, { Location: r.redirect }); return res.end();
+      const r = await OAUTH1.callback(req, res, url.searchParams); if (OAUTH1.loggedIn(req)) STORE.log(OAUTH1.userOf(req), "login");
+      res.writeHead(302, { Location: r.redirect }); return res.end();
     }
     // Login must start on the same host the callback returns to (e.g. 127.0.0.1:5000, not localhost),
     // otherwise the browser comes back without its session cookie.
@@ -177,12 +195,21 @@ const server = http.createServer(async (req, res) => {
           if (req.method === "GET") return ok(await STORE.getWords(user));
           if (req.method === "PUT") return ok({ n: await STORE.putWords(user, JSON.parse((await readBody(req)).toString("utf8") || "[]")) });
         }
+        if (p === "/store/source" && req.method === "PUT") { // just the dictionary source, without touching the other settings
+          const v = JSON.parse((await readBody(req)).toString("utf8") || "{}").source; if (!/^(both|wd|wikt)$/.test(v)) throw new Error("bad source");
+          const cur = STORE.getPrefs(user).data || {}; cur.source = v; return ok(STORE.putPrefs(user, cur)); }
         if (p === "/store/prefs") {
           if (req.method === "GET") return ok(STORE.getPrefs(user));
           if (req.method === "PUT") return ok(STORE.putPrefs(user, JSON.parse((await readBody(req)).toString("utf8") || "{}")));
         }
+        if (p === "/store/speakers") { // shared speakers: the studio's list goes up, every speaker this account may use comes back
+          if (req.method === "GET") return ok(STORE.speakersOf(user));
+          if (req.method === "PUT") return ok(STORE.syncSpeakers(user, JSON.parse((await readBody(req)).toString("utf8") || "[]")));
+          if (req.method === "POST") { const b = JSON.parse((await readBody(req)).toString("utf8") || "{}"); return ok(STORE.linkSpeaker(user, b.id, b.code)); }
+        }
         const m = p.match(/^\/store\/clips\/([a-z0-9]+)$/i); // details only; audio is never stored here
-        if (m && req.method === "PUT") return ok(await STORE.putMeta(user, m[1], JSON.parse((await readBody(req)).toString("utf8") || "{}")));
+        if (m && req.method === "PUT") { const b = JSON.parse((await readBody(req)).toString("utf8") || "{}"), was = (STORE.list(user).find(c => c.id === m[1]) || {}).status;
+          const r = STORE.putMeta(user, m[1], b); if (r.status === "done" && was !== "done") STORE.log(user, "clip.upload", r.file || r.word); return ok(r); }
         if (m && req.method === "DELETE") { await STORE.remove(user, m[1]); return ok({ ok: true }); }
       } catch (e) { return send(res, 400, JSON.stringify({ error: e.message })); }
       return send(res, 404, JSON.stringify({ error: "not found" }));
@@ -196,10 +223,15 @@ const server = http.createServer(async (req, res) => {
       // Random answers must never be reused from a cache; everything else may be kept for a minute.
       return send(res, 200, JSON.stringify(out), undefined, { "Cache-Control": p === "/api/random" || p.startsWith("/api/wikt/") ? "no-store" : "public, max-age=60" });
     }
+    const user = OAUTH1.loggedIn(req) && OAUTH1.userOf(req);
+    if (await PANEL.handle(req, res, url, user, readBody, h => stamp(nodeFlag(req)(h)))) return;
     const moved = cleanRedirect(p, url.search);
     if (moved) { res.writeHead(301, { Location: moved }); return res.end(); }
     // Every page learns it runs behind this server (clean links; the wizard routes its Wikidata calls through /proxy).
-    for (const [rx, file] of CLEAN) { const m = p.match(rx); if (m) { const name = typeof file === "function" ? file(m) : file; return sendFile(res, path.join(PUB, name), h => SEO.apply(nodeFlag(req)(h), req, name, m)); } }
+    for (const [rx, file] of CLEAN) { const m = p.match(rx); if (m) {
+      const name = typeof file === "function" ? file(m) : file;
+      const ns = await SSR.noscript(name, m, url, STORE.site()); // the page's content for browsers without JavaScript
+      return sendFile(res, path.join(PUB, name), h => stamp(SEO.apply(nodeFlag(req)(h), req, name, m)).replace(/<body[^>]*>/, b => b + ns)); } }
     // Only the reader engine files are shared with browsers (not oauth1.js and other server code).
     if (/^\/lib\/(config|wikidata|lexindex|reader|wiktparse)\.js$/.test(p)) return sendFile(res, path.join(LIB, p.slice(5)), null, req);
     if (p.startsWith("/lib/")) return send(res, 404, "Not found", "text/plain; charset=utf-8");

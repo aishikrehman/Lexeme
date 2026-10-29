@@ -6,7 +6,7 @@
 .studio{
   --bg:#f6f7f9;--pn:#fff;--pn2:#f8f9fa;--sub:#eef0f3;--ln:#e1e4e8;--ln2:#a2a9b1;--tx:#202122;--mu:#54595d;
   --ac:#3366cc;--ac-h:#447ff5;--ac-soft:#eaf3ff;--rec:#d73333;--ok:#14866d;--ok-soft:#e6f4ef;--warn:#ac6600;
-  --wave:#3366cc;--wave2:#6b98e8;--r:12px;--gap:10px;--menu-w:190px;--right-w:320px;
+  --wave:#3366cc;--wave2:#6b98e8;--r:12px;--gap:10px;--menu-w:190px;--right-w:340px;
 }
 :root[data-theme="dark"] .studio{--bg:#101418;--pn:#1b2025;--pn2:#202122;--sub:#27292d;--ln:#3a3f45;--ln2:#54595d;--tx:#eaecf0;--mu:#a2a9b1;--ac:#6d8af0;--ac-h:#88a3e8;--ac-soft:#233566;--rec:#fd7865;--ok:#3cba8f;--ok-soft:#1d3a31;--warn:#e8a33a;--wave:#88a3e8;--wave2:#a9bdf2}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .studio{--bg:#101418;--pn:#1b2025;--pn2:#202122;--sub:#27292d;--ln:#3a3f45;--ln2:#54595d;--tx:#eaecf0;--mu:#a2a9b1;--ac:#6d8af0;--ac-h:#88a3e8;--ac-soft:#233566;--rec:#fd7865;--ok:#3cba8f;--ok-soft:#1d3a31;--warn:#e8a33a;--wave:#88a3e8;--wave2:#a9bdf2}}
@@ -145,8 +145,8 @@
 .ps-sub.inline{position:static;box-shadow:none;border:0;border-left:2px solid var(--sub);border-radius:0;margin:0 0 4px 24px;max-height:none;min-width:0;max-width:none;padding:2px 0 2px 4px;background:none}
 
 /* ---------- tabs ---------- */
-.st-tabs{display:grid;grid-template-columns:minmax(0,1fr) var(--right-w);gap:var(--gap)}
-.tabs-c,.tabs-r{display:flex;gap:4px;border-bottom:1px solid var(--ln)}
+.st-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln)}
+.tabs-c{display:contents}
 .st-tabs button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:8px 14px;font:600 14.5px "Noto Serif Bengali",sans-serif;color:var(--mu);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;position:relative}
 .st-tabs button svg{width:16px;height:16px}
 .st-tabs button[aria-selected=true]{color:var(--ac);border-bottom-color:var(--ac)}
@@ -309,7 +309,28 @@
 .st-msg{margin-left:auto;color:var(--ac);font-family:"Noto Serif Bengali",sans-serif;font-size:13.5px}
 
 /* ---------- parts pane ---------- */
-.st-right-col .pane > .pn{flex:1;display:flex;flex-direction:column;min-height:0}
+.pane-list > .pn{flex:1;display:flex;flex-direction:column}
+/* right column: settings of the tool in use (effects, mix), only while recording/editing */
+.st-insp #insp-body{display:flex;flex-direction:column;gap:var(--gap)}
+.st-insp .st-drawer{border-color:var(--sub)}
+.st-insp .fx{grid-template-columns:minmax(0,1fr)}
+.sd-body:not(.on-wizard) .st-insp,.sd-body:not(.insp-on) .st-insp{display:none}
+.sd-body:not(.on-wizard) .studio,.sd-body:not(.insp-on) .studio{grid-template-areas:"menu tabs tabs" "menu center center"}
+/* the bottom player bar can be hidden from the menu */
+.sd-body.no-player .st-player{display:none}
+.sd-body.no-player{padding-bottom:0}
+/* left menu folded to icons (wide screens) */
+.ps-title{display:flex;align-items:center;justify-content:space-between}
+.ps-mini{border:0;background:none;color:var(--mu);cursor:pointer;font-size:15px;padding:0 4px;border-radius:6px}
+.ps-mini:hover{background:var(--sub);color:var(--ac)}
+@media (min-width:861px){
+  .sd-body.menu-mini .studio{--menu-w:52px}
+  .menu-mini .ps-title{justify-content:center;padding:2px 0 6px}
+  /* only the menu column folds; its flyout submenus (in <body>) keep their words */
+  .menu-mini .ps-title > span,.menu-mini .ps-menu > .ps-it > :not(.ps-ic),.menu-mini .ps-menu > .ps-sw > :not(.ps-ic){display:none}
+  .menu-mini .ps-menu > .ps-it,.menu-mini .ps-menu > .ps-sw{grid-template-columns:1fr;justify-items:center;padding:9px 0}
+  .menu-mini .ps-menu > .ps-sub.inline{display:none}
+}
 .r-tools{display:flex;gap:6px;margin-bottom:8px}
 .r-tools input{flex:1}
 .r-tools select{width:120px}
@@ -328,6 +349,8 @@
 .rg-sub select{height:24px;padding:0 4px;font-size:12px}
 .rg-sub .ib,.rg-top .ib{border-color:transparent;background:none}
 .rg-sub .ib:hover,.rg-top .ib:hover{background:var(--sub)}
+.studio .rg-t{width:86px;padding:1px 4px;font-size:12px;border-color:transparent;background:var(--pn2)}
+.studio .rg-t:hover{border-color:var(--ln)}
 .rg-skip{display:inline-flex;align-items:center;gap:3px;cursor:pointer}
 .rg-text{font-size:13px;padding:3px 6px}
 .rg .lx{font-size:11.5px;white-space:nowrap}
@@ -384,14 +407,11 @@
 
 /* ================= medium and phone: one pane at a time ================= */
 @media (max-width:1250px){
-  .st-right-col{grid-area:center}
-  body[data-col="center"] .st-right-col,body[data-col="right"] .st-center{display:none}
-  .tabs-c,.tabs-r{display:contents}
+  .st-insp{display:none} /* its settings move under the timeline */
 }
 /* medium: menu | tabs over the pane */
 @media (min-width:861px) and (max-width:1250px){
   .studio{grid-template-columns:var(--menu-w) minmax(0,1fr);grid-template-areas:"menu tabs" "menu center"}
-  .st-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln)}
   .st-left{align-self:stretch}
 }
 /* phone: one column */
@@ -411,7 +431,7 @@
   .ps-menu.open > .ps-it:not([data-path="0.0"]):not([data-path="0.1"]),.ps-menu.open > .ps-sw{display:grid;flex:1 1 100%;padding:10px 8px;font-size:15px}
   .ps-menu.open > .ps-sub{flex:1 1 100%}
   /* tabs: five equal cells, icon over a short word */
-  .st-tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:var(--sub);border-radius:12px;padding:3px}
+  .st-tabs{display:grid;border-bottom:0;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:2px;background:var(--sub);border-radius:12px;padding:3px}
   .st-tabs button{flex-direction:column;gap:2px;padding:6px 2px;font-size:12px;border:0;margin:0;border-radius:9px;min-width:0}
   .st-tabs button svg{width:18px;height:18px}
   .st-tabs button[aria-selected=true]{background:var(--pn);box-shadow:0 1px 3px rgba(0,0,0,.1)}

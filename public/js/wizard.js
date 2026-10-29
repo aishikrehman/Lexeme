@@ -1832,9 +1832,17 @@ async function resolveLanguages() {
   const cur = CFG.languages.find(l => l.iso3 === "ben"); if (draft.language === "Q9610" && cur) draft.langCode = cur.code || "bn";
   renderHero();
 }
-$("#cat").addEventListener("change", () => { $("#cat").classList.toggle("need", !draft.category); scheduleAutoLookup(); });
+$("#cat").addEventListener("change", () => { $("#cat").classList.toggle("need", !draft.category); }); // the word was already looked up while typing; the class alone needs no new search
 $("#lookup").addEventListener("click", () => lookup(false));
 $("#lemma").addEventListener("keydown", e => { if (e.key === "Enter") { clearTimeout(autoTimer); lookup(false); } });
+// Login leaves the page: the unsaved draft (and the open tab) go to sessionStorage first and come back after.
+window.addEventListener("lx-before-login", () => { try { sessionStorage.setItem("lx_wiz_stash", JSON.stringify({ draft, tab: $(".tabs button[aria-selected=true]")?.dataset.tab || "" })); } catch (e) {} });
+(function restoreStash() {
+  let s; try { s = JSON.parse(sessionStorage.getItem("lx_wiz_stash") || "null"); sessionStorage.removeItem("lx_wiz_stash"); } catch (e) {}
+  if (!s?.draft) return; window.LX_STASHED = true; // the boot script then does not reload ?id over it
+  draft = Object.assign(newDraft(), s.draft); tpl.sig = ""; tpl.key = ""; renderAll(); if (s.tab) selectTab(s.tab);
+  $("#found").innerHTML = `<div class="msg">লগ ইনের আগে যা লিখেছিলেন, ফেরত আনা হলো।</div>`;
+})();
 $("#reset").addEventListener("click", () => { if (confirm("এই খসড়ার সবকিছু মুছে যাবে। নিশ্চিত?")) { draft = newDraft(); $("#found").innerHTML = ""; renderAll(); } });
 
 $("#submit").addEventListener("click", async () => {

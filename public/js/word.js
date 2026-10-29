@@ -228,7 +228,7 @@ document.addEventListener("click", ev => {
 });
 // Hovering a word link warms the cache, so the next page opens instantly.
 document.addEventListener("mouseover", ev => {
-  const a = ev.target.closest('a[href^="word.html?id="], a[href^="/lemma/"]'); if (!a || a.dataset.pf) return; a.dataset.pf = 1;
+  const a = ev.target.closest('a[href^="word.html?id="]'); if (!a || a.dataset.pf) return; a.dataset.pf = 1;
   const m = a.getAttribute("href").match(/(L\d+)/); if (m) getJSON(`/api/word/${m[1]}`).catch(() => {});
 });
 
