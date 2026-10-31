@@ -315,7 +315,7 @@
 .st-insp .st-drawer{border-color:var(--sub)}
 .st-insp .fx{grid-template-columns:minmax(0,1fr)}
 .sd-body:not(.on-wizard) .st-insp,.sd-body:not(.insp-on) .st-insp{display:none}
-.sd-body:not(.on-wizard) .studio,.sd-body:not(.insp-on) .studio{grid-template-areas:"menu tabs tabs" "menu center center"}
+@media (min-width:1251px){ .sd-body:not(.on-wizard) .studio,.sd-body:not(.insp-on) .studio{grid-template-areas:"menu tabs tabs" "menu center center"} }
 /* the bottom player bar can be hidden from the menu */
 .sd-body.no-player .st-player{display:none}
 .sd-body.no-player{padding-bottom:0}
@@ -371,6 +371,7 @@
 .no-editor.word-mode .c-ruler,.no-editor.word-mode .c-over,.no-editor.word-mode .st-meter{display:none}
 .no-editor.word-mode .st-wavewrap{height:110px}
 .no-editor.word-mode .st-clock{top:6px}
+.no-editor.word-mode:not(.has-audio) .st-editor:not(:has(#s-msg:not(:empty))),
 .no-editor.word-mode:not(.has-audio) .st-stage,.no-editor.word-mode #s-sel,.no-editor.word-mode #s-info{display:none!important}
 .no-editor .st-batch{padding:22px 20px}
 .no-editor .bt-word b:not(.empty){font-size:clamp(44px,6vw,72px)}
