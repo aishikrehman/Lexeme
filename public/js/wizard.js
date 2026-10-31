@@ -517,6 +517,11 @@ const sameSet = (a, b) => a.length === b.length && [...a].sort().join() === [...
 function buildPlan(d) {
   const lc = d.langCode || "bn", isNew = !d.existingId, o = d.orig;
   const data = {}, phase2 = [];
+  // A new form with no spelling is dropped below instead of being created (just a warning, not
+  // a blocking error), so any statement still pointing at it via "@F<key>" (e.g. a usage example's
+  // subject-form qualifier) must be cleared first — otherwise that placeholder never resolves and
+  // gets sent to Wikibase as a literal "undefined" entity id.
+  d.forms.forEach(f => { if (!f._id && !present(f.rep)) clearRef(formRef(f)); });
   const split = (arr, target) => { const keep = [], later = []; arr.forEach(s => (hasLocal(s) ? later : keep).push(s)); if (later.length) phase2.push({ target, claims: later }); return keep; };
   if (isNew) { data.type = "lexeme"; data.lemmas = { [lc]: { language: lc, value: nfc(d.lemma) } }; data.language = d.language; data.lexicalCategory = d.category; }
   else if (o) {
