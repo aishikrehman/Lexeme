@@ -711,15 +711,34 @@ async function submitPlan(plan, summary, log = () => {}) {
     ent = r.entity; log(`${ent.id} সংরক্ষিত (সংস্করণ ${ent.lastrevid})।`);
   } else ent = { id: p1.id, forms: [], senses: [] };
   const map = { lexeme: ent.id };
-  const nf = p1.newFormKeys?.length || 0, ns = p1.newSenseKeys?.length || 0, ef = ent.forms || [], es = ent.senses || [];
-  (p1.newFormKeys || []).forEach((k, i) => (map["@F" + k] = ef[ef.length - nf + i]?.id));
-  (p1.newSenseKeys || []).forEach((k, i) => (map["@S" + k] = es[es.length - ns + i]?.id));
+  const mapNew = e => {
+    const nf = p1.newFormKeys?.length || 0, ns = p1.newSenseKeys?.length || 0, ef = e.forms || [], es = e.senses || [];
+    (p1.newFormKeys || []).forEach((k, i) => (map["@F" + k] = ef[ef.length - nf + i]?.id));
+    (p1.newSenseKeys || []).forEach((k, i) => (map["@S" + k] = es[es.length - ns + i]?.id));
+  };
+  mapNew(ent);
+  const unresolved = () => plan.phase2.flatMap(g => [g.target, ...(JSON.stringify(g.claims).match(/"@[FS]\d+"/g) || []).map(k => k.slice(1, -1))]).filter(k => k.startsWith("@") && !map[k]);
+  if (unresolved().length) mapNew(await getLexeme(ent.id, true));
+  const isLost = sn => typeof sn?.datavalue?.value?.id === "string" && sn.datavalue.value.id.startsWith("@");
   for (const g of plan.phase2) {
-    let json = JSON.stringify(g.claims);
-    for (const [k, v] of Object.entries(map)) if (k.startsWith("@")) json = json.split(`"${k}"`).join(`"${v}"`);
     const target = map[g.target] || g.target;
-    log(`${target}-এ ${g.claims.length}টি যুক্ত বিবৃতি যোগ হচ্ছে…`);
-    await withMaxlag(() => api(CFG.wd, { action: "wbeditentity", id: target, data: JSON.stringify({ claims: JSON.parse(json) }), token, summary, maxlag: ml }, { post: true }), log);
+    if (target.startsWith("@")) { log(`সতর্কতা: নতুন রূপ বা অর্থের আইডি পাওয়া যায়নি, তাই ${g.claims.length}টি বিবৃতি যোগ হয়নি।`); continue; }
+    const claims = JSON.parse(JSON.stringify(g.claims), (k, v) => (k === "id" && typeof v === "string" && v.startsWith("@") ? map[v] || v : v));
+    // Never send an unresolved placeholder: drop just that value and keep the rest of the statement.
+    let dropped = 0;
+    const kept = claims.filter(s => {
+      if (isLost(s.mainsnak)) { dropped++; return false; }
+      for (const [p, arr] of Object.entries(s.qualifiers || {})) {
+        const ok = arr.filter(sn => !isLost(sn)); dropped += arr.length - ok.length;
+        if (ok.length) s.qualifiers[p] = ok; else { delete s.qualifiers[p]; s["qualifiers-order"] = s["qualifiers-order"].filter(x => x !== p); }
+      }
+      if (s.qualifiers && !Object.keys(s.qualifiers).length) { delete s.qualifiers; delete s["qualifiers-order"]; }
+      return true;
+    });
+    if (dropped) log(`সতর্কতা: ${dropped}টি মান এমন রূপ বা অর্থের দিকে নির্দেশ করছিল যা তৈরি হয়নি, তাই সেগুলো বাদ দেওয়া হলো।`);
+    if (!kept.length) continue;
+    log(`${target}-এ ${kept.length}টি যুক্ত বিবৃতি যোগ হচ্ছে…`);
+    await withMaxlag(() => api(CFG.wd, { action: "wbeditentity", id: target, data: JSON.stringify({ claims: kept }), token, summary, maxlag: ml }, { post: true }), log);
   }
   return { id: ent.id, map };
 }
