@@ -102,9 +102,16 @@
   // After a successful save: do it, with a final confirmation for replacing hand-written text.
   window.LX_afterSave = async function (lid) {
     if (mode === "off") return;
+    const linkify = s => s.replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+    const log = m => { const lb = $("#submit-log"); if (lb) { lb.hidden = false; lb.insertAdjacentHTML("beforeend", `<div>${linkify(esc(m))}</div>`); } };
     await check();
-    const p = plan(lid); if (p.act === "none") return;
-    const log = m => { const lb = $("#submit-log"); if (lb) { lb.hidden = false; lb.insertAdjacentHTML("beforeend", `<div>${esc(m)}</div>`); } };
+    const p = plan(lid);
+    // Nothing to do: say why in the save log, so a skipped step (e.g. a hand-written page) is never silent.
+    if (p.act === "none") {
+      if (page?.error) log(`উইকিঅভিধান: দেখা যায়নি — ${page.error}`);
+      else if (p.why) log(`উইকিঅভিধান: কিছু করা হয়নি — ${p.why} (${PAGE(page.title)})`);
+      return;
+    }
     if (p.act === "replace" && !confirm(`উইকিঅভিধানের “${page.title}” পাতাটি হাতে লেখা। পুরো লেখা মুছে শুধু {{লে|${lid}}} রাখা হবে (পুরোনো লেখা পাতার ইতিহাসে থাকবে)। নিশ্চিত?`)) { log("উইকিঅভিধান: প্রতিস্থাপন বাতিল করা হলো।"); return; }
     try {
       const token = await csrf(WIKT);
