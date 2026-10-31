@@ -537,7 +537,7 @@ function buildPlan(d) {
     if (!f._id) {
       if (!present(f.rep)) continue;
       const x = { representations: { [lc]: { language: lc, value: nfc(f.rep) } }, grammaticalFeatures: f.features.filter(present) };
-      if (fc.length) x.claims = fc; if (!isNew) x.add = "";
+      if (fc.length) x.claims = fc; x.add = ""; // "add" is required even when the lexeme itself is new: Wikibase silently ignores a form entry without id/add/remove
       forms.push(x); newFormKeys.push(f._key);
     } else {
       const x = { id: f._id }; let ch = false;
@@ -567,7 +567,7 @@ function buildPlan(d) {
     const sc = split(built, senseRef(s));
     const glosses = {}; const og = s._origGloss || {};
     for (const [k, v] of Object.entries(s.gloss)) { const t = nfc(v); if (t && t !== og[k]) glosses[k] = { language: k, value: t }; else if (!t && og[k]) glosses[k] = { language: k, remove: "" }; }
-    if (!s._id) { const x = { glosses }; if (sc.length) x.claims = sc; if (!isNew) x.add = ""; senses.push(x); newSenseKeys.push(s._key); }
+    if (!s._id) { const x = { glosses }; if (sc.length) x.claims = sc; x.add = ""; senses.push(x); newSenseKeys.push(s._key); }
     else { const x = { id: s._id }; let ch = false; if (Object.keys(glosses).length) { x.glosses = glosses; ch = true; } if (sc.length) { x.claims = sc; ch = true; } if (ch) senses.push(x); }
   }
   d._removedSenses.forEach(id => senses.push({ id, remove: "" }));
@@ -1871,7 +1871,9 @@ $("#reset").addEventListener("click", () => { if (confirm("এই খসড়�
 
 $("#submit").addEventListener("click", async () => {
   const logBox = $("#submit-log"); logBox.hidden = false; logBox.innerHTML = "";
-  const log = m => { logBox.insertAdjacentHTML("beforeend", `<div>${esc(m)}</div>`); logBox.scrollTop = 1e9; };
+  // Addresses in a log line become links (e.g. the finished lexeme), opened in a new tab.
+  const linkify = s => s.replace(/https?:\/\/[^\s<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+  const log = m => { logBox.insertAdjacentHTML("beforeend", `<div>${linkify(esc(m))}</div>`); logBox.scrollTop = 1e9; };
   $("#submit").disabled = true;
   try {
     const r = await submitPlan(buildPlan(draft), editSummary(), log);
